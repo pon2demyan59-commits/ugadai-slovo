@@ -1,4 +1,4 @@
-const CACHE_NAME = "ugadai-slovo-v5";
+const CACHE_NAME = "ugadai-slovo-v6";
 const FILES_TO_CACHE = ["./", "./index.html", "./style.css", "./script.js", "./data/words.js", "./manifest.webmanifest", "./assets/icon.svg"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(FILES_TO_CACHE)).then(() => self.skipWaiting()));
