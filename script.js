@@ -1,4 +1,36 @@
 const maxAttempts = 4;
+const SCORE_STORAGE_KEY = "ugadai-slovo-score-v1";
+const winsCountElement = document.querySelector("#winsCount");
+const lossesCountElement = document.querySelector("#lossesCount");
+
+function loadScore() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SCORE_STORAGE_KEY) || "{}");
+    return {
+      wins: Number.isSafeInteger(saved.wins) && saved.wins >= 0 ? saved.wins : 0,
+      losses: Number.isSafeInteger(saved.losses) && saved.losses >= 0 ? saved.losses : 0
+    };
+  } catch {
+    return { wins: 0, losses: 0 };
+  }
+}
+const score = loadScore();
+
+function renderScore() {
+  winsCountElement.textContent = score.wins;
+  lossesCountElement.textContent = score.losses;
+}
+function recordResult(won) {
+  if (won) score.wins++;
+  else score.losses++;
+  try {
+    localStorage.setItem(SCORE_STORAGE_KEY, JSON.stringify(score));
+  } catch {
+    // Если хранилище недоступно, счётчики сохраняются до перезагрузки.
+  }
+  renderScore();
+}
+
 const russianAlphabet = Array.from("АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ");
 const statusPriority = { unused: 0, missing: 1, present: 2, correct: 3 };
 const hintElement = document.querySelector("#hint");
@@ -266,6 +298,8 @@ function checkFinalChance() {
 }
 
 function finishGame(won) {
+  if (phase === "finished") return;
+  recordResult(won);
   phase = "finished";
   guessForm.hidden = true;
   finalInput.hidden = true;
@@ -302,6 +336,7 @@ finalEntry.addEventListener("click", () => {
   if (phase === "final") finalInput.focus();
 });
 nextWordButton.addEventListener("click", startGame);
+renderScore();
 startGame();
 if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
   navigator.serviceWorker.register("service-worker.js").catch(() => {});
