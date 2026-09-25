@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Угадай слово</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="game">
+    <section class="game-card">
+      <p class="game-label">Мобильная игра</p>
+      <h1>Угадай слово</h1>
+
+      <p class="hint" id="hint">Подсказка появится здесь</p>
+
+      <div class="word" id="word"></div>
+
+      <div class="stats">
+        <span>Ошибки: <strong id="mistakes">0</strong></span>
+        <span>Осталось: <strong id="attempts">6</strong></span>
+      </div>
+
+      <form class="guess-form" id="guessForm">
+        <input
+          id="guessInput"
+          type="text"
+          maxlength="20"
+          autocomplete="off"
+          placeholder="Буква или слово"
+        >
+        <button type="submit">Проверить</button>
+      </form>
+
+      <p class="message" id="message">Введи букву или попробуй угадать слово целиком.</p>
+
+      <div class="used">
+        <span>Уже были:</span>
+        <strong id="usedLetters">пока нет</strong>
+      </div>
+
+      <button class="new-game" id="newGameButton" type="button">Новая игра</button>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
