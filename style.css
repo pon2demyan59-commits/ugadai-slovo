@@ -186,3 +186,31 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
   background:linear-gradient(#dca75e,#8d5a25 18%,#5c381b 68%,#3e2719);
   box-shadow:inset 0 2px 0 #fff6d05c,inset 0 -3px 0 #1c140c,0 5px 12px #0009;
 }
+
+/* Компактный счётчик завершённых слов */
+.scoreboard {
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px; margin:-6px 0 18px;
+}
+.score-tile {
+  display:flex; align-items:center; justify-content:space-between; gap:7px;
+  padding:10px 13px; border-radius:9px; text-align:left;
+  background:linear-gradient(145deg,#454a51,#22262b 60%,#191b20);
+  box-shadow:inset 0 1px 0 #d4d9de35,inset 0 -2px 0 #05070b,0 4px 10px #0007;
+}
+.score-win { border:1px solid #76c9949c; }
+.score-loss { border:1px solid #c47c729c; }
+.score-label {
+  font-size:clamp(11px,3vw,13px); font-weight:700;
+  letter-spacing:.01em; color:#e1e4e7;
+}
+.score-number {
+  font-size:clamp(20px,6vw,27px); line-height:1; font-variant-numeric:tabular-nums;
+  font-weight:900; text-shadow:0 0 12px currentColor;
+}
+.score-win .score-number { color:#8df0af; }
+.score-loss .score-number { color:#f1a19a; }
+@media(max-width:360px) {
+  .scoreboard { gap:7px; }
+  .score-tile { padding:9px 8px; }
+}
