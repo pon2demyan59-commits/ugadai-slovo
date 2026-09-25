@@ -30,13 +30,13 @@ let previousWord = "";
 function startGame() {
   const available = GAME_WORDS.filter(item => item.word !== previousWord);
   const pool = available.length ? available : GAME_WORDS;
-  currentWord = pool[Math.floor(Math.random() * pool.length)].word.toLowerCase().trim();
+  const selected = pool[Math.floor(Math.random() * pool.length)];
+  currentWord = selected.word.toLowerCase().trim();
   previousWord = currentWord;
   currentAttempt = 0;
   phase = "guess";
   revealed = Array(currentWord.length).fill(false);
-  revealed[0] = true;
-  usedLetters = { [currentWord[0].toUpperCase()]: "correct" };
+  usedLetters = {};
   submitButton.disabled = false;
   guessForm.hidden = false;
   finalInput.value = "";
@@ -45,7 +45,7 @@ function startGame() {
   finalForm.classList.remove("active");
   resultBackdrop.hidden = true;
   resultBanner.classList.remove("win", "lose");
-  hintElement.textContent = "Зелёные буквы — на своих местах";
+  hintElement.textContent = selected.hint;
   messageElement.textContent = "Введи слово в первую строку.";
   renderBoard();
   renderPreview();
@@ -227,7 +227,7 @@ function beginFinalChance() {
   finalSubmit.hidden = false;
   finalForm.classList.add("active");
   finalInput.maxLength = revealed.filter(value => !value).length;
-  hintElement.textContent = "ПОСЛЕДНИЙ ШАНС";
+  hintElement.textContent = "Подсказка: " + GAME_WORDS.find(item => item.word === currentWord).hint;
   messageElement.textContent = "Впиши недостающие буквы прямо в верхнюю рамку и проверь слово.";
   renderPreview();
 }
@@ -274,12 +274,12 @@ function finishGame(won) {
   finalForm.classList.remove("active");
   if (won) {
     revealed.fill(true);
-    hintElement.textContent = "СЛОВО РАЗГАДАНО";
+    // Подсказка остаётся на экране после завершения раунда.
     resultTitle.textContent = "ПОЗДРАВЛЯЕМ!";
     resultText.textContent = "Ты угадал слово! Готов к следующему испытанию?";
     resultBanner.classList.add("win");
   } else {
-    hintElement.textContent = "ПОПРОБУЙ ЕЩЁ РАЗ";
+    // Не раскрываем начальные буквы даже при поражении.
     resultTitle.textContent = "СЕГОДНЯ НЕ УГАДАЛИ";
     resultText.textContent = "В этот раз слово осталось загадкой. Попробуй ещё раз с новым словом!";
     resultBanner.classList.add("lose");
