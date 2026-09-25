@@ -1,157 +1,159 @@
 const maxAttempts = 5;
-
+const russianAlphabet = Array.from("АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ");
+const statusPriority = { unused: 0, missing: 1, present: 2, correct: 3 };
 const hintElement = document.querySelector("#hint");
 const boardElement = document.querySelector("#board");
+const previewElement = document.querySelector("#wordPreview");
+const alphabetElement = document.querySelector("#alphabet");
 const currentAttemptElement = document.querySelector("#currentAttempt");
 const attemptsLeftElement = document.querySelector("#attemptsLeft");
 const guessForm = document.querySelector("#guessForm");
 const guessInput = document.querySelector("#guessInput");
 const messageElement = document.querySelector("#message");
 const newGameButton = document.querySelector("#newGameButton");
-
+const submitButton = guessForm.querySelector("button");
 let currentWord = "";
-let currentHint = "";
 let currentAttempt = 0;
 let isGameOver = false;
+let usedLetters = {};
 
 function startGame() {
-  const randomIndex = Math.floor(Math.random() * GAME_WORDS.length);
-  const selectedWord = GAME_WORDS[randomIndex];
-
-  currentWord = selectedWord.word.toLowerCase();
-  currentHint = selectedWord.hint;
+  const selectedWord = GAME_WORDS[Math.floor(Math.random() * GAME_WORDS.length)];
+  currentWord = selectedWord.word.toLowerCase().trim();
   currentAttempt = 0;
   isGameOver = false;
-
-  hintElement.textContent = currentHint;
-  messageElement.textContent = `Напиши слово из ${currentWord.length} букв.`;
+  usedLetters = {};
   guessInput.value = "";
   guessInput.maxLength = currentWord.length;
   guessInput.disabled = false;
-  guessForm.querySelector("button").disabled = false;
-
+  submitButton.disabled = false;
+  hintElement.textContent = "Первая буква открыта";
+  messageElement.textContent = "Попробуй угадать слово!";
   renderBoard();
+  renderPreview(false);
+  renderAlphabet();
   updateStats();
-  guessInput.focus();
+  // Не вызываем focus при запуске: на мобильном это открывает клавиатуру поверх игры.
 }
-
 function renderBoard() {
-  boardElement.innerHTML = "";
+  boardElement.replaceChildren();
   boardElement.style.setProperty("--word-length", currentWord.length);
-
-  for (let rowIndex = 0; rowIndex < maxAttempts; rowIndex += 1) {
-    const rowElement = document.createElement("div");
-    rowElement.classList.add("row");
-
-    for (let cellIndex = 0; cellIndex < currentWord.length; cellIndex += 1) {
-      const cellElement = document.createElement("span");
-      cellElement.classList.add("cell");
-      rowElement.append(cellElement);
+  for (let r = 0; r < maxAttempts; r++) {
+    const row = document.createElement("div");
+    row.className = "row";
+    for (let c = 0; c < currentWord.length; c++) {
+      const cell = document.createElement("span");
+      cell.className = "cell";
+      row.append(cell);
     }
-
-    boardElement.append(rowElement);
+    boardElement.append(row);
   }
 }
-
+function renderPreview(revealAll) {
+  previewElement.replaceChildren();
+  previewElement.style.setProperty("--word-length", currentWord.length);
+  for (let i = 0; i < currentWord.length; i++) {
+    const cell = document.createElement("span");
+    cell.className = "preview-cell";
+    if (revealAll || i === 0) {
+      cell.classList.add("is-known");
+      cell.textContent = currentWord[i].toUpperCase();
+    } else {
+      cell.textContent = "?";
+    }
+    previewElement.append(cell);
+  }
+}
+function renderAlphabet() {
+  alphabetElement.replaceChildren();
+  for (const letter of russianAlphabet) {
+    const cell = document.createElement("span");
+    const status = usedLetters[letter] || "unused";
+    cell.className = "alphabet-letter" + (status === "unused" ? "" : " " + status);
+    cell.textContent = letter;
+    cell.setAttribute("aria-label", letter + ": " + ({
+      unused: "ещё не использована", missing: "отсутствует",
+      present: "есть в слове", correct: "стоит на месте"
+    })[status]);
+    alphabetElement.append(cell);
+  }
+}
 function updateStats() {
   currentAttemptElement.textContent = Math.min(currentAttempt + 1, maxAttempts);
   attemptsLeftElement.textContent = maxAttempts - currentAttempt;
 }
-
-function checkGuess(guess) {
-  if (isGameOver) {
-    return;
-  }
-
-  if (!guess) {
-    messageElement.textContent = "Сначала введи букву или слово.";
-    return;
-  }
-
-  if (guess.length !== currentWord.length) {
-    messageElement.textContent = `Нужно слово из ${currentWord.length} букв.`;
-    return;
-  }
-
-  showGuessResult(guess);
-  currentAttempt += 1;
-  updateStats();
-
-  if (guess === currentWord) {
-    finishGame("Победа! Все буквы на своих местах.");
-    return;
-  }
-
-  if (currentAttempt >= maxAttempts) {
-    finishGame(`Попытки закончились. Было слово: ${currentWord}.`);
-    return;
-  }
-
-  messageElement.textContent = "Зеленые буквы стоят правильно, белые есть в слове, но не на этом месте.";
-}
-
-function showGuessResult(guess) {
-  const rowElement = boardElement.children[currentAttempt];
-  const result = getGuessResult(guess);
-
-  result.forEach((letterData, index) => {
-    const cellElement = rowElement.children[index];
-
-    cellElement.textContent = letterData.status === "missing" ? "" : letterData.letter;
-    cellElement.classList.add(letterData.status);
-  });
-}
-
 function getGuessResult(guess) {
-  const result = guess.split("").map((letter) => ({
-    letter,
-    status: "missing"
-  }));
-
-  const remainingLetters = currentWord.split("");
-
-  for (let index = 0; index < guess.length; index += 1) {
-    if (guess[index] === currentWord[index]) {
-      result[index].status = "correct";
-      remainingLetters[index] = null;
+  const result = Array.from(guess, letter => ({ letter, status: "missing" }));
+  const remaining = Array.from(currentWord);
+  // Сначала отмечаем точные совпадения, затем учитываем оставшиеся повторы.
+  for (let i = 0; i < result.length; i++) {
+    if (guess[i] === currentWord[i]) {
+      result[i].status = "correct";
+      remaining[i] = null;
     }
   }
-
-  for (let index = 0; index < guess.length; index += 1) {
-    if (result[index].status === "correct") {
-      continue;
-    }
-
-    const foundIndex = remainingLetters.indexOf(guess[index]);
-
-    if (foundIndex !== -1) {
-      result[index].status = "present";
-      remainingLetters[foundIndex] = null;
+  for (let i = 0; i < result.length; i++) {
+    if (result[i].status === "correct") continue;
+    const at = remaining.indexOf(guess[i]);
+    if (at !== -1) {
+      result[i].status = "present";
+      remaining[at] = null;
     }
   }
-
   return result;
 }
-
+function updateAlphabet(result) {
+  for (const item of result) {
+    const letter = item.letter.toUpperCase();
+    const previous = usedLetters[letter] || "unused";
+    // Если Л уже обнаружена, лишняя Л в другой попытке не перечеркнёт её.
+    if (statusPriority[item.status] > statusPriority[previous]) {
+      usedLetters[letter] = item.status;
+    }
+  }
+  renderAlphabet();
+}
+function checkGuess(guess) {
+  if (isGameOver) return;
+  if (!guess) { messageElement.textContent = "Сначала введи слово."; return; }
+  if (!/^[а-яё]+$/.test(guess)) {
+    messageElement.textContent = "Используй русские буквы."; return;
+  }
+  if (guess.length !== currentWord.length) {
+    messageElement.textContent = "Нужно слово из " + currentWord.length + " букв."; return;
+  }
+  const result = getGuessResult(guess);
+  const row = boardElement.children[currentAttempt];
+  result.forEach((item, i) => {
+    const cell = row.children[i];
+    cell.textContent = item.letter.toUpperCase(); // Не скрываем отсутствующие буквы.
+    cell.classList.add(item.status);
+  });
+  updateAlphabet(result);
+  currentAttempt++;
+  updateStats();
+  if (guess === currentWord) { finishGame("Победа! Все буквы на своих местах."); return; }
+  if (currentAttempt >= maxAttempts) {
+    finishGame("Попытки закончились. Было слово: " + currentWord.toUpperCase() + "."); return;
+  }
+  messageElement.textContent = "Зелёные — на месте, золотые — есть в слове. Зачёркнутых букв нет в слове.";
+}
 function finishGame(text) {
   isGameOver = true;
   messageElement.textContent = text;
   guessInput.disabled = true;
-  guessForm.querySelector("button").disabled = true;
+  submitButton.disabled = true;
+  renderPreview(true);
+  hintElement.textContent = "Слово раскрыто";
 }
-
-guessForm.addEventListener("submit", (event) => {
+guessForm.addEventListener("submit", event => {
   event.preventDefault();
-
   const guess = guessInput.value.trim().toLowerCase();
   checkGuess(guess);
-  guessInput.value = "";
+  if (guess.length === currentWord.length && /^[а-яё]+$/.test(guess)) guessInput.value = "";
 });
-
 newGameButton.addEventListener("click", startGame);
-
 startGame();
-
 if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
   navigator.serviceWorker.register("service-worker.js").catch(() => {});
 }
