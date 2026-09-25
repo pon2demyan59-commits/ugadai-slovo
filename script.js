@@ -1,43 +1,40 @@
 const words = [
   {
-    word: "молния",
-    hint: "Яркая вспышка во время грозы."
+    word: "маска",
+    hint: "Ее надевают на лицо, чтобы скрыться или сыграть роль."
   },
   {
-    word: "замок",
-    hint: "Может быть крепостью или стоять на двери."
+    word: "свеча",
+    hint: "Горит маленьким огнем и дает мягкий свет."
   },
   {
-    word: "фонарь",
-    hint: "Помогает видеть в темноте."
+    word: "берег",
+    hint: "Место, где вода встречается с землей."
   },
   {
-    word: "корабль",
-    hint: "Плывет по морю и перевозит людей или груз."
+    word: "песня",
+    hint: "Ее можно спеть."
   },
   {
-    word: "легенда",
-    hint: "Старая история, в которой правда смешана с вымыслом."
+    word: "камин",
+    hint: "Домашний очаг, возле которого тепло."
   }
 ];
 
-const maxMistakes = 6;
+const maxAttempts = 5;
 
 const hintElement = document.querySelector("#hint");
-const wordElement = document.querySelector("#word");
-const mistakesElement = document.querySelector("#mistakes");
-const attemptsElement = document.querySelector("#attempts");
+const boardElement = document.querySelector("#board");
+const currentAttemptElement = document.querySelector("#currentAttempt");
+const attemptsLeftElement = document.querySelector("#attemptsLeft");
 const guessForm = document.querySelector("#guessForm");
 const guessInput = document.querySelector("#guessInput");
 const messageElement = document.querySelector("#message");
-const usedLettersElement = document.querySelector("#usedLetters");
 const newGameButton = document.querySelector("#newGameButton");
 
 let currentWord = "";
 let currentHint = "";
-let openedLetters = [];
-let usedLetters = [];
-let mistakes = 0;
+let currentAttempt = 0;
 let isGameOver = false;
 
 function startGame() {
@@ -46,34 +43,42 @@ function startGame() {
 
   currentWord = selectedWord.word.toLowerCase();
   currentHint = selectedWord.hint;
-  openedLetters = [];
-  usedLetters = [];
-  mistakes = 0;
+  currentAttempt = 0;
   isGameOver = false;
 
   hintElement.textContent = currentHint;
-  messageElement.textContent = "Введи букву или попробуй угадать слово целиком.";
+  messageElement.textContent = `Напиши слово из ${currentWord.length} букв.`;
   guessInput.value = "";
+  guessInput.maxLength = currentWord.length;
   guessInput.disabled = false;
   guessForm.querySelector("button").disabled = false;
 
-  renderGame();
+  renderBoard();
+  updateStats();
   guessInput.focus();
 }
 
-function renderGame() {
-  wordElement.innerHTML = "";
+function renderBoard() {
+  boardElement.innerHTML = "";
+  boardElement.style.setProperty("--word-length", currentWord.length);
 
-  for (const letter of currentWord) {
-    const letterElement = document.createElement("span");
-    letterElement.classList.add("letter");
-    letterElement.textContent = openedLetters.includes(letter) ? letter : "";
-    wordElement.append(letterElement);
+  for (let rowIndex = 0; rowIndex < maxAttempts; rowIndex += 1) {
+    const rowElement = document.createElement("div");
+    rowElement.classList.add("row");
+
+    for (let cellIndex = 0; cellIndex < currentWord.length; cellIndex += 1) {
+      const cellElement = document.createElement("span");
+      cellElement.classList.add("cell");
+      rowElement.append(cellElement);
+    }
+
+    boardElement.append(rowElement);
   }
+}
 
-  mistakesElement.textContent = mistakes;
-  attemptsElement.textContent = maxMistakes - mistakes;
-  usedLettersElement.textContent = usedLetters.length > 0 ? usedLetters.join(", ") : "пока нет";
+function updateStats() {
+  currentAttemptElement.textContent = Math.min(currentAttempt + 1, maxAttempts);
+  attemptsLeftElement.textContent = maxAttempts - currentAttempt;
 }
 
 function checkGuess(guess) {
@@ -86,55 +91,69 @@ function checkGuess(guess) {
     return;
   }
 
-  if (guess.length === 1) {
-    checkLetter(guess);
-  } else {
-    checkWord(guess);
-  }
-
-  renderGame();
-  checkGameEnd();
-}
-
-function checkLetter(letter) {
-  if (usedLetters.includes(letter)) {
-    messageElement.textContent = "Эта буква уже была.";
+  if (guess.length !== currentWord.length) {
+    messageElement.textContent = `Нужно слово из ${currentWord.length} букв.`;
     return;
   }
 
-  usedLetters.push(letter);
+  showGuessResult(guess);
+  currentAttempt += 1;
+  updateStats();
 
-  if (currentWord.includes(letter)) {
-    openedLetters.push(letter);
-    messageElement.textContent = "Есть такая буква.";
-  } else {
-    mistakes += 1;
-    messageElement.textContent = "Такой буквы нет.";
-  }
-}
-
-function checkWord(word) {
-  if (word === currentWord) {
-    openedLetters = [...new Set(currentWord.split(""))];
-    messageElement.textContent = "Верно! Ты угадал слово целиком.";
-  } else {
-    mistakes += 1;
-    messageElement.textContent = "Не угадал. Минус одна попытка.";
-  }
-}
-
-function checkGameEnd() {
-  const isWordOpened = currentWord
-    .split("")
-    .every((letter) => openedLetters.includes(letter));
-
-  if (isWordOpened) {
-    finishGame("Победа! Слово открыто.");
+  if (guess === currentWord) {
+    finishGame("Победа! Все буквы на своих местах.");
+    return;
   }
 
-  if (mistakes >= maxMistakes) {
+  if (currentAttempt >= maxAttempts) {
     finishGame(`Попытки закончились. Было слово: ${currentWord}.`);
+    return;
   }
+
+  messageElement.textContent = "Зеленые буквы стоят правильно, белые есть в слове, но не на этом месте.";
+}
+
+function showGuessResult(guess) {
+  const rowElement = boardElement.children[currentAttempt];
+  const result = getGuessResult(guess);
+
+  result.forEach((letterData, index) => {
+    const cellElement = rowElement.children[index];
+
+    cellElement.textContent = letterData.status === "missing" ? "" : letterData.letter;
+    cellElement.classList.add(letterData.status);
+  });
+}
+
+function getGuessResult(guess) {
+  const result = guess.split("").map((letter) => ({
+    letter,
+    status: "missing"
+  }));
+
+  const remainingLetters = currentWord.split("");
+
+  for (let index = 0; index < guess.length; index += 1) {
+    if (guess[index] === currentWord[index]) {
+      result[index].status = "correct";
+      remainingLetters[index] = null;
+    }
+  }
+
+  for (let index = 0; index < guess.length; index += 1) {
+    if (result[index].status === "correct") {
+      continue;
+    }
+
+    const foundIndex = remainingLetters.indexOf(guess[index]);
+
+    if (foundIndex !== -1) {
+      result[index].status = "present";
+      remainingLetters[foundIndex] = null;
+    }
+  }
+
+  return result;
 }
 
 function finishGame(text) {
