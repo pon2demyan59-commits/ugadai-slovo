@@ -14,30 +14,24 @@
 
       <p class="hint" id="hint">Подсказка появится здесь</p>
 
-      <div class="word" id="word"></div>
+      <div class="board" id="board"></div>
 
       <div class="stats">
-        <span>Ошибки: <strong id="mistakes">0</strong></span>
-        <span>Осталось: <strong id="attempts">6</strong></span>
+        <span>Попытка: <strong id="currentAttempt">1</strong></span>
+        <span>Осталось: <strong id="attemptsLeft">5</strong></span>
       </div>
 
       <form class="guess-form" id="guessForm">
         <input
           id="guessInput"
           type="text"
-          maxlength="20"
           autocomplete="off"
-          placeholder="Буква или слово"
+          placeholder="Напиши слово"
         >
         <button type="submit">Проверить</button>
       </form>
 
-      <p class="message" id="message">Введи букву или попробуй угадать слово целиком.</p>
-
-      <div class="used">
-        <span>Уже были:</span>
-        <strong id="usedLetters">пока нет</strong>
-      </div>
+      <p class="message" id="message">У тебя 5 попыток угадать слово целиком.</p>
 
       <button class="new-game" id="newGameButton" type="button">Новая игра</button>
     </section>
