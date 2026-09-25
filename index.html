@@ -14,8 +14,16 @@
     <section class="game-card">
       <h1>Угадай слово</h1>
       <section class="word-panel" aria-label="Подсказка">
-        <div class="word-preview" id="wordPreview"></div>
-        <p class="hint" id="hint">Первая буква открыта</p>
+        <form id="finalForm" class="final-form" autocomplete="off">
+          <div class="final-entry" id="finalEntry">
+            <div class="word-preview" id="wordPreview" aria-label="Угаданные буквы"></div>
+            <input class="final-input" id="finalInput" type="text" inputmode="text"
+              autocapitalize="none" spellcheck="false" autocomplete="off"
+              aria-label="Последний шанс: введите недостающие буквы" hidden>
+          </div>
+          <p class="hint" id="hint">Первая буква открыта</p>
+          <button id="finalSubmit" class="final-submit" type="submit" hidden>Проверить слово</button>
+        </form>
       </section>
       <form class="guess-form" id="guessForm">
         <div class="board" id="board" aria-label="Четыре строки для ввода слова"></div>
@@ -26,7 +34,6 @@
         <button id="checkButton" type="submit">Проверить</button>
       </form>
       <p class="message" id="message" aria-live="polite">У тебя 4 попытки угадать слово.</p>
-      <button class="new-game" id="newGameButton" type="button">Новая игра</button>
       <section class="alphabet-panel" aria-label="Алфавит">
         <h2>АЛФАВИТ</h2>
         <div class="alphabet-grid" id="alphabet"></div>
@@ -37,6 +44,15 @@
         </div>
       </section>
     </section>
+    <div class="result-backdrop" id="resultBackdrop" hidden>
+      <section class="result-banner" role="dialog" aria-modal="true"
+        aria-labelledby="resultTitle" aria-describedby="resultText">
+        <div class="result-ornament" aria-hidden="true">✦</div>
+        <h2 id="resultTitle">Результат</h2>
+        <p id="resultText"></p>
+        <button type="button" id="nextWordButton">Следующее слово</button>
+      </section>
+    </div>
   </main>
   <script src="data/words.js"></script>
   <script src="script.js"></script>
