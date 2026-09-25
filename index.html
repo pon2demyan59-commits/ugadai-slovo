@@ -17,6 +17,14 @@
         <div class="word-preview" id="wordPreview"></div>
         <p class="hint" id="hint">Первая буква открыта</p>
       </section>
+      <form class="guess-form" id="guessForm">
+        <div class="board" id="board" aria-label="Четыре строки для ввода слова"></div>
+        <div class="stats">
+          <span>Попытка: <strong id="currentAttempt">1</strong></span>
+          <span>Осталось: <strong id="attemptsLeft">4</strong></span>
+        </div>
+        <button id="checkButton" type="submit">Проверить</button>
+      </form>
       <p class="message" id="message" aria-live="polite">У тебя 4 попытки угадать слово.</p>
       <button class="new-game" id="newGameButton" type="button">Новая игра</button>
       <section class="alphabet-panel" aria-label="Алфавит">
