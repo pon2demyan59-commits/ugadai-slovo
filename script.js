@@ -22,7 +22,7 @@ function startGame() {
   currentWord = selectedWord.word.toLowerCase().trim();
   currentAttempt = 0;
   isGameOver = false;
-  usedLetters = {};
+  usedLetters = { [currentWord[0].toUpperCase()]: "correct" };
   submitButton.disabled = false;
   hintElement.textContent = "Первая буква открыта";
   messageElement.textContent = "Попробуй угадать слово!";
