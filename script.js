@@ -1,26 +1,3 @@
-const words = [
-  {
-    word: "маска",
-    hint: "Ее надевают на лицо, чтобы скрыться или сыграть роль."
-  },
-  {
-    word: "свеча",
-    hint: "Горит маленьким огнем и дает мягкий свет."
-  },
-  {
-    word: "берег",
-    hint: "Место, где вода встречается с землей."
-  },
-  {
-    word: "песня",
-    hint: "Ее можно спеть."
-  },
-  {
-    word: "камин",
-    hint: "Домашний очаг, возле которого тепло."
-  }
-];
-
 const maxAttempts = 5;
 
 const hintElement = document.querySelector("#hint");
@@ -38,8 +15,8 @@ let currentAttempt = 0;
 let isGameOver = false;
 
 function startGame() {
-  const randomIndex = Math.floor(Math.random() * words.length);
-  const selectedWord = words[randomIndex];
+  const randomIndex = Math.floor(Math.random() * GAME_WORDS.length);
+  const selectedWord = GAME_WORDS[randomIndex];
 
   currentWord = selectedWord.word.toLowerCase();
   currentHint = selectedWord.hint;
@@ -174,3 +151,7 @@ guessForm.addEventListener("submit", (event) => {
 newGameButton.addEventListener("click", startGame);
 
 startGame();
+
+if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
+  navigator.serviceWorker.register("service-worker.js").catch(() => {});
+}
