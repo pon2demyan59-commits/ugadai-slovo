@@ -31,6 +31,56 @@ function recordResult(won) {
   renderScore();
 }
 
+// Отдельный от статистики список уже показанных и разгаданных слов.
+const WORD_PROGRESS_KEY = "ugadai-slovo-word-progress-v1";
+const wordBank = [...new Set(GAME_WORDS.map(item => item.word.toLowerCase().trim()))];
+function loadWordProgress() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(WORD_PROGRESS_KEY) || "{}");
+    const valid = new Set(wordBank);
+    return {
+      attempted: new Set(Array.isArray(saved.attempted) ? saved.attempted.filter(w => valid.has(w)) : []),
+      solved: new Set(Array.isArray(saved.solved) ? saved.solved.filter(w => valid.has(w)) : []),
+      active: valid.has(saved.active) ? saved.active : null
+    };
+  } catch {
+    return { attempted: new Set(), solved: new Set(), active: null };
+  }
+}
+const wordProgress = loadWordProgress();
+for (const word of wordProgress.solved) wordProgress.attempted.add(word);
+function saveWordProgress() {
+  try {
+    localStorage.setItem(WORD_PROGRESS_KEY, JSON.stringify({
+      attempted: [...wordProgress.attempted],
+      solved: [...wordProgress.solved],
+      active: wordProgress.active
+    }));
+  } catch { /* Прогресс останется доступен до обновления страницы. */ }
+}
+function chooseNextWord() {
+  const fresh = wordBank.filter(word => !wordProgress.attempted.has(word));
+  const unfinished = wordBank.filter(word => !wordProgress.solved.has(word));
+  const pool = fresh.length ? fresh : unfinished;
+  if (!pool.length) return null;
+  const alternatives = pool.filter(word => word !== previousWord);
+  const choices = alternatives.length ? alternatives : pool;
+  return choices[Math.floor(Math.random() * choices.length)];
+}
+function showCollectionComplete() {
+  phase = "finished";
+  guessForm.hidden = true;
+  finalInput.hidden = true;
+  finalSubmit.hidden = true;
+  resultBanner.classList.remove("lose");
+  resultBanner.classList.add("win");
+  resultTitle.textContent = "ВСЕ СЛОВА РАЗГАДАНЫ!";
+  resultText.textContent = "Ты разгадал все " + wordBank.length + " слов. Можешь начать новый круг!";
+  nextWordButton.textContent = "Начать заново";
+  resultBackdrop.hidden = false;
+  nextWordButton.focus();
+}
+
 const russianAlphabet = Array.from("АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ");
 const statusPriority = { unused: 0, missing: 1, present: 2, correct: 3 };
 const hintElement = document.querySelector("#hint");
@@ -60,11 +110,19 @@ let phase = "guess";
 let previousWord = "";
 
 function startGame() {
-  const available = GAME_WORDS.filter(item => item.word !== previousWord);
-  const pool = available.length ? available : GAME_WORDS;
-  const selected = pool[Math.floor(Math.random() * pool.length)];
-  currentWord = selected.word.toLowerCase().trim();
+  // Незаконченное слово остаётся текущим после обновления страницы.
+  const nextWord = wordProgress.active && !wordProgress.solved.has(wordProgress.active)
+    ? wordProgress.active : chooseNextWord();
+  if (!nextWord) {
+    showCollectionComplete();
+    return;
+  }
+  const selected = GAME_WORDS.find(item => item.word.toLowerCase().trim() === nextWord);
+  currentWord = nextWord;
   previousWord = currentWord;
+  wordProgress.active = currentWord;
+  wordProgress.attempted.add(currentWord);
+  saveWordProgress();
   currentAttempt = 0;
   phase = "guess";
   revealed = Array(currentWord.length).fill(false);
@@ -300,6 +358,9 @@ function checkFinalChance() {
 function finishGame(won) {
   if (phase === "finished") return;
   recordResult(won);
+  if (won) wordProgress.solved.add(currentWord);
+  wordProgress.active = null;
+  saveWordProgress();
   phase = "finished";
   guessForm.hidden = true;
   finalInput.hidden = true;
@@ -310,12 +371,17 @@ function finishGame(won) {
     revealed.fill(true);
     // Подсказка остаётся на экране после завершения раунда.
     resultTitle.textContent = "ПОЗДРАВЛЯЕМ!";
-    resultText.textContent = "Ты угадал слово! Готов к следующему испытанию?";
+    const remaining = wordBank.length - wordProgress.solved.size;
+    resultText.textContent = remaining
+      ? "Ты угадал слово! Осталось разгадать: " + remaining + "."
+      : "Ты разгадал все " + wordBank.length + " слов! Поздравляем!";
+    nextWordButton.textContent = remaining ? "Следующее слово" : "Начать заново";
     resultBanner.classList.add("win");
   } else {
     // Не раскрываем начальные буквы даже при поражении.
     resultTitle.textContent = "СЕГОДНЯ НЕ УГАДАЛИ";
-    resultText.textContent = "В этот раз слово осталось загадкой. Попробуй ещё раз с новым словом!";
+    resultText.textContent = "В этот раз слово осталось загадкой. Сначала будут новые слова, затем вернёмся к неразгаданным.";
+    nextWordButton.textContent = "Следующее слово";
     resultBanner.classList.add("lose");
   }
   renderPreview();
@@ -335,7 +401,16 @@ finalInput.addEventListener("input", cleanFinalInput);
 finalEntry.addEventListener("click", () => {
   if (phase === "final") finalInput.focus();
 });
-nextWordButton.addEventListener("click", startGame);
+nextWordButton.addEventListener("click", () => {
+  if (wordProgress.solved.size === wordBank.length) {
+    wordProgress.solved.clear();
+    wordProgress.attempted.clear();
+    wordProgress.active = null;
+    previousWord = "";
+    saveWordProgress();
+  }
+  startGame();
+});
 renderScore();
 startGame();
 if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
