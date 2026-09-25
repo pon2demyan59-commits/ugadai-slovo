@@ -13,6 +13,16 @@
   <main class="game">
     <section class="game-card">
       <h1>Угадай слово</h1>
+      <section class="scoreboard" aria-label="Статистика угаданных слов">
+        <div class="score-tile score-win">
+          <span class="score-label">Угадано</span>
+          <strong id="winsCount" class="score-number">0</strong>
+        </div>
+        <div class="score-tile score-loss">
+          <span class="score-label">Не угадано</span>
+          <strong id="lossesCount" class="score-number">0</strong>
+        </div>
+      </section>
       <section class="word-panel" aria-label="Подсказка">
         <form id="finalForm" class="final-form" autocomplete="off">
           <div class="final-entry" id="finalEntry">
