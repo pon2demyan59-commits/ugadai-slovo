@@ -60,6 +60,7 @@ function renderBoard() {
     }
     boardElement.append(row);
   }
+  syncInput();
 }
 function syncInput() {
   if (!guessInput || isGameOver) return;
