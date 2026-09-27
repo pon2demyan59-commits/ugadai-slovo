@@ -71,7 +71,6 @@ function showCollectionComplete() {
   phase = "finished";
   guessForm.hidden = true;
   finalInput.hidden = true;
-  finalSubmit.hidden = true;
   resultBanner.classList.remove("lose");
   resultBanner.classList.add("win");
   resultTitle.textContent = "ВСЕ СЛОВА РАЗГАДАНЫ!";
@@ -91,10 +90,8 @@ const alphabetElement = document.querySelector("#alphabet");
 const currentAttemptElement = document.querySelector("#currentAttempt");
 const attemptsLeftElement = document.querySelector("#attemptsLeft");
 const guessForm = document.querySelector("#guessForm");
-const submitButton = document.querySelector("#checkButton");
 const finalForm = document.querySelector("#finalForm");
 const finalInput = document.querySelector("#finalInput");
-const finalSubmit = document.querySelector("#finalSubmit");
 const finalEntry = document.querySelector("#finalEntry");
 const messageElement = document.querySelector("#message");
 const resultBackdrop = document.querySelector("#resultBackdrop");
@@ -128,11 +125,9 @@ function startGame() {
   phase = "guess";
   revealed = Array(currentWord.length).fill(false);
   usedLetters = {};
-  submitButton.disabled = false;
   guessForm.hidden = false;
   finalInput.value = "";
   finalInput.hidden = true;
-  finalSubmit.hidden = true;
   finalForm.classList.remove("active");
   resultBackdrop.hidden = true;
   resultBanner.classList.remove("win", "lose");
@@ -283,6 +278,19 @@ function renderAlphabet() {
       cellWrap.append(cell);
       row.append(cellWrap);
     }
+    // ENTER sits inside the bottom keyboard row instead of a large button.
+    if (letters === keyboardRows[keyboardRows.length - 1]) {
+      const enter = document.createElement("button");
+      enter.type = "button";
+      enter.className = "keyboard-enter";
+      enter.textContent = "ENTER";
+      enter.setAttribute("aria-label", "Проверить слово");
+      enter.addEventListener("click", () => {
+        if (phase === "guess" && guessInput) checkGuess(guessInput.value.trim().toLowerCase());
+        else if (phase === "final") checkFinalChance();
+      });
+      row.append(enter);
+    }
     alphabetElement.append(row);
   }
 }
@@ -363,7 +371,6 @@ function beginFinalChance() {
   phase = "final";
   guessForm.hidden = true;
   finalInput.hidden = false;
-  finalSubmit.hidden = false;
   finalForm.classList.add("active");
   finalInput.maxLength = revealed.filter(value => !value).length;
   hintElement.textContent = "Подсказка: " + GAME_WORDS.find(item => item.word === currentWord).hint;
@@ -391,13 +398,11 @@ function checkFinalChance() {
   if (candidate === currentWord) {
     revealed.fill(true);
     finalInput.hidden = true;
-    finalSubmit.hidden = true;
     finalForm.classList.remove("active");
     renderPreview();
     finishGame(true);
   } else {
     finalInput.hidden = true;
-    finalSubmit.hidden = true;
     finalForm.classList.remove("active");
     renderPreview();
     finishGame(false);
@@ -413,7 +418,6 @@ function finishGame(won) {
   phase = "finished";
   guessForm.hidden = true;
   finalInput.hidden = true;
-  finalSubmit.hidden = true;
   if (guessInput) { guessInput.remove(); guessInput = null; }
   finalForm.classList.remove("active");
   if (won) {
