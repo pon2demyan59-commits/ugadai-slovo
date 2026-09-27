@@ -236,24 +236,52 @@ function typeKeyboardLetter(letter) {
   target.dispatchEvent(new Event("input", { bubbles: true }));
   // На телефонах не открываем системную клавиатуру после нажатия экранной кнопки.
 }
+// Одна клавиша Е/Ё: при нажатии показываем выбор нужной буквы.
+function showEChoice(anchor) {
+  const old = alphabetElement.querySelector(".keyboard-letter-choice");
+  if (old) { old.remove(); if (old.parentElement === anchor) return; }
+  const menu = document.createElement("div");
+  menu.className = "keyboard-letter-choice";
+  menu.setAttribute("role", "group");
+  menu.setAttribute("aria-label", "Выбрать Е или Ё");
+  for (const letter of ["Е", "Ё"]) {
+    const option = document.createElement("button");
+    option.type = "button";
+    option.className = "keyboard-choice-button";
+    option.textContent = letter;
+    option.addEventListener("click", event => {
+      event.stopPropagation();
+      menu.remove();
+      typeKeyboardLetter(letter);
+    });
+    menu.append(option);
+  }
+  anchor.append(menu);
+}
 function renderAlphabet() {
   alphabetElement.replaceChildren();
-  const rows = ["Ё", ...keyboardRows];
-  for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+  for (const letters of keyboardRows) {
     const row = document.createElement("div");
-    row.className = "keyboard-row" + (rowIndex === 0 ? " keyboard-yo" : "");
-    for (const letter of rows[rowIndex]) {
+    row.className = "keyboard-row";
+    for (const letter of letters) {
+      const combined = letter === "Е";
+      const cellWrap = document.createElement("div");
+      cellWrap.className = "keyboard-key-wrap";
       const cell = document.createElement("button");
       cell.type = "button";
-      const status = usedLetters[letter] || "unused";
+      const status = combined
+        ? (statusPriority[usedLetters["Е"] || "unused"] >= statusPriority[usedLetters["Ё"] || "unused"]
+            ? usedLetters["Е"] || "unused" : usedLetters["Ё"] || "unused")
+        : usedLetters[letter] || "unused";
       cell.className = "alphabet-letter" + (status === "unused" ? "" : " " + status);
-      cell.textContent = letter;
-      cell.setAttribute("aria-label", letter + ": " + ({
+      cell.textContent = combined ? "Е/Ё" : letter;
+      cell.setAttribute("aria-label", (combined ? "Выбрать Е или Ё" : letter) + ": " + ({
         unused: "ещё не использована", missing: "отсутствует",
         present: "есть в слове", correct: "стоит на месте"
       })[status]);
-      cell.addEventListener("click", () => typeKeyboardLetter(letter));
-      row.append(cell);
+      cell.addEventListener("click", () => combined ? showEChoice(cellWrap) : typeKeyboardLetter(letter));
+      cellWrap.append(cell);
+      row.append(cellWrap);
     }
     alphabetElement.append(row);
   }
