@@ -283,7 +283,7 @@ function renderAlphabet() {
       const enter = document.createElement("button");
       enter.type = "button";
       enter.className = "keyboard-enter";
-      enter.textContent = "ENTER";
+      enter.textContent = "Проверить";
       enter.setAttribute("aria-label", "Проверить слово");
       enter.addEventListener("click", () => {
         if (phase === "guess" && guessInput) checkGuess(guessInput.value.trim().toLowerCase());
