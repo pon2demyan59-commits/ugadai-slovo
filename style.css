@@ -276,8 +276,8 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
 }
 .keyboard-enter:active,.keyboard-erase:active { transform:translateY(2px); }
 .alphabet-legend { margin-top:10px; }
-.line-input,.final-input { pointer-events:none; cursor:default; }
-.final-form.active .final-entry { cursor:default; }
+.line-input,.final-input { pointer-events:auto; cursor:text; }
+.final-form.active .final-entry { cursor:text; }
 .final-input[hidden],.guess-form[hidden],.result-backdrop[hidden] { display:none!important; }
 /* Подсказки игры доступны экранным дикторам, но не занимают место. Ошибки — небольшое всплывающее уведомление. */
 .message {
