@@ -296,29 +296,27 @@ function renderAlphabet() {
     alphabetElement.append(row);
   }
   // Две удобные кнопки под буквами: удалить и проверить слово.
-  {
-    const row = document.createElement("div");
-    row.className = "keyboard-row keyboard-actions";
-    const erase = document.createElement("button");
-    erase.type = "button";
-    erase.className = "keyboard-erase";
-    erase.textContent = "⌫ Удалить";
-    erase.setAttribute("aria-label", "Удалить последнюю букву");
-    erase.addEventListener("click", eraseKeyboardLetter);
-    row.append(erase);
-      const enter = document.createElement("button");
-      enter.type = "button";
-      enter.className = "keyboard-enter";
-      enter.textContent = "Проверить";
-      enter.setAttribute("aria-label", "Проверить слово");
-      enter.addEventListener("click", () => {
-        if (phase === "guess" && guessInput) checkGuess(guessInput.value.trim().toLowerCase());
-        else if (phase === "final") checkFinalChance();
-      });
-      row.append(enter);
-    }
-    alphabetElement.append(row);
-  }
+  const actions = document.createElement("div");
+  actions.className = "keyboard-row keyboard-actions";
+  const erase = document.createElement("button");
+  erase.type = "button";
+  erase.className = "keyboard-erase";
+  erase.textContent = "⌫ Удалить";
+  erase.setAttribute("aria-label", "Удалить последнюю букву");
+  erase.addEventListener("click", eraseKeyboardLetter);
+  actions.append(erase);
+
+  const enter = document.createElement("button");
+  enter.type = "button";
+  enter.className = "keyboard-enter";
+  enter.textContent = "Проверить";
+  enter.setAttribute("aria-label", "Проверить слово");
+  enter.addEventListener("click", () => {
+    if (phase === "guess" && guessInput) checkGuess(guessInput.value.trim().toLowerCase());
+    else if (phase === "final") checkFinalChance();
+  });
+  actions.append(enter);
+  alphabetElement.append(actions);
 }
 
 function updateStats() {
