@@ -80,7 +80,7 @@ function showCollectionComplete() {
   nextWordButton.focus();
 }
 
-// Раскладка русской клавиатуры: отдельная клавиша Ё и три привычных ряда.
+// Экранная русская клавиатура — единственный способ вводить буквы на телефоне.
 const keyboardRows = ["ЙЦУКЕНГШЩЗХЪ", "ФЫВАПРОЛДЖЭ", "ЯЧСМИТЬБЮ"];
 const statusPriority = { unused: 0, missing: 1, present: 2, correct: 3 };
 const hintElement = document.querySelector("#hint");
@@ -129,6 +129,7 @@ function startGame() {
   finalInput.value = "";
   finalInput.hidden = true;
   finalForm.classList.remove("active");
+  messageElement.classList.remove("is-error");
   resultBackdrop.hidden = true;
   resultBanner.classList.remove("win", "lose");
   hintElement.textContent = selected.hint;
@@ -144,6 +145,9 @@ function createLineInput(number) {
   input.className = "line-input";
   input.type = "text";
   input.autocomplete = "off";
+  input.readOnly = true;
+  input.inputMode = "none";
+  input.tabIndex = -1;
   input.autocapitalize = "none";
   input.spellcheck = false;
   input.maxLength = currentWord.length;
@@ -222,15 +226,26 @@ function renderPreview() {
 // Экранная клавиатура: буквы также можно нажимать мышкой или пальцем.
 function typeKeyboardLetter(letter) {
   const target = phase === "final" ? finalInput : phase === "guess" ? guessInput : null;
-  if (!target) return;
-  const limit = target.maxLength;
-  if (target.value.length >= limit) return;
-  const pos = typeof target.selectionStart === "number" ? target.selectionStart : target.value.length;
-  const end = typeof target.selectionEnd === "number" ? target.selectionEnd : pos;
-  target.value = target.value.slice(0, pos) + letter.toLowerCase() + target.value.slice(end);
-  target.dispatchEvent(new Event("input", { bubbles: true }));
-  // На телефонах не открываем системную клавиатуру после нажатия экранной кнопки.
+  if (!target || target.value.length >= target.maxLength) return;
+  // Вводим только игровой клавиатурой: не открываем системную клавиатуру телефона.
+  target.value += letter.toLowerCase();
+  target.dispatchEvent(new Event("input", { bubbles:true }));
+  messageElement.classList.remove("is-error");
 }
+
+function eraseKeyboardLetter() {
+  const target = phase === "final" ? finalInput : phase === "guess" ? guessInput : null;
+  if (!target || !target.value.length) return;
+  target.value = target.value.slice(0, -1);
+  target.dispatchEvent(new Event("input", { bubbles:true }));
+  messageElement.classList.remove("is-error");
+}
+
+function showInputError(text) {
+  messageElement.textContent = text;
+  messageElement.classList.add("is-error");
+}
+
 // Одна клавиша Е/Ё: при нажатии показываем выбор нужной буквы.
 function showEChoice(anchor) {
   const old = alphabetElement.querySelector(".keyboard-letter-choice");
@@ -278,8 +293,19 @@ function renderAlphabet() {
       cellWrap.append(cell);
       row.append(cellWrap);
     }
-    // ENTER sits inside the bottom keyboard row instead of a large button.
-    if (letters === keyboardRows[keyboardRows.length - 1]) {
+    alphabetElement.append(row);
+  }
+  // Две удобные кнопки под буквами: удалить и проверить слово.
+  {
+    const row = document.createElement("div");
+    row.className = "keyboard-row keyboard-actions";
+    const erase = document.createElement("button");
+    erase.type = "button";
+    erase.className = "keyboard-erase";
+    erase.textContent = "⌫ Удалить";
+    erase.setAttribute("aria-label", "Удалить последнюю букву");
+    erase.addEventListener("click", eraseKeyboardLetter);
+    row.append(erase);
       const enter = document.createElement("button");
       enter.type = "button";
       enter.className = "keyboard-enter";
@@ -333,9 +359,9 @@ function updateAlphabet(result) {
 
 function checkGuess(guess) {
   if (phase !== "guess") return;
-  if (!guess) { messageElement.textContent = "Сначала введи слово."; return; }
+  if (!guess) { showInputError("Сначала введи слово."); return; }
   if (guess.length !== currentWord.length) {
-    messageElement.textContent = "Нужно слово из " + currentWord.length + " букв.";
+    showInputError("Нужно слово из " + currentWord.length + " букв.");
     return;
   }
   const result = getGuessResult(guess);
@@ -388,7 +414,7 @@ function checkFinalChance() {
   if (phase !== "final") return;
   const missing = revealed.filter(value => !value).length;
   if (finalInput.value.length !== missing) {
-    messageElement.textContent = "Впиши все " + missing + " недостающие буквы в верхней рамке.";
+    showInputError("Впиши все " + missing + " недостающие буквы.");
     return;
   }
   let index = 0;
@@ -451,9 +477,6 @@ finalForm.addEventListener("submit", event => {
   checkFinalChance();
 });
 finalInput.addEventListener("input", cleanFinalInput);
-finalEntry.addEventListener("click", () => {
-  if (phase === "final") finalInput.focus();
-});
 nextWordButton.addEventListener("click", () => {
   if (wordProgress.solved.size === wordBank.length) {
     wordProgress.solved.clear();
