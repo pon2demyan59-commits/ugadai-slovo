@@ -81,7 +81,8 @@ function showCollectionComplete() {
   nextWordButton.focus();
 }
 
-const russianAlphabet = Array.from("АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ");
+// Раскладка русской клавиатуры: отдельная клавиша Ё и три привычных ряда.
+const keyboardRows = ["ЙЦУКЕНГШЩЗХЪ", "ФЫВАПРОЛДЖЭ", "ЯЧСМИТЬБЮ"];
 const statusPriority = { unused: 0, missing: 1, present: 2, correct: 3 };
 const hintElement = document.querySelector("#hint");
 const boardElement = document.querySelector("#board");
@@ -223,18 +224,38 @@ function renderPreview() {
   }
 }
 
+// Экранная клавиатура: буквы также можно нажимать мышкой или пальцем.
+function typeKeyboardLetter(letter) {
+  const target = phase === "final" ? finalInput : phase === "guess" ? guessInput : null;
+  if (!target) return;
+  const limit = target.maxLength;
+  if (target.value.length >= limit) return;
+  const pos = typeof target.selectionStart === "number" ? target.selectionStart : target.value.length;
+  const end = typeof target.selectionEnd === "number" ? target.selectionEnd : pos;
+  target.value = target.value.slice(0, pos) + letter.toLowerCase() + target.value.slice(end);
+  target.dispatchEvent(new Event("input", { bubbles: true }));
+  // На телефонах не открываем системную клавиатуру после нажатия экранной кнопки.
+}
 function renderAlphabet() {
   alphabetElement.replaceChildren();
-  for (const letter of russianAlphabet) {
-    const cell = document.createElement("span");
-    const status = usedLetters[letter] || "unused";
-    cell.className = "alphabet-letter" + (status === "unused" ? "" : " " + status);
-    cell.textContent = letter;
-    cell.setAttribute("aria-label", letter + ": " + ({
-      unused: "ещё не использована", missing: "отсутствует",
-      present: "есть в слове", correct: "стоит на месте"
-    })[status]);
-    alphabetElement.append(cell);
+  const rows = ["Ё", ...keyboardRows];
+  for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+    const row = document.createElement("div");
+    row.className = "keyboard-row" + (rowIndex === 0 ? " keyboard-yo" : "");
+    for (const letter of rows[rowIndex]) {
+      const cell = document.createElement("button");
+      cell.type = "button";
+      const status = usedLetters[letter] || "unused";
+      cell.className = "alphabet-letter" + (status === "unused" ? "" : " " + status);
+      cell.textContent = letter;
+      cell.setAttribute("aria-label", letter + ": " + ({
+        unused: "ещё не использована", missing: "отсутствует",
+        present: "есть в слове", correct: "стоит на месте"
+      })[status]);
+      cell.addEventListener("click", () => typeKeyboardLetter(letter));
+      row.append(cell);
+    }
+    alphabetElement.append(row);
   }
 }
 
