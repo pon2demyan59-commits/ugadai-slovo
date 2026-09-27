@@ -503,6 +503,14 @@ nextWordButton.addEventListener("click", () => {
   }
   startGame();
 });
+// Стартовая заставка: сначала показываем название, затем открываем игровое поле.
+const welcomeScreen = document.querySelector("#welcomeScreen");
+const gameScreen = document.querySelector("#gameScreen");
+document.querySelector("#welcomeEnter").addEventListener("click", () => {
+  welcomeScreen.hidden = true;
+  gameScreen.hidden = false;
+  if (guessInput) guessInput.focus({ preventScroll: true });
+});
 renderScore();
 startGame();
 if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
