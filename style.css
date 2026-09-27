@@ -270,3 +270,22 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
   .alphabet-grid { gap:5px; }
   .keyboard-key-wrap > .alphabet-letter { font-size:clamp(9px,2.8vw,12px); }
 }
+
+/* Кнопка ENTER в нижнем ряду клавиатуры вместо полноширинной проверки. */
+.guess-form { gap:0; }
+.keyboard-row:last-child .keyboard-key-wrap {
+  flex-basis:min(32px,calc((100% - 11 * var(--key-gap)) / 12));
+}
+.keyboard-enter {
+  appearance:none; -webkit-appearance:none;
+  flex:0 0 calc(2 * min(32px, (100% - 11 * var(--key-gap)) / 12) + var(--key-gap));
+  min-width:0; align-self:stretch; padding:0 2px;
+  border:1px solid #f2c885; border-radius:5px;
+  background:linear-gradient(145deg,#b88a4e,#71502c 45%,#3e2b1d);
+  color:#fff4d9; font-size:clamp(9px,2.4vw,12px); font-weight:900; letter-spacing:.02em;
+  box-shadow:inset 0 2px 0 #ffedc04d,inset 0 -2px 0 #1e120c,0 3px 5px #0008;
+  cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+}
+.keyboard-enter:hover { filter:brightness(1.2); }
+.keyboard-enter:active { transform:translateY(2px); }
+.keyboard-enter:focus-visible { outline:2px solid #ffe1a7; outline-offset:2px; }
