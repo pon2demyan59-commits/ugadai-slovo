@@ -214,3 +214,28 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
   .scoreboard { gap:7px; }
   .score-tile { padding:9px 8px; }
 }
+
+
+/* Русская клавиатура: физическая раскладка, адаптивная ширина и нажимаемые клавиши. */
+.alphabet-panel { padding:16px 9px 13px; border-color:#b38a5488; }
+.alphabet-panel h2 { margin-bottom:10px; }
+.alphabet-grid { display:flex; flex-direction:column; align-items:center; gap:6px; }
+.keyboard-row { display:flex; width:100%; justify-content:center; gap:clamp(2px,.8vw,5px); }
+.keyboard-yo { justify-content:flex-start; padding-left:2px; margin-bottom:-1px; }
+.alphabet-letter {
+  appearance:none; -webkit-appearance:none; cursor:pointer; flex:1 1 0; width:0;
+  max-width:35px; min-width:0; height:clamp(33px,9vw,42px); padding:0;
+  border-radius:7px; font-size:clamp(11px,3.4vw,16px);
+  transition:transform .12s ease, filter .12s ease, border-color .12s ease;
+  touch-action:manipulation; user-select:none; -webkit-tap-highlight-color:transparent;
+}
+.keyboard-yo .alphabet-letter { flex:0 0 calc((100% - 12 * clamp(2px,.8vw,5px)) / 13); }
+.alphabet-letter:hover { filter:brightness(1.23); border-color:#ffe1a7; }
+.alphabet-letter:active { transform:translateY(2px) scale(.96); }
+.alphabet-letter:focus-visible { outline:2px solid #ffe1a7; outline-offset:2px; }
+@media(max-width:380px) {
+  .alphabet-grid { gap:5px; }
+  .keyboard-row { gap:2px; }
+  .keyboard-yo .alphabet-letter { flex-basis:calc((100% - 24px) / 13); }
+  .alphabet-letter { height:34px; font-size:11px; border-radius:5px; }
+}
