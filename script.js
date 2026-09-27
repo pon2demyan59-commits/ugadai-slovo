@@ -145,9 +145,7 @@ function createLineInput(number) {
   input.className = "line-input";
   input.type = "text";
   input.autocomplete = "off";
-  input.readOnly = true;
-  input.inputMode = "none";
-  input.tabIndex = -1;
+  input.inputMode = "text";
   input.autocapitalize = "none";
   input.spellcheck = false;
   input.maxLength = currentWord.length;
@@ -224,20 +222,31 @@ function renderPreview() {
 }
 
 // Экранная клавиатура: буквы также можно нажимать мышкой или пальцем.
+// Обе клавиатуры редактируют одно и то же поле: у телефона и игровой клавиатуры
+// общий текст и позиция курсора, поэтому удаление работает в обе стороны.
+function activeLetterInput() {
+  return phase === "final" ? finalInput : phase === "guess" ? guessInput : null;
+}
+
 function typeKeyboardLetter(letter) {
-  const target = phase === "final" ? finalInput : phase === "guess" ? guessInput : null;
-  if (!target || target.value.length >= target.maxLength) return;
-  // Вводим только игровой клавиатурой: не открываем системную клавиатуру телефона.
-  target.value += letter.toLowerCase();
-  target.dispatchEvent(new Event("input", { bubbles:true }));
+  const target = activeLetterInput();
+  if (!target) return;
+  const start = target.selectionStart ?? target.value.length;
+  const end = target.selectionEnd ?? start;
+  if (target.value.length - (end - start) >= target.maxLength) return;
+  target.setRangeText(letter.toLowerCase(), start, end, "end");
+  target.dispatchEvent(new Event("input", { bubbles: true }));
   messageElement.classList.remove("is-error");
 }
 
 function eraseKeyboardLetter() {
-  const target = phase === "final" ? finalInput : phase === "guess" ? guessInput : null;
+  const target = activeLetterInput();
   if (!target || !target.value.length) return;
-  target.value = target.value.slice(0, -1);
-  target.dispatchEvent(new Event("input", { bubbles:true }));
+  const start = target.selectionStart ?? target.value.length;
+  const end = target.selectionEnd ?? start;
+  if (start === end && start === 0) return;
+  target.setRangeText("", start === end ? start - 1 : start, end, "end");
+  target.dispatchEvent(new Event("input", { bubbles: true }));
   messageElement.classList.remove("is-error");
 }
 
@@ -475,6 +484,9 @@ finalForm.addEventListener("submit", event => {
   checkFinalChance();
 });
 finalInput.addEventListener("input", cleanFinalInput);
+finalEntry.addEventListener("click", () => {
+  if (phase === "final") finalInput.focus();
+});
 nextWordButton.addEventListener("click", () => {
   if (wordProgress.solved.size === wordBank.length) {
     wordProgress.solved.clear();
