@@ -1,7 +1,5 @@
 const maxAttempts = 4;
 const SCORE_STORAGE_KEY = "ugadai-slovo-score-v1";
-const winsCountElement = document.querySelector("#winsCount");
-const lossesCountElement = document.querySelector("#lossesCount");
 
 function loadScore() {
   try {
@@ -16,10 +14,6 @@ function loadScore() {
 }
 const score = loadScore();
 
-function renderScore() {
-  winsCountElement.textContent = score.wins;
-  lossesCountElement.textContent = score.losses;
-}
 function recordResult(won) {
   if (won) score.wins++;
   else score.losses++;
@@ -28,7 +22,6 @@ function recordResult(won) {
   } catch {
     // Если хранилище недоступно, счётчики сохраняются до перезагрузки.
   }
-  renderScore();
 }
 
 // Отдельный от статистики список уже показанных и разгаданных слов.
@@ -570,7 +563,6 @@ document.querySelector("#menuRules").addEventListener("click", () => {
   }
   detailsBody.append(list);
 });
-renderScore();
 startGame();
 if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
   navigator.serviceWorker.register("service-worker.js").catch(() => {});
