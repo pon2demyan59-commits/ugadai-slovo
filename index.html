@@ -8,6 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
+  <script src="/sdk.js"></script>
 </head>
 <body>
   <main class="game">
@@ -31,7 +32,8 @@
               autocapitalize="none" spellcheck="false" autocomplete="off"
               aria-label="Последний шанс: введите недостающие буквы" hidden>
           </div>
-          <p class="hint" id="hint">Подсказка к слову</p>
+        <p class="hint" id="hint">Подсказка к слову</p>
+          <button id="rewardHintButton" class="reward-button" type="button">Открыть букву за рекламу</button>
           <button id="finalSubmit" class="final-submit" type="submit" hidden>Проверить слово</button>
         </form>
       </section>
@@ -65,6 +67,7 @@
     </div>
   </main>
   <script src="data/words.js"></script>
+  <script src="yandex-sdk.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

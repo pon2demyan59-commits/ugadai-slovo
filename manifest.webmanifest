@@ -4,8 +4,8 @@
   "description": "Простая мобильная игра на угадывание слова.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#221414",
-  "theme_color": "#221414",
+  "background_color": "#111216",
+  "theme_color": "#111216",
   "icons": [
     {
       "src": "assets/icon.svg",

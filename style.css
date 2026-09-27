@@ -162,6 +162,19 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
   background:linear-gradient(#dca75e,#8d5a25 18%,#5c381b 68%,#3e2719);
   box-shadow:inset 0 2px 0 #fff6d05c,inset 0 -3px 0 #1c140c,0 5px 12px #0009;
 }
+.reward-button {
+  width:100%; margin-top:12px; min-height:40px; border-radius:9px; cursor:pointer;
+  border:1px solid #8fc4ff; color:#eef7ff; font-weight:800;
+  background:linear-gradient(#407ab8,#24486e 45%,#172b44);
+  box-shadow:inset 0 2px 0 #e0f0ff4d,inset 0 -3px 0 #091521,0 5px 12px #0008;
+}
+.reward-button:disabled {
+  cursor:default;
+  opacity:.6;
+}
+.reward-button[hidden] {
+  display:none!important;
+}
 .result-backdrop {
   position:fixed; z-index:20; inset:0; display:grid; place-items:center; padding:18px;
   background:rgba(3,4,6,.82); backdrop-filter:blur(8px);

@@ -95,6 +95,7 @@ const finalForm = document.querySelector("#finalForm");
 const finalInput = document.querySelector("#finalInput");
 const finalSubmit = document.querySelector("#finalSubmit");
 const finalEntry = document.querySelector("#finalEntry");
+const rewardHintButton = document.querySelector("#rewardHintButton");
 const messageElement = document.querySelector("#message");
 const resultBackdrop = document.querySelector("#resultBackdrop");
 const resultBanner = resultBackdrop.querySelector(".result-banner");
@@ -313,6 +314,7 @@ function checkGuess(guess) {
 function beginFinalChance() {
   phase = "final";
   guessForm.hidden = true;
+  rewardHintButton.hidden = true;
   finalInput.hidden = false;
   finalSubmit.hidden = false;
   finalForm.classList.add("active");
@@ -320,6 +322,30 @@ function beginFinalChance() {
   hintElement.textContent = "Подсказка: " + GAME_WORDS.find(item => item.word === currentWord).hint;
   messageElement.textContent = "Впиши недостающие буквы прямо в верхнюю рамку и проверь слово.";
   renderPreview();
+}
+
+function revealRandomLetter() {
+  if (phase !== "guess") return false;
+  const hiddenIndexes = revealed
+    .map((isOpen, index) => isOpen ? -1 : index)
+    .filter(index => index >= 0);
+
+  if (!hiddenIndexes.length) {
+    messageElement.textContent = "Все буквы уже открыты.";
+    return false;
+  }
+
+  const index = hiddenIndexes[Math.floor(Math.random() * hiddenIndexes.length)];
+  revealed[index] = true;
+  renderPreview();
+
+  if (revealed.every(Boolean)) {
+    finishGame(true);
+  } else {
+    messageElement.textContent = "Одна буква открыта. Попробуй угадать слово.";
+  }
+
+  return true;
 }
 
 function cleanFinalInput() {
@@ -411,8 +437,20 @@ nextWordButton.addEventListener("click", () => {
   }
   startGame();
 });
+rewardHintButton.addEventListener("click", () => {
+  if (phase !== "guess") return;
+  rewardHintButton.disabled = true;
+  messageElement.textContent = "Сейчас откроется реклама за подсказку.";
+  YandexGames.showRewardedAd(
+    () => revealRandomLetter(),
+    () => {
+      rewardHintButton.disabled = false;
+    }
+  );
+});
 renderScore();
 startGame();
+YandexGames.init().then(() => YandexGames.gameReady());
 if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
   navigator.serviceWorker.register("service-worker.js").catch(() => {});
 }
