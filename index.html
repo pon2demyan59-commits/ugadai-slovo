@@ -27,7 +27,7 @@
         <form id="finalForm" class="final-form" autocomplete="off">
           <div class="final-entry" id="finalEntry">
             <div class="word-preview" id="wordPreview" aria-label="Угаданные буквы"></div>
-            <input class="final-input" id="finalInput" type="text" inputmode="text"
+            <input class="final-input" id="finalInput" type="text" inputmode="none" readonly tabindex="-1"
               autocapitalize="none" spellcheck="false" autocomplete="off"
               aria-label="Последний шанс: введите недостающие буквы" hidden>
           </div>
@@ -41,9 +41,8 @@
           <span>Осталось: <strong id="attemptsLeft">4</strong></span>
         </div>
       </form>
-      <p class="message" id="message" aria-live="polite">У тебя 4 попытки угадать слово.</p>
+      <p class="message" id="message" role="status" aria-live="polite"></p>
       <section class="alphabet-panel" aria-label="Алфавит">
-        <h2>АЛФАВИТ</h2>
         <div class="alphabet-grid" id="alphabet"></div>
         <div class="alphabet-legend">
           <span><i class="legend-dot legend-present"></i> Есть</span>
