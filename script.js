@@ -371,6 +371,12 @@ function checkGuess(guess) {
     showInputError("Нужно слово из " + currentWord.length + " букв.");
     return;
   }
+  // Ошибочная последовательность букв не расходует попытку.
+  if (!VALID_RUSSIAN_WORDS.has(guess)) {
+    showInputError("Такого слова нет в словаре. Попробуй другое.");
+    return;
+  }
+  messageElement.classList.remove("is-error");
   const result = getGuessResult(guess);
   const row = boardElement.children[currentAttempt];
   result.forEach((item, i) => {
