@@ -214,3 +214,78 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
   .scoreboard { gap:7px; }
   .score-tile { padding:9px 8px; }
 }
+
+
+/* Русская клавиатура: физическая раскладка, адаптивная ширина и нажимаемые клавиши. */
+.alphabet-panel { padding:16px 9px 13px; border-color:#b38a5488; }
+.alphabet-panel h2 { margin-bottom:10px; }
+.alphabet-grid { display:flex; flex-direction:column; align-items:center; gap:6px; }
+.keyboard-row { display:flex; width:100%; justify-content:center; gap:clamp(2px,.8vw,5px); }
+.keyboard-yo { justify-content:flex-start; padding-left:2px; margin-bottom:-1px; }
+.alphabet-letter {
+  appearance:none; -webkit-appearance:none; cursor:pointer; flex:1 1 0; width:0;
+  max-width:35px; min-width:0; height:clamp(33px,9vw,42px); padding:0;
+  border-radius:7px; font-size:clamp(11px,3.4vw,16px);
+  transition:transform .12s ease, filter .12s ease, border-color .12s ease;
+  touch-action:manipulation; user-select:none; -webkit-tap-highlight-color:transparent;
+}
+.keyboard-yo .alphabet-letter { flex:0 0 calc((100% - 12 * clamp(2px,.8vw,5px)) / 13); }
+.alphabet-letter:hover { filter:brightness(1.23); border-color:#ffe1a7; }
+.alphabet-letter:active { transform:translateY(2px) scale(.96); }
+.alphabet-letter:focus-visible { outline:2px solid #ffe1a7; outline-offset:2px; }
+@media(max-width:380px) {
+  .alphabet-grid { gap:5px; }
+  .keyboard-row { gap:2px; }
+  .keyboard-yo .alphabet-letter { flex-basis:calc((100% - 24px) / 13); }
+  .alphabet-letter { height:34px; font-size:11px; border-radius:5px; }
+}
+
+/* Квадратные клавиши одинакового размера во всех трёх рядах. */
+.alphabet-grid { --key-gap:clamp(2px,.65vw,5px); gap:7px; }
+.keyboard-row { gap:var(--key-gap); justify-content:center; }
+.keyboard-key-wrap {
+  position:relative; flex:0 0 min(36px,calc((100% - 11 * var(--key-gap)) / 12));
+  min-width:0; aspect-ratio:1 / 1;
+}
+.keyboard-key-wrap > .alphabet-letter {
+  display:grid; place-items:center; width:100%; height:100%; max-width:none;
+  font-size:clamp(10px,2.9vw,16px); border-radius:5px; line-height:1;
+}
+.keyboard-key-wrap > .alphabet-letter:has(+ .keyboard-letter-choice) { border-color:#ffe1a7; }
+.keyboard-letter-choice {
+  position:absolute; z-index:8; display:flex; gap:4px; padding:5px;
+  left:50%; bottom:calc(100% + 5px); transform:translateX(-50%);
+  border:1px solid #e6bb7b; border-radius:9px; background:#262932;
+  box-shadow:0 8px 20px #000b;
+}
+.keyboard-choice-button {
+  width:40px; height:40px; border:1px solid #e6bb7b; border-radius:6px;
+  background:linear-gradient(145deg,#777f89,#323944); color:#fff5df;
+  font-size:18px; font-weight:850; cursor:pointer;
+}
+.keyboard-choice-button:hover,.keyboard-choice-button:focus-visible {
+  background:#946530; outline:2px solid #ffe1a7; outline-offset:1px;
+}
+@media(max-width:380px) {
+  .alphabet-grid { gap:5px; }
+  .keyboard-key-wrap > .alphabet-letter { font-size:clamp(9px,2.8vw,12px); }
+}
+
+/* Компактная кнопка «Проверить» в нижнем ряду клавиатуры. */
+.guess-form { gap:0; }
+.keyboard-row:last-child .keyboard-key-wrap {
+  flex-basis:min(32px,calc((100% - 11 * var(--key-gap)) / 12));
+}
+.keyboard-enter {
+  appearance:none; -webkit-appearance:none;
+  flex:0 0 calc(3 * min(32px, (100% - 11 * var(--key-gap)) / 12) + 2 * var(--key-gap));
+  min-width:0; align-self:stretch; padding:0 2px;
+  border:1px solid #f2c885; border-radius:5px;
+  background:linear-gradient(145deg,#b88a4e,#71502c 45%,#3e2b1d);
+  color:#fff4d9; font-size:clamp(9px,2.4vw,11px); font-weight:900; letter-spacing:0;
+  box-shadow:inset 0 2px 0 #ffedc04d,inset 0 -2px 0 #1e120c,0 3px 5px #0008;
+  cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+}
+.keyboard-enter:hover { filter:brightness(1.2); }
+.keyboard-enter:active { transform:translateY(2px); }
+.keyboard-enter:focus-visible { outline:2px solid #ffe1a7; outline-offset:2px; }

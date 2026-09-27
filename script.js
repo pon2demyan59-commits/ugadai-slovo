@@ -71,7 +71,6 @@ function showCollectionComplete() {
   phase = "finished";
   guessForm.hidden = true;
   finalInput.hidden = true;
-  finalSubmit.hidden = true;
   resultBanner.classList.remove("lose");
   resultBanner.classList.add("win");
   resultTitle.textContent = "ВСЕ СЛОВА РАЗГАДАНЫ!";
@@ -81,7 +80,8 @@ function showCollectionComplete() {
   nextWordButton.focus();
 }
 
-const russianAlphabet = Array.from("АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ");
+// Раскладка русской клавиатуры: отдельная клавиша Ё и три привычных ряда.
+const keyboardRows = ["ЙЦУКЕНГШЩЗХЪ", "ФЫВАПРОЛДЖЭ", "ЯЧСМИТЬБЮ"];
 const statusPriority = { unused: 0, missing: 1, present: 2, correct: 3 };
 const hintElement = document.querySelector("#hint");
 const boardElement = document.querySelector("#board");
@@ -90,10 +90,8 @@ const alphabetElement = document.querySelector("#alphabet");
 const currentAttemptElement = document.querySelector("#currentAttempt");
 const attemptsLeftElement = document.querySelector("#attemptsLeft");
 const guessForm = document.querySelector("#guessForm");
-const submitButton = document.querySelector("#checkButton");
 const finalForm = document.querySelector("#finalForm");
 const finalInput = document.querySelector("#finalInput");
-const finalSubmit = document.querySelector("#finalSubmit");
 const finalEntry = document.querySelector("#finalEntry");
 const messageElement = document.querySelector("#message");
 const resultBackdrop = document.querySelector("#resultBackdrop");
@@ -127,11 +125,9 @@ function startGame() {
   phase = "guess";
   revealed = Array(currentWord.length).fill(false);
   usedLetters = {};
-  submitButton.disabled = false;
   guessForm.hidden = false;
   finalInput.value = "";
   finalInput.hidden = true;
-  finalSubmit.hidden = true;
   finalForm.classList.remove("active");
   resultBackdrop.hidden = true;
   resultBanner.classList.remove("win", "lose");
@@ -223,18 +219,79 @@ function renderPreview() {
   }
 }
 
+// Экранная клавиатура: буквы также можно нажимать мышкой или пальцем.
+function typeKeyboardLetter(letter) {
+  const target = phase === "final" ? finalInput : phase === "guess" ? guessInput : null;
+  if (!target) return;
+  const limit = target.maxLength;
+  if (target.value.length >= limit) return;
+  const pos = typeof target.selectionStart === "number" ? target.selectionStart : target.value.length;
+  const end = typeof target.selectionEnd === "number" ? target.selectionEnd : pos;
+  target.value = target.value.slice(0, pos) + letter.toLowerCase() + target.value.slice(end);
+  target.dispatchEvent(new Event("input", { bubbles: true }));
+  // На телефонах не открываем системную клавиатуру после нажатия экранной кнопки.
+}
+// Одна клавиша Е/Ё: при нажатии показываем выбор нужной буквы.
+function showEChoice(anchor) {
+  const old = alphabetElement.querySelector(".keyboard-letter-choice");
+  if (old) { const sameKey = old.parentElement === anchor; old.remove(); if (sameKey) return; }
+  const menu = document.createElement("div");
+  menu.className = "keyboard-letter-choice";
+  menu.setAttribute("role", "group");
+  menu.setAttribute("aria-label", "Выбрать Е или Ё");
+  for (const letter of ["Е", "Ё"]) {
+    const option = document.createElement("button");
+    option.type = "button";
+    option.className = "keyboard-choice-button";
+    option.textContent = letter;
+    option.addEventListener("click", event => {
+      event.stopPropagation();
+      menu.remove();
+      typeKeyboardLetter(letter);
+    });
+    menu.append(option);
+  }
+  anchor.append(menu);
+}
 function renderAlphabet() {
   alphabetElement.replaceChildren();
-  for (const letter of russianAlphabet) {
-    const cell = document.createElement("span");
-    const status = usedLetters[letter] || "unused";
-    cell.className = "alphabet-letter" + (status === "unused" ? "" : " " + status);
-    cell.textContent = letter;
-    cell.setAttribute("aria-label", letter + ": " + ({
-      unused: "ещё не использована", missing: "отсутствует",
-      present: "есть в слове", correct: "стоит на месте"
-    })[status]);
-    alphabetElement.append(cell);
+  for (const letters of keyboardRows) {
+    const row = document.createElement("div");
+    row.className = "keyboard-row";
+    for (const letter of letters) {
+      const combined = letter === "Е";
+      const cellWrap = document.createElement("div");
+      cellWrap.className = "keyboard-key-wrap";
+      const cell = document.createElement("button");
+      cell.type = "button";
+      const status = combined
+        ? (statusPriority[usedLetters["Е"] || "unused"] >= statusPriority[usedLetters["Ё"] || "unused"]
+            ? usedLetters["Е"] || "unused" : usedLetters["Ё"] || "unused")
+        : usedLetters[letter] || "unused";
+      cell.className = "alphabet-letter" + (status === "unused" ? "" : " " + status);
+      cell.textContent = combined ? "Е/Ё" : letter;
+      cell.setAttribute("aria-label", (combined ? "Выбрать Е или Ё" : letter) + ": " + ({
+        unused: "ещё не использована", missing: "отсутствует",
+        present: "есть в слове", correct: "стоит на месте"
+      })[status]);
+      cell.addEventListener("click", () => combined ? showEChoice(cellWrap) : typeKeyboardLetter(letter));
+      cellWrap.append(cell);
+      row.append(cellWrap);
+    }
+    // ENTER sits inside the bottom keyboard row instead of a large button.
+    if (letters === keyboardRows[keyboardRows.length - 1]) {
+      const enter = document.createElement("button");
+      enter.type = "button";
+      enter.className = "keyboard-enter";
+      enter.textContent = "Проверить";
+      enter.setAttribute("aria-label", "Проверить слово");
+      enter.addEventListener("click", () => {
+        if (phase === "guess" && guessInput) checkGuess(guessInput.value.trim().toLowerCase());
+        else if (phase === "final") checkFinalChance();
+      });
+      row.append(enter);
+    }
+    alphabetElement.append(row);
   }
 }
 
@@ -314,7 +371,6 @@ function beginFinalChance() {
   phase = "final";
   guessForm.hidden = true;
   finalInput.hidden = false;
-  finalSubmit.hidden = false;
   finalForm.classList.add("active");
   finalInput.maxLength = revealed.filter(value => !value).length;
   hintElement.textContent = "Подсказка: " + GAME_WORDS.find(item => item.word === currentWord).hint;
@@ -342,13 +398,11 @@ function checkFinalChance() {
   if (candidate === currentWord) {
     revealed.fill(true);
     finalInput.hidden = true;
-    finalSubmit.hidden = true;
     finalForm.classList.remove("active");
     renderPreview();
     finishGame(true);
   } else {
     finalInput.hidden = true;
-    finalSubmit.hidden = true;
     finalForm.classList.remove("active");
     renderPreview();
     finishGame(false);
@@ -364,7 +418,6 @@ function finishGame(won) {
   phase = "finished";
   guessForm.hidden = true;
   finalInput.hidden = true;
-  finalSubmit.hidden = true;
   if (guessInput) { guessInput.remove(); guessInput = null; }
   finalForm.classList.remove("active");
   if (won) {
