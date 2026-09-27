@@ -503,13 +503,72 @@ nextWordButton.addEventListener("click", () => {
   }
   startGame();
 });
-// Стартовая заставка: сначала показываем название, затем открываем игровое поле.
+// Навигация внутри страницы: заставка -> меню -> игра.
+// Возврат в меню не сбрасывает текущий раунд и статистику.
 const welcomeScreen = document.querySelector("#welcomeScreen");
+const homeScreen = document.querySelector("#homeScreen");
 const gameScreen = document.querySelector("#gameScreen");
-document.querySelector("#welcomeEnter").addEventListener("click", () => {
-  welcomeScreen.hidden = true;
-  gameScreen.hidden = false;
-  if (guessInput) guessInput.focus({ preventScroll: true });
+const details = document.querySelector("#menuDetails");
+const detailsTitle = document.querySelector("#menuDetailsTitle");
+const detailsBody = document.querySelector("#menuDetailsBody");
+const homeMenu = document.querySelector(".home-menu");
+function showScreen(screen) {
+  welcomeScreen.hidden = screen !== welcomeScreen;
+  homeScreen.hidden = screen !== homeScreen;
+  gameScreen.hidden = screen !== gameScreen;
+  if (screen === homeScreen) {
+    closeMenuDetails();
+    document.querySelector("#menuPlay").focus({ preventScroll:true });
+  }
+}
+function closeMenuDetails() {
+  details.hidden = true;
+  homeMenu.hidden = false;
+}
+function openMenuDetails(title) {
+  detailsTitle.textContent = title;
+  details.hidden = false;
+  homeMenu.hidden = true;
+  detailsBody.replaceChildren();
+}
+document.querySelector("#welcomeEnter").addEventListener("click", () => showScreen(homeScreen));
+document.querySelector("#menuPlay").addEventListener("click", () => showScreen(gameScreen));
+document.querySelector("#gameMenuBack").addEventListener("click", () => showScreen(homeScreen));
+document.querySelector("#menuSplashBack").addEventListener("click", () => showScreen(welcomeScreen));
+document.querySelector("#menuDetailsBack").addEventListener("click", closeMenuDetails);
+document.querySelector("#menuStats").addEventListener("click", () => {
+  openMenuDetails("СТАТИСТИКА");
+  const lines = [
+    ["Угадано", score.wins],
+    ["Не угадано", score.losses],
+    ["Разгадано разных слов", wordProgress.solved.size + " / " + wordBank.length]
+  ];
+  for (const [label, value] of lines) {
+    const line = document.createElement("div");
+    line.className = "home-stat-line";
+    const name = document.createElement("span");
+    name.textContent = label;
+    const number = document.createElement("strong");
+    number.textContent = value;
+    line.append(name, number);
+    detailsBody.append(line);
+  }
+});
+document.querySelector("#menuRules").addEventListener("click", () => {
+  openMenuDetails("КАК ИГРАТЬ");
+  const rules = [
+    "Угадай слово из 5 букв за 4 попытки.",
+    "Зелёная буква — на своём месте, жёлтая — есть в слове, серая — отсутствует.",
+    "Вводи настоящие слова с игровой клавиатуры или клавиатуры телефона.",
+    "После четырёх попыток получишь последний шанс вписать недостающие буквы."
+  ];
+  const list = document.createElement("ol");
+  for (const rule of rules) {
+    const item = document.createElement("li");
+    item.textContent = rule;
+    list.append(item);
+  }
+  detailsBody.append(list);
 });
 renderScore();
 startGame();
