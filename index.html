@@ -10,7 +10,22 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="game">
+  <!-- Первая заставка. Вход открывает игру без перезагрузки страницы. -->
+  <section class="welcome-screen" id="welcomeScreen" aria-labelledby="welcomeTitle">
+    <div class="welcome-glow welcome-glow-left" aria-hidden="true"></div>
+    <div class="welcome-glow welcome-glow-right" aria-hidden="true"></div>
+    <div class="welcome-content">
+      <div class="welcome-tiles" aria-hidden="true">
+        <span>С</span><span>Л</span><span>О</span><span>В</span><span>О</span>
+      </div>
+      <h1 id="welcomeTitle" class="welcome-title">УГАДАЙ<br><span>СЛОВО</span></h1>
+      <p class="welcome-subtitle">Найди слово за 4 попытки!</p>
+      <button id="welcomeEnter" class="welcome-button" type="button">ВХОД <span aria-hidden="true">➜</span></button>
+    </div>
+    <div class="welcome-decor welcome-decor-one" aria-hidden="true">?</div>
+    <div class="welcome-decor welcome-decor-two" aria-hidden="true">✦</div>
+  </section>
+  <main class="game" id="gameScreen" hidden>
     <section class="game-card">
       <h1>Угадай слово</h1>
       <section class="scoreboard" aria-label="Статистика угаданных слов">
