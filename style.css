@@ -459,3 +459,220 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
 @media(prefers-reduced-motion:reduce) {
   .home-menu-button { transition:none; }
 }
+
+
+/* ==========================================================
+   ЯРКАЯ ГОЛОВОЛОМКА — игровое поле в стиле заставки и меню.
+   Все стили ниже ограничены .game, остальные экраны не меняем.
+   ========================================================== */
+.game {
+  background:radial-gradient(circle at 12% 12%,#ff91c789,transparent 34%),
+             radial-gradient(circle at 88% 84%,#65f0d68c,transparent 38%),
+             linear-gradient(145deg,#7a4df0 0%,#5266e9 54%,#26b9e9 100%);
+  padding:clamp(6px,2vw,16px);
+}
+.game-card {
+  width:min(100%,540px); max-width:540px; overflow:visible;
+  padding:clamp(12px,3vw,22px) clamp(9px,3vw,20px) 18px;
+  border:2px solid #ffffffb3; border-radius:clamp(18px,5vw,30px);
+  background:linear-gradient(150deg,#ffffff5c,#ffffff26);
+  box-shadow:inset 0 2px 1px #ffffff9c,0 18px 50px #32218f61;
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+}
+.game-card::before {
+  inset:0 18px auto; height:3px;
+  background:linear-gradient(90deg,transparent,#fffbd0,transparent);
+}
+.game-card > h1 {
+  margin:3px 0 14px; color:#fff;
+  font-size:clamp(25px,7.5vw,35px); font-weight:1000; letter-spacing:.04em;
+  text-shadow:0 4px 0 #4d36b888,0 7px 15px #3a26957d;
+}
+.game .game-menu-back {
+  margin:0 0 10px; padding:9px 14px;
+  border:1px solid #ffffffca; border-radius:12px;
+  background:linear-gradient(160deg,#ffffff78,#ffffff34);
+  color:#fff; font-size:14px; font-weight:850;
+  box-shadow:0 3px 10px #3526993b;
+}
+.game .game-menu-back:hover { background:#ffffff75; }
+.game .scoreboard { margin:0 0 13px; gap:9px; }
+.game .score-tile {
+  padding:10px 12px; border:2px solid #fffa; border-radius:15px;
+  box-shadow:inset 0 2px #ffffff8a,inset 0 -4px #00000016,0 6px 13px #38258045;
+}
+.game .score-win { background:linear-gradient(150deg,#59d8b2,#21adad); }
+.game .score-loss { background:linear-gradient(150deg,#ff8cac,#eb5f9c); }
+.game .score-label { color:#fff; font-weight:850; font-size:clamp(11px,3.3vw,14px); }
+.game .score-number { color:#fff; text-shadow:0 2px 5px #37297785; font-size:clamp(20px,6vw,27px); }
+.game .word-panel {
+  padding:13px 10px 11px;
+  border:2px solid #ffffffc2; border-radius:18px;
+  background:linear-gradient(150deg,#ffffffed,#e9e9ffed);
+  box-shadow:inset 0 3px #fff,0 7px 17px #3928a150;
+}
+.game .word-preview { max-width:375px; gap:clamp(4px,1.5vw,8px); }
+.game .preview-cell {
+  border:2px solid #b2a3ed; border-radius:11px; background:linear-gradient(145deg,#fff,#ded5ff);
+  box-shadow:inset 0 2px #fff,0 4px 0 #b5a2e6,0 6px 11px #685bc12e;
+  color:#6350b7; text-shadow:none; font-weight:1000;
+}
+.game .preview-cell.is-known {
+  color:#fff; border-color:#b0ffe4; background:linear-gradient(145deg,#67e1b6,#22ae87);
+  box-shadow:inset 0 2px #ffffff9c,0 4px 0 #169d7b,0 6px 12px #159f8740;
+  text-shadow:0 2px 2px #10856388;
+}
+.game .preview-cell.is-draft {
+  color:#fff; border-color:#ffeeb0; background:linear-gradient(150deg,#ffd979,#ffa52f);
+  box-shadow:inset 0 2px #fffa,0 4px 0 #e28a27; text-shadow:0 1px 3px #a66327;
+}
+.game .preview-cell.final-next {
+  border-color:#ffbe5b; box-shadow:inset 0 2px #fff,0 0 12px #ffb940;
+}
+.game .preview-cell.final-next::after { background:#f79e2e; }
+.game .hint {
+  margin-top:12px; color:#6043a4; font-size:clamp(12px,3.6vw,14px);
+  font-weight:850; line-height:1.45; letter-spacing:.015em;
+  text-transform:none;
+}
+.game .board {
+  margin:15px auto 8px; max-width:395px; gap:clamp(5px,1.4vw,9px);
+}
+.game .row { gap:clamp(4px,1.7vw,9px); padding-bottom:5px; min-height:clamp(43px,12vw,55px); }
+.game .cell {
+  height:clamp(38px,11vw,50px); padding-bottom:3px;
+  border:2px solid #d2bfff; border-bottom:4px solid #a48be5;
+  border-radius:10px; background:linear-gradient(160deg,#ffffffed,#d9d2ffcf);
+  box-shadow:inset 0 2px #fff9,0 3px 0 #8064ce3b;
+  color:#6450b8; text-shadow:none; font-size:clamp(21px,6vw,29px);
+}
+.game .cell::after { display:none; }
+.game .row.active .cell {
+  border-color:#fff; border-bottom-color:#ffb934;
+  background:linear-gradient(160deg,#fffef9,#ffefbb);
+}
+.game .row.active .cell.next {
+  border-color:#ffc052; box-shadow:0 0 0 3px #ffdb7299,0 4px 9px #ffb83b75;
+}
+.game .row.active .cell.next::before {
+  top:7px; height:clamp(21px,6vw,29px); background:#f1a124; box-shadow:none;
+}
+.game .row.completed .cell.correct {
+  color:#fff; border-color:#a4ffdf; border-bottom-color:#119e76;
+  background:linear-gradient(150deg,#67e2b3,#20b486); text-shadow:0 2px #148968;
+}
+.game .row.completed .cell.present {
+  color:#59378a; border-color:#ffe69a; border-bottom-color:#eea025;
+  background:linear-gradient(150deg,#ffe78c,#ffbf4a); text-shadow:none;
+}
+.game .row.completed .cell.missing {
+  color:#9093ad; border-color:#d8d8e5; border-bottom-color:#9da0b2;
+  background:linear-gradient(150deg,#f3f3f7,#c9cbd9); text-shadow:none;
+}
+.game .stats { margin:5px 2px 11px; color:#fff; font-weight:750; font-size:clamp(12px,3.5vw,15px); }
+.game .stats strong { color:#ffe980; text-shadow:0 2px 4px #35217b60; }
+.game .alphabet-panel {
+  padding:13px clamp(3px,1.4vw,9px) 12px;
+  border:2px solid #ffffffa8; border-radius:18px;
+  background:linear-gradient(150deg,#ffffff54,#ffffff24);
+  box-shadow:inset 0 2px #ffffff90,0 7px 17px #3a2c9c4a;
+}
+.game .alphabet-grid { gap:clamp(5px,1.5vw,9px); --key-gap:clamp(2px,.65vw,5px); }
+.game .keyboard-key-wrap {
+  flex-basis:min(43px,calc((100% - 11 * var(--key-gap)) / 12));
+}
+.game .keyboard-key-wrap > .alphabet-letter {
+  font-size:clamp(14px,4vw,21px); color:#57459b; font-weight:1000; text-shadow:none;
+  border:1px solid #ffffffed; border-bottom:4px solid #b2a1e0;
+  border-radius:clamp(5px,1.6vw,9px);
+  background:linear-gradient(150deg,#fff,#e6dfff);
+  box-shadow:inset 0 2px #fff,0 3px 5px #47329b35;
+}
+.game .keyboard-key-wrap > .alphabet-letter:hover { filter:brightness(1.07); }
+.game .keyboard-key-wrap > .alphabet-letter.present {
+  color:#72448c; border-color:#fff1b9; border-bottom-color:#e8a031;
+  background:linear-gradient(150deg,#ffec92,#ffbf50);
+}
+.game .keyboard-key-wrap > .alphabet-letter.correct {
+  color:#fff; border-color:#a8ffdc; border-bottom-color:#159c75;
+  background:linear-gradient(150deg,#6ae5bd,#22b28b); text-shadow:0 1px #168a6b;
+}
+.game .keyboard-key-wrap > .alphabet-letter.missing {
+  color:#8c91ab; border-color:#d2d5e4; border-bottom-color:#9298af;
+  background:linear-gradient(150deg,#e1e3ef,#b8bbcf); box-shadow:none;
+}
+.game .keyboard-key-wrap > .alphabet-letter.missing::after { background:#e46e8f; box-shadow:none; }
+.game .keyboard-key-wrap > .alphabet-letter[aria-label^="Выбрать"] { font-size:clamp(11px,3vw,16px); }
+.game .keyboard-letter-choice {
+  border:2px solid #fff; background:#8871dd;
+  box-shadow:0 8px 20px #2c218a80;
+}
+.game .keyboard-choice-button {
+  color:#6350ac; border:1px solid white; background:linear-gradient(#fff,#d9cfff);
+}
+.game .keyboard-actions { margin-top:4px; gap:10px; }
+.game .keyboard-enter,.game .keyboard-erase {
+  min-height:clamp(43px,11vw,50px); color:#fff; border:2px solid #fffc;
+  border-bottom-width:5px; border-radius:13px;
+  font-size:clamp(13px,3.7vw,18px); letter-spacing:.01em;
+  box-shadow:inset 0 2px #ffffff70,0 5px 12px #3629974c;
+}
+.game .keyboard-enter {
+  background:linear-gradient(155deg,#ffdb76,#ffad32);
+  border-bottom-color:#e18b1d; color:#633d84;
+}
+.game .keyboard-erase {
+  background:linear-gradient(155deg,#ff8bb2,#ec5797); border-bottom-color:#bb4081;
+}
+.game .alphabet-legend { margin-top:12px; color:#fff; font-weight:750; font-size:clamp(10px,3vw,13px); }
+.game .legend-dot { width:11px; height:11px; border-radius:4px; }
+.game .legend-correct { background:#29c18e; }
+.game .legend-present { background:#ffc650; }
+.game .legend-missing { background:#b2b5cc; }
+.game .message.is-error {
+  border-color:#fff5b1; border-radius:13px;
+  background:#673fc8; color:#fff; box-shadow:0 8px 22px #2d218680;
+}
+.game .result-backdrop {
+  background:#30208ca8; backdrop-filter:blur(9px); -webkit-backdrop-filter:blur(9px);
+}
+.game .result-banner {
+  border:2px solid #ffffffd9; border-radius:25px;
+  background:linear-gradient(150deg,#9864f4,#486de3 70%,#28b8e4);
+  box-shadow:inset 0 2px #fffa,0 22px 60px #261c8f9c,0 0 35px #a981ff88;
+}
+.game .result-ornament { color:#ffe47d; text-shadow:0 2px #7748ce; }
+.game .result-banner h2 { color:#fff; text-shadow:0 3px #5635af; }
+.game .result-banner.win { border-color:#adffe0; box-shadow:0 16px 55px #261c8f9c,0 0 30px #5ce8ac80; }
+.game .result-banner.win h2,.game .result-banner.win .result-ornament { color:#ffe47d; }
+.game .result-banner p { color:#fff; font-weight:600; }
+.game .result-banner button {
+  border:2px solid #fff8; border-bottom:5px solid #d78216;
+  border-radius:14px; color:#623981; font-size:17px;
+  background:linear-gradient(#ffdc74,#ffaf32);
+  box-shadow:inset 0 2px #fffa,0 8px 14px #34229e66;
+}
+@media(max-width:380px) {
+  .game { padding:4px; }
+  .game-card { padding:11px 5px 12px; border-radius:19px; }
+  .game-card > h1 { font-size:25px; margin-bottom:9px; }
+  .game .game-menu-back { padding:7px 11px; margin-bottom:6px; }
+  .game .scoreboard { margin-bottom:9px; gap:5px; }
+  .game .score-tile { padding:8px 7px; border-radius:11px; }
+  .game .word-panel { padding:9px 5px; border-radius:13px; }
+  .game .board { margin:10px auto 5px; gap:5px; }
+  .game .row { min-height:42px; gap:4px; padding-bottom:4px; }
+  .game .cell { height:37px; border-radius:8px; }
+  .game .alphabet-panel { padding:9px 3px; border-radius:12px; }
+  .game .alphabet-grid { gap:5px; --key-gap:2px; }
+  .game .keyboard-key-wrap > .alphabet-letter { font-size:clamp(13px,4.4vw,17px); }
+  .game .keyboard-key-wrap > .alphabet-letter[aria-label^="Выбрать"] { font-size:10px; }
+  .game .keyboard-enter,.game .keyboard-erase { min-height:41px; font-size:13px; }
+  .game .alphabet-legend { gap:5px 9px; font-size:10px; }
+}
+@media(max-height:660px) and (orientation:landscape) {
+  .game { display:block; }
+  .game-card { margin:0 auto; }
+  .game-card > h1 { margin-bottom:8px; }
+  .game .board { margin:8px auto 5px; gap:4px; }
+}
