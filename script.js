@@ -239,7 +239,7 @@ function typeKeyboardLetter(letter) {
 // Одна клавиша Е/Ё: при нажатии показываем выбор нужной буквы.
 function showEChoice(anchor) {
   const old = alphabetElement.querySelector(".keyboard-letter-choice");
-  if (old) { old.remove(); if (old.parentElement === anchor) return; }
+  if (old) { const sameKey = old.parentElement === anchor; old.remove(); if (sameKey) return; }
   const menu = document.createElement("div");
   menu.className = "keyboard-letter-choice";
   menu.setAttribute("role", "group");
