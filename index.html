@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Первая заставка. Вход открывает игру без перезагрузки страницы. -->
+  <!-- Стартовая заставка → главное меню → игровое поле. -->
   <section class="welcome-screen" id="welcomeScreen" aria-labelledby="welcomeTitle">
     <div class="welcome-glow welcome-glow-left" aria-hidden="true"></div>
     <div class="welcome-glow welcome-glow-right" aria-hidden="true"></div>
@@ -25,8 +25,27 @@
     <div class="welcome-decor welcome-decor-one" aria-hidden="true">?</div>
     <div class="welcome-decor welcome-decor-two" aria-hidden="true">✦</div>
   </section>
+  <main class="home-screen" id="homeScreen" hidden>
+    <section class="home-card" aria-labelledby="homeTitle">
+      <div class="home-tiles" aria-hidden="true"><span>У</span><span>Г</span><span>А</span><span>Д</span><span>АЙ</span></div>
+      <h2 id="homeTitle" class="home-title">ГЛАВНОЕ МЕНЮ</h2>
+      <p class="home-tagline">Собери слово. Победи загадку!</p>
+      <nav class="home-menu" aria-label="Главное меню">
+        <button type="button" id="menuPlay" class="home-menu-button menu-play">▶ <span>ИГРАТЬ</span></button>
+        <button type="button" id="menuStats" class="home-menu-button menu-stats">★ <span>СТАТИСТИКА</span></button>
+        <button type="button" id="menuRules" class="home-menu-button menu-rules">? <span>КАК ИГРАТЬ</span></button>
+      </nav>
+      <section id="menuDetails" class="home-details" aria-live="polite" hidden>
+        <h3 id="menuDetailsTitle"></h3>
+        <div id="menuDetailsBody"></div>
+        <button type="button" id="menuDetailsBack" class="home-back">← К меню</button>
+      </section>
+      <button type="button" id="menuSplashBack" class="home-splash-back">← На заставку</button>
+    </section>
+  </main>
   <main class="game" id="gameScreen" hidden>
     <section class="game-card">
+      <button type="button" id="gameMenuBack" class="game-menu-back" aria-label="Вернуться в главное меню">← Меню</button>
       <h1>Угадай слово</h1>
       <section class="scoreboard" aria-label="Статистика угаданных слов">
         <div class="score-tile score-win">
