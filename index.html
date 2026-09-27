@@ -41,9 +41,8 @@
           <span>Осталось: <strong id="attemptsLeft">4</strong></span>
         </div>
       </form>
-      <p class="message" id="message" aria-live="polite">У тебя 4 попытки угадать слово.</p>
+      <p class="message" id="message" role="status" aria-live="polite"></p>
       <section class="alphabet-panel" aria-label="Алфавит">
-        <h2>АЛФАВИТ</h2>
         <div class="alphabet-grid" id="alphabet"></div>
         <div class="alphabet-legend">
           <span><i class="legend-dot legend-present"></i> Есть</span>
@@ -63,6 +62,7 @@
     </div>
   </main>
   <script src="data/words.js"></script>
+  <script src="data/valid-words.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
