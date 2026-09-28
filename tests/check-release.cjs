@@ -130,6 +130,17 @@ async function checkPlatformLanguage(){
   console.log("OK: SDK i18n ru/en/kk, русский fallback, международные домены Яндекса.");
 }
 checkPlatformLanguage().catch(error=>{console.error(error);process.exitCode=1;});
+// При новом открытии страницы — заставка, при обновлении — сохранённый экран.
+const startupMatch=script.match(/function startupScreen\(savedScreen,navigationType\) \{[\s\S]*?\n\}/);
+assert(startupMatch,"Не найдена логика различения обновления и нового запуска");
+const startupScreen=vm.runInNewContext(startupMatch[0]+";startupScreen");
+for(const screen of ["welcome","home","game"]){
+  assert.equal(startupScreen(screen,"reload"),screen,"Обновление должно сохранять экран");
+  assert.equal(startupScreen(screen,"navigate"),"welcome","Новый запуск должен показывать заставку");
+}
+assert(script.includes('initialScreen=startupScreen(initialUiState.screen,navigationType)'));
+assert(script.includes('showScreen(initialScreen==="game"?gameScreen:'),
+  "Первый экран должен зависеть от типа навигации");
 const worker=fs.readFileSync(path.join(root,"service-worker.js"),"utf8");
 assert(worker.includes('event.request.mode === "navigate"'),"Нет проверки свежего HTML");
 console.log("OK: 1000 слов, 50 уровней, SDK, ник, облачный профиль и 10 фрагментов награды.");
