@@ -279,6 +279,58 @@ assert(!!audioSaved.get("ugadai-slovo-audio-v1"));
 console.log("OK: ретро-аудио, независимые настройки, запрет автозапуска и пауза во время рекламы.");
 const workflow=fs.readFileSync(path.join(root,".github/workflows/yandex-release.yml"),"utf8");
 assert(workflow.includes("analytics.js audio.js"),"Звук не включён в сборку Яндекс Игр");
+// Рекламная пауза: после трёх раундов на мобильном, не теряем раунды при отказе SDK.
+async function checkMobileInterstitial(hostname){
+  let now=1000,requests=0,showNext=false;
+  const fakeDoc={
+    hidden:false,documentElement:{lang:"ru"},
+    addEventListener(){},dispatchEvent(){},createElement(){return{};},
+    head:{append(script){script.onload();}}
+  };
+  const sdk={
+    environment:{i18n:{lang:"ru"}},
+    features:{LoadingAPI:{ready(){}},GameplayAPI:{start(){},stop(){}}},
+    adv:{
+      showFullscreenAdv({callbacks}){
+        requests++;
+        callbacks.onOpen();
+        callbacks.onClose(showNext);
+      }
+    }
+  };
+  const sandbox={
+    location:{hostname},document:fakeDoc,Promise,console,
+    Date:{now:()=>now},Event:class{constructor(type){this.type=type;}},
+    window:{YaGames:{init:async()=>sdk}}
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(bridge,sandbox);
+  await sandbox.window.YandexPlatform.whenSdk;
+  const ad=sandbox.window.YandexPlatform;
+  ad.roundFinished();ad.roundFinished();
+  assert.equal(await ad.showInterstitialIfDue(),false);
+  assert.equal(requests,0,"До третьего раунда рекламы нет");
+  ad.roundFinished();
+  assert.equal(await ad.showInterstitialIfDue(),false);
+  assert.equal(requests,1,"После третьего раунда сразу запрос рекламы");
+  assert.equal(ad.adDebugStatus().rounds,3,"После onClose(false) раунды сохраняются");
+  now+=10000;
+  assert.equal(await ad.showInterstitialIfDue(),false);
+  assert.equal(requests,1,"Без повторных вызовов в течение минуты");
+  now+=60000;showNext=true;
+  assert.equal(await ad.showInterstitialIfDue(),true);
+  assert.equal(ad.adDebugStatus().rounds,0,"Счётчик обнуляется после показа");
+  ad.roundFinished();ad.roundFinished();ad.roundFinished();
+  assert.equal(await ad.showInterstitialIfDue(),false);
+  assert.equal(requests,2,"После показанной рекламы действует пауза 3 минуты");
+  now+=180001;
+  assert.equal(await ad.showInterstitialIfDue(),true);
+  assert.equal(requests,3,"После паузы новый показ возможен на следующем переходе");
+}
+Promise.all([checkMobileInterstitial("games.yandex.ru"),
+  checkMobileInterstitial("games.yandex.com")]).then(()=>
+  console.log("OK: 3 раунда, запрос на телефоне, отказ SDK, повтор и пауза между показами.")
+).catch(error=>{console.error(error);process.exitCode=1;});
 const worker=fs.readFileSync(path.join(root,"service-worker.js"),"utf8");
 assert(worker.includes('event.request.mode === "navigate"'),"Нет проверки свежего HTML");
 assert(worker.includes('"./audio.js"')&&worker.includes('"./hints.js"'),
