@@ -467,6 +467,10 @@ function checkGuess(guess) {
   const known=VALID_RUSSIAN_WORDS.has(guess)||VALID_LONG_WORDS.has(guess)||
     EXTRA_VALID_WORDS.has(guess)||acceptedAnswers.has(guess);
   if (!phrase && !known) {
+    if (guess.length > 5 && !longDictionaryReady) {
+      showInputError("Словарь загружается. Повтори попытку чуть позже.");
+      return;
+    }
     showInputError("Такого слова нет в словаре. Попробуй другое.");
     return;
   }
