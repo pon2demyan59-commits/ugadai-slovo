@@ -822,3 +822,67 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
   .game .long-letters .cell,.game .long-letters .preview-cell { min-height:27px; }
 }
 @media(max-height:670px) { .levels-list { gap:5px; } .level-card { min-height:55px; padding:6px 10px; } .level-number { height:36px; flex-basis:36px; } }
+
+/* Облачное сохранение показывается только гостям на Яндекс Играх. */
+#menuCloud[hidden]{display:none!important}
+.menu-cloud{background:linear-gradient(135deg,#5acdb8,#369bdf);color:#fff}
+#welcomeEnter:disabled{opacity:.65;cursor:wait}
+
+/* Торжественная победа: буквы перелетают из нижнего ряда в верхний ответ. */
+.victory-flying-letter{
+  display:grid!important;place-items:center!important;
+  border:2px solid #bbffe0!important;border-radius:10px!important;
+  background:linear-gradient(140deg,#dcffeb,#51df9c 48%,#148d66)!important;
+  color:#164c3b!important;font-weight:1000!important;
+  box-shadow:0 0 18px #8fffbe,0 0 32px #64ffe89a,0 8px 22px #11543a9e!important;
+  will-change:transform,opacity;transform-origin:center;
+}
+.game .preview-cell.victory-arrived{
+  animation:letter-land .42s ease-out both;
+  border-color:#edffb2!important;
+  box-shadow:0 0 18px #b7ff98,0 0 30px #7ffa9c99!important;
+}
+.game .word-preview.victory-glow{
+  animation:word-victory-pulse .9s ease-in-out 2;
+  filter:drop-shadow(0 0 12px #7fffac);
+}
+@keyframes letter-land{
+  0%{transform:scale(1.35);filter:brightness(1.6)}
+  65%{transform:scale(.93)}100%{transform:scale(1);filter:brightness(1)}
+}
+@keyframes word-victory-pulse{
+  0%,100%{filter:drop-shadow(0 0 8px #7fffac)}
+  50%{filter:drop-shadow(0 0 25px #baff97) brightness(1.18)}
+}
+.result-banner.win{animation:result-grand-entrance .52s cubic-bezier(.2,.9,.2,1) both}
+@keyframes result-grand-entrance{
+  from{opacity:0;transform:translateY(18px) scale(.88)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+.result-banner .result-puzzle{
+  display:grid;gap:7px;margin:14px 0 18px;padding:14px 10px;
+  border:1px solid #aaffbb8c;border-radius:15px;
+  background:linear-gradient(150deg,#174e476b,#18305277);
+}
+.result-banner .result-puzzle:has(#resultQuestion[hidden]){display:none}
+.result-puzzle-label{font-size:10px;letter-spacing:.17em;font-weight:900;color:#d3ffcf}
+.result-banner .result-question{
+  margin:0 0 8px!important;font-size:clamp(15px,4.1vw,19px);
+  line-height:1.4;color:#fff9e8!important;font-weight:750;
+}
+.result-banner .result-answer{
+  display:block;max-width:100%;overflow-wrap:anywhere;
+  padding:8px 3px;color:#fff0a9;font-weight:1000;
+  font-size:clamp(26px,8vw,43px);letter-spacing:.06em;line-height:1.18;
+  text-shadow:0 2px 0 #9b713a,0 0 17px #ffdf9c7a;
+}
+.result-banner .result-answer[hidden],.result-banner .result-question[hidden]{display:none}
+.result-banner.win .result-ornament{animation:result-star-spin 1.1s ease-out both}
+@keyframes result-star-spin{
+  from{transform:rotate(-60deg) scale(.5);opacity:0}
+  to{transform:rotate(0) scale(1);opacity:1}
+}
+@media(prefers-reduced-motion:reduce){
+  .game .preview-cell.victory-arrived,.game .word-preview.victory-glow,
+  .result-banner.win,.result-banner.win .result-ornament{animation:none!important}
+}

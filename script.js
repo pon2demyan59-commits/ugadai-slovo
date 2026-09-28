@@ -21,6 +21,7 @@ function recordResult(won) {
   else score.losses++;
   try {
     localStorage.setItem(SCORE_STORAGE_KEY, JSON.stringify(score));
+    window.GameCloud.schedule();
   } catch {
     // Если хранилище недоступно, счётчики сохраняются до перезагрузки.
   }
@@ -107,6 +108,7 @@ function saveWordProgress() {
       }
     }
     localStorage.setItem(WORD_PROGRESS_KEY,JSON.stringify(data));
+    window.GameCloud.schedule();
   } catch { /* При отключённом хранилище прогресс живёт до закрытия игры. */ }
 }
 function saveRound() {
@@ -133,10 +135,12 @@ function showCollectionComplete() {
   resultBanner.classList.add("win");
   wordProgress.completed=true;
   saveWordProgress();
+  refreshRewardCounter();
   resultTitle.textContent="УРОВЕНЬ "+selectedLevel+" ПРОЙДЕН!";
   resultText.textContent="Все 20 заданий категории разгаданы!"+(selectedLevel<MAX_LEVEL?" Следующий уровень открыт.":" Категория полностью пройдена!");
   nextWordButton.textContent="К уровням";
   resultBackdrop.hidden=false;
+  window.YandexPlatform.setGameplay(false);
 }
 
 // Русская игровая клавиатура// Русская игровая клавиатура дополняет системную клавиатуру телефона.
@@ -157,6 +161,8 @@ const resultBackdrop = document.querySelector("#resultBackdrop");
 const resultBanner = resultBackdrop.querySelector(".result-banner");
 const resultTitle = document.querySelector("#resultTitle");
 const resultText = document.querySelector("#resultText");
+const resultQuestion = document.querySelector("#resultQuestion");
+const resultAnswer = document.querySelector("#resultAnswer");
 const nextWordButton = document.querySelector("#nextWordButton");
 let guessInput = null;
 let currentWord = "";
@@ -196,6 +202,9 @@ function startGame() {
   finalForm.classList.remove("active");
   messageElement.classList.remove("is-error");
   resultBackdrop.hidden=true;
+  resultQuestion.hidden=true;
+  resultAnswer.hidden=true;
+  previewElement.classList.remove("victory-glow");
   resultBanner.classList.remove("win","lose");
   hintElement.textContent=selected.hint;
   const cat=GAME_CATEGORIES.find(c=>c.id===selectedCategory);
@@ -219,6 +228,7 @@ function startGame() {
     }
   }
   restoringRound=false;
+  window.YandexPlatform.setGameplay(true);
   saveRound();
   saveWordProgress();
 }
@@ -478,6 +488,8 @@ function checkGuess(guess) {
   }
   messageElement.classList.remove("is-error");
   const result = getGuessResult(guess);
+  // Снимок верхней строки до проверки нужен для анимации перелёта.
+  const previouslyRevealed=[...revealed];
   roundGuesses.push(guess);
   const row = boardElement.children[currentAttempt];
   result.forEach((item, i) => {
@@ -496,8 +508,25 @@ function checkGuess(guess) {
   updateAlphabet(result);
   currentAttempt++;
   updateStats();
+  const isWin=guess === currentWord || revealed.every(Boolean);
+  if (isWin && currentAttempt < maxAttempts && !restoringRound) {
+    // До 4-й попытки показываем именно перелёт букв, а не мгновенный результат.
+    phase="celebrating";
+    revealed=previouslyRevealed;
+    renderPreview();
+    messageElement.textContent="✨ Слово разгадано! Собираем ответ…";
+    window.YandexPlatform.setGameplay(false);
+    saveWordProgress();
+    animateWinningLetters(row).then(()=>{
+      revealed.fill(true);
+      renderPreview();
+      previewElement.classList.add("victory-glow");
+      finishGame(true);
+    });
+    return;
+  }
   renderPreview();
-  if (guess === currentWord || revealed.every(Boolean)) {
+  if (isWin) {
     finishGame(true);
   } else if (currentAttempt >= maxAttempts) {
     beginFinalChance();
@@ -506,6 +535,44 @@ function checkGuess(guess) {
     messageElement.textContent = "Правильные буквы появились в верхней рамке.";
   }
   saveRound();
+}
+
+/* Буквы летят из угаданной строки в верхний ответ с небольшим интервалом.
+   При сниженной анимации или неподдерживаемом API ответ раскрывается сразу. */
+async function animateWinningLetters(sourceRow) {
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ||
+      typeof Element==="undefined" || !Element.prototype.animate) return;
+  const source=Array.from(sourceRow.querySelectorAll(".cell"));
+  const destination=Array.from(previewElement.querySelectorAll(".preview-cell"));
+  const count=Math.min(source.length,destination.length);
+  const flights=[];
+  for (let i=0;i<count;i++) {
+    const from=source[i].getBoundingClientRect();
+    const to=destination[i].getBoundingClientRect();
+    if (!from.width || !to.width) continue;
+    const tile=source[i].cloneNode(true);
+    tile.classList.add("victory-flying-letter");
+    tile.style.cssText="position:fixed;z-index:60;left:"+from.left+"px;top:"+from.top+
+      "px;width:"+from.width+"px;height:"+from.height+"px;pointer-events:none;margin:0;";
+    document.body.append(tile);
+    const delay=i*75;
+    const flight=tile.animate([
+      {transform:"translate(0,0) scale(1)",opacity:1,filter:"brightness(1)"},
+      {transform:"translate("+(to.left-from.left)*.5+"px,"+
+        ((to.top-from.top)*.5-35)+"px) scale(1.24)",opacity:1,filter:"brightness(1.6)",offset:.58},
+      {transform:"translate("+(to.left-from.left)+"px,"+(to.top-from.top)+
+        "px) scale("+(to.width/from.width)+")",opacity:1,filter:"brightness(1.2)"}
+    ],{duration:540,delay,easing:"cubic-bezier(.22,.8,.24,1)",fill:"forwards"});
+    const done=flight.finished.catch(()=>{}).then(()=>{
+      tile.remove();
+      destination[i].textContent=currentWord[i].toUpperCase();
+      destination[i].classList.add("is-known","victory-arrived");
+    });
+    flights.push(done);
+  }
+  await Promise.all(flights);
+  // Последняя доля секунды оставляет собранное слово на экране.
+  await new Promise(resolve=>setTimeout(resolve,380));
 }
 
 function beginFinalChance() {
@@ -557,23 +624,37 @@ function finishGame(won) {
   if (won) wordProgress.solved.add(currentWord);
   const complete=wordProgress.solved.size===wordBank.length;
   if (complete) wordProgress.completed=true;
+  if (complete && won) {
+    const completed=window.GameRewards.earnedCount(allProgress,GAME_CATEGORIES,MAX_LEVEL,wordsInCategory);
+    resultText.dataset.rewardCount=completed;
+    if (completed===GAME_CATEGORIES.length) window.GameRewards.ensureIssueDate();
+  }
   wordProgress.active=null;
   wordProgress.round=null;
   saveWordProgress();
+  refreshRewardCounter();
+  window.GameCloud.flush(); // Победа/поражение сразу отправляются в облако.
   phase="finished";
   guessForm.hidden=true;
   finalInput.hidden=true;
   if (guessInput) {guessInput.remove();guessInput=null;}
   finalForm.classList.remove("active");
   if (won) {
+    resultQuestion.hidden=false;
+    resultAnswer.hidden=false;
+    resultQuestion.textContent=currentEntry?.hint||"";
+    resultAnswer.textContent=(currentEntry?.display||currentWord).toLocaleUpperCase("ru-RU");
     revealed.fill(true);
     resultTitle.textContent=complete?"УРОВЕНЬ "+selectedLevel+" ПРОЙДЕН!":"ПОЗДРАВЛЯЕМ!";
     resultText.textContent=complete
       ? "Все 20 слов разгаданы!"+(selectedLevel<MAX_LEVEL?" Следующий уровень открыт.":" Все пять уровней категории завершены!")
       : "Ты угадал слово! Осталось разгадать: "+(wordBank.length-wordProgress.solved.size)+".";
+    if (complete) resultText.textContent+=" 🧩 Получен фрагмент секретной благодарности!";
     nextWordButton.textContent=complete?"К уровням":"Следующее слово";
     resultBanner.classList.add("win");
   } else {
+    resultQuestion.hidden=true;
+    resultAnswer.hidden=true;
     resultTitle.textContent="ПОКА НЕ УГАДАНО";
     resultText.textContent="Это слово осталось загадкой. Следующим будет новое, а затем вернёмся к неразгаданным.";
     nextWordButton.textContent="Следующее слово";
@@ -581,6 +662,7 @@ function finishGame(won) {
   }
   renderPreview();
   resultBackdrop.hidden=false;
+  window.YandexPlatform.roundFinished();
   nextWordButton.focus();
 }
 
@@ -596,7 +678,11 @@ finalInput.addEventListener("input", cleanFinalInput);
 finalEntry.addEventListener("click", () => {
   if (phase === "final") finalInput.focus();
 });
-nextWordButton.addEventListener("click",()=>{
+nextWordButton.addEventListener("click",async ()=>{
+  if (nextWordButton.disabled) return;
+  nextWordButton.disabled=true;
+  try { await window.YandexPlatform.showInterstitialIfDue(); }
+  finally { nextWordButton.disabled=false; }
   if (wordProgress.completed && wordProgress.solved.size===wordBank.length) {
     resultBackdrop.hidden=true;
     showScreen(homeScreen);
@@ -631,14 +717,15 @@ function saveUiState() {
 function setHomeView(view) {
   homeView=view;
   homeMenu.hidden=view!=="menu";
+  document.querySelector("#nicknameForm").hidden=view!=="menu";
   categoryScreen.hidden=view!=="categories";
   levelsScreen.hidden=view!=="levels";
-  details.hidden=view!=="stats" && view!=="rules";
+  details.hidden=view!=="stats" && view!=="rules" && view!=="reward";
   homeCard.classList.toggle("subview",view!=="menu");
-  homeCard.classList.toggle("stats-open",view==="stats");
+  homeCard.classList.toggle("stats-open",view==="stats" || view==="reward");
   homeCard.setAttribute("aria-labelledby",{
     menu:"homeTitle",categories:"categoryTitle",levels:"levelsTitle",
-    stats:"menuDetailsTitle",rules:"menuDetailsTitle"
+    stats:"menuDetailsTitle",rules:"menuDetailsTitle",reward:"menuDetailsTitle"
   }[view]);
   saveUiState();
 }
@@ -648,6 +735,7 @@ function showScreen(screen) {
   gameScreen.hidden=screen!==gameScreen;
   if (screen===homeScreen) setHomeView("menu");
   saveUiState();
+  window.YandexPlatform.setGameplay(screen===gameScreen && phase!=="finished");
 }
 function openMenuDetails(title,view) {
   detailsTitle.textContent=title;
@@ -743,10 +831,45 @@ document.querySelector("#gameMenuBack").addEventListener("click",()=>{
 });
 document.querySelector("#menuSplashBack").addEventListener("click",()=>showScreen(welcomeScreen));
 document.querySelector("#menuDetailsBack").addEventListener("click",()=>setHomeView("menu"));
+// Ник не обязателен для игры; сохраняется локально и через Яндекс ID.
+const nickForm=document.querySelector("#nicknameForm");
+const nickInput=document.querySelector("#nicknameInput");
+const nickMessage=document.querySelector("#nicknameMessage");
+const rewardCounter=document.querySelector("#rewardCounter");
+nickInput.value=window.GameRewards.getNickname()==="Игрок"?"":window.GameRewards.getNickname();
+nickForm.addEventListener("submit",event=>{
+  event.preventDefault();
+  const saved=window.GameRewards.saveNickname(nickInput.value);
+  nickMessage.textContent=saved.ok?"✓ Ник сохранён: "+saved.nickname:saved.message;
+  if(saved.ok) nickInput.value=saved.nickname;
+});
+function refreshRewardCounter(){
+  const earned=window.GameRewards.earnedCount(allProgress,GAME_CATEGORIES,MAX_LEVEL,wordsInCategory);
+  rewardCounter.textContent=earned+"/10";
+}
+refreshRewardCounter();
+document.querySelector("#menuReward").addEventListener("click",()=>{
+  openMenuDetails("СЕКРЕТНАЯ НАГРАДА","reward");
+  window.GameRewards.render(detailsBody,allProgress,GAME_CATEGORIES,
+    MAX_LEVEL,wordsInCategory,score);
+});
 document.querySelector("#menuStats").addEventListener("click",()=>{
   openMenuDetails("МОЯ СТАТИСТИКА","stats");
   window.GameStatsPanel.render(detailsBody,score,allProgress,GAME_CATEGORIES,
     GAME_WORDS.length,MAX_LEVEL,wordsInCategory);
+  window.GameRewards.appendProgress(detailsBody,allProgress,GAME_CATEGORIES,MAX_LEVEL,wordsInCategory);
+});
+const cloudButton=document.querySelector("#menuCloud");
+if (window.YandexPlatform.isYandex && !window.GameCloud.isAuthorized()) cloudButton.hidden=false;
+cloudButton.addEventListener("click",async ()=>{
+  cloudButton.disabled=true;
+  try {
+    const signedIn=await window.GameCloud.signIn();
+    if(!signedIn){cloudButton.disabled=false;}
+  } catch(error) {
+    console.warn("Не удалось войти:",error);
+    cloudButton.disabled=false;
+  }
 });
 document.querySelector("#menuRules").addEventListener("click",()=>{
   openMenuDetails("КАК ИГРАТЬ","rules");
@@ -776,6 +899,9 @@ if (initialUiState.screen==="home") {
   else if (initialUiState.homeView==="rules") document.querySelector("#menuRules").click();
 }
 
-if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
+window.YandexPlatform.ready();
+
+// Яндекс самостоятельно управляет файлами игры; SW оставляем для GitHub Pages.
+if (!window.YandexPlatform.isYandex && "serviceWorker" in navigator && window.location.protocol !== "file:") {
   navigator.serviceWorker.register("service-worker.js").catch(() => {});
 }
