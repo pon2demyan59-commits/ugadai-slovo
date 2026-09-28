@@ -23,7 +23,7 @@ jobs:
         run: |
           mkdir -p dist
           zip -q -9 -r dist/ugadai-slovo-yandex.zip \
-            index.html style.css stats.css script.js stats.js \
+            index.html style.css stats.css rewards.css script.js stats.js rewards.js \
             yandex-platform.js cloud-save.js game-bootstrap.js \
             manifest.webmanifest assets data
           unzip -l dist/ugadai-slovo-yandex.zip | grep 'index.html'
