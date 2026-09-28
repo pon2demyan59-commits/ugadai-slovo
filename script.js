@@ -1074,8 +1074,8 @@ function showLevels(id) {
     const title=document.createElement("strong");
     title.textContent=(level===5?"Мастер слов":LEVEL_NAMES[level-1]);
     const detail=document.createElement("small");
-    detail.textContent=level===5?"9+ букв и выражения":
-      (level+4)+" букв · "+(progress.completed?"Пройден · можно повторить":"20 заданий");
+    const levelFormat=level===5?"9+ букв и выражения":(level+4)+" букв";
+    detail.textContent=levelFormat+" · "+(progress.completed?"Пройден · можно повторить":"20 заданий");
     info.append(title,detail);
     const count=document.createElement("span");
     count.className="level-count";
