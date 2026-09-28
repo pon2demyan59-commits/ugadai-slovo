@@ -37,10 +37,16 @@
       </nav>
       <section id="categoryScreen" class="category-screen" hidden aria-labelledby="categoryTitle">
         <h3 id="categoryTitle">ВЫБОР КАТЕГОРИИ</h3>
-        <p class="category-level-heading">УРОВЕНЬ 1 · ПО 20 СЛОВ В КАТЕГОРИИ</p>
+        <p class="category-level-heading">10 КАТЕГОРИЙ · 5 УРОВНЕЙ</p>
         <div id="categoryList" class="category-list"></div>
-        <p class="category-goal">В игре уже 200 заданий · цель — 1 000</p>
+        <p class="category-goal">1 000 слов и выражений · 20 заданий в каждом уровне</p>
         <button type="button" id="categoryBack" class="home-back">← К меню</button>
+      </section>
+      <section id="levelsScreen" class="levels-screen" hidden aria-labelledby="levelsTitle">
+        <h3 id="levelsTitle">УРОВНИ</h3>
+        <p class="levels-subtitle" id="levelsSubtitle">Выбери сложность</p>
+        <div id="levelsList" class="levels-list"></div>
+        <button type="button" id="levelsBack" class="home-back">← Категории</button>
       </section>
       <section id="menuDetails" class="home-details" aria-live="polite" hidden>
         <h3 id="menuDetailsTitle"></h3>
@@ -52,7 +58,7 @@
   </main>
   <main class="game" id="gameScreen" hidden>
     <section class="game-card">
-      <button type="button" id="gameMenuBack" class="game-menu-back" aria-label="Вернуться в главное меню">← Меню</button>
+      <button type="button" id="gameMenuBack" class="game-menu-back" aria-label="Вернуться к выбору уровня">← Уровни</button>
       <h1>Угадай слово</h1>
       <p id="activeCategoryTitle" class="game-category-label"></p>
       <section class="word-panel" aria-label="Подсказка">
@@ -95,6 +101,17 @@
   </main>
   <script src="data/words.js"></script>
   <script src="data/valid-words.js"></script>
+  <script src="data/valid-long-words.js"></script>
+  <script src="data/levels/animals.js"></script>
+  <script src="data/levels/nature.js"></script>
+  <script src="data/levels/food.js"></script>
+  <script src="data/levels/home.js"></script>
+  <script src="data/levels/city.js"></script>
+  <script src="data/levels/tech.js"></script>
+  <script src="data/levels/slang.js"></script>
+  <script src="data/levels/cinema.js"></script>
+  <script src="data/levels/sport.js"></script>
+  <script src="data/levels/travel.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
