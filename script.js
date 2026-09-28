@@ -373,7 +373,7 @@ function renderPreview() {
       cell.addEventListener("click",()=>{
         if(!revealHintMode)return;
         revealHintMode=false;
-        if(revealed[i] || revealed.filter(x=>!x).length<=1){
+        if(revealed[i] || roundHints.positions.length>=3 || revealed.filter(x=>!x).length<=1){
           hintStatus.textContent="Нужно оставить хотя бы одну неизвестную букву.";
           return;
         }
@@ -746,12 +746,16 @@ const hintStatus=document.querySelector("#hintStatus");
 const hintClueText=document.querySelector("#hintClueText");
 const hintButtons={
   letter:document.querySelector("#hintLetter"),
+  first:document.querySelector("#hintFirst"),
+  vowel:document.querySelector("#hintVowel"),
   attempt:document.querySelector("#hintAttempt"),
   eliminate:document.querySelector("#hintEliminate"),
   clue:document.querySelector("#hintClue")
 };
 const hintCounts={
   letter:document.querySelector("#hintLetterCount"),
+  first:document.querySelector("#hintFirstCount"),
+  vowel:document.querySelector("#hintVowelCount"),
   attempt:document.querySelector("#hintAttemptCount"),
   eliminate:document.querySelector("#hintEliminateCount"),
   clue:document.querySelector("#hintClueCount")
@@ -760,7 +764,12 @@ function renderHints(){
   const stock=window.GameHints.balances();
   for(const type of Object.keys(hintButtons))hintCounts[type].textContent="×"+stock[type];
   hintButtons.letter.disabled=phase!=="guess"||stock.letter<1||
-    roundHints.positions.length>=2||revealed.filter(x=>!x).length<=1;
+    roundHints.positions.length>=3||revealed.filter(x=>!x).length<=1;
+  hintButtons.first.disabled=phase!=="guess"||stock.first<1||
+    roundHints.positions.length>=3||revealed[0]||revealed.filter(x=>!x).length<=1;
+  hintButtons.vowel.disabled=phase!=="guess"||stock.vowel<1||
+    roundHints.positions.length>=3||!Array.from(currentWord).some((c,i)=>
+      /[аеёиоуыэюя]/.test(c)&&!revealed[i])||revealed.filter(x=>!x).length<=1;
   hintButtons.attempt.disabled=phase!=="guess"||stock.attempt<1||
     roundHints.extraAttempt||currentAttempt>=baseAttempts;
   hintButtons.eliminate.disabled=phase!=="guess"||stock.eliminate<1||
@@ -776,6 +785,23 @@ function renderHints(){
 hintButtons.letter.addEventListener("click",()=>{
   revealHintMode=true;
   hintStatus.textContent="Нажми на вопросительный знак нужной клетки в верхнем ответе.";
+});
+function revealAutomatic(kind,index){
+  if(phase!=="guess"||index<0||roundHints.positions.length>=3||
+     revealed[index]||revealed.filter(x=>!x).length<=1||
+     !window.GameHints.spend(kind))return;
+  roundHints.positions.push(index);
+  revealed[index]=true;
+  renderPreview();renderHints();saveRound();
+  window.GameAnalytics?.track("hint_used");
+  hintStatus.textContent="Открыта буква «"+currentWord[index].toUpperCase()+"».";
+}
+hintButtons.first.addEventListener("click",()=>revealAutomatic("first",0));
+hintButtons.vowel.addEventListener("click",()=>{
+  const positions=Array.from(currentWord).map((c,i)=>
+    /[аеёиоуыэюя]/.test(c)&&!revealed[i]?i:-1).filter(i=>i>=0);
+  if(positions.length)revealAutomatic("vowel",
+    positions[Math.floor(Math.random()*positions.length)]);
 });
 hintButtons.attempt.addEventListener("click",()=>{
   if(phase!=="guess"||roundHints.extraAttempt||!window.GameHints.spend("attempt"))return;
@@ -813,7 +839,7 @@ adButton.addEventListener("click",async()=>{
   try{
     const rewarded=await window.YandexPlatform.showRewarded();
     if(rewarded){
-      const amount=kind==="letter"?3:2;
+      const amount=["letter","first","vowel"].includes(kind)?3:2;
       window.GameHints.grant(kind,amount);
       window.GameAnalytics?.track("reward_ad_rewarded");
       hintStatus.textContent="Бонус получен: +"+amount+" подсказки!";
