@@ -1036,10 +1036,10 @@ document.querySelector("#menuPlay").addEventListener("click",showCategories);
 document.querySelector("#categoryBack").addEventListener("click",()=>setHomeView("menu"));
 document.querySelector("#levelsBack").addEventListener("click",showCategories);
 document.querySelector("#gameMenuBack").addEventListener("click",()=>{
+  saveRound(); // Возврат к уровням не должен терять текущую попытку.
   showScreen(homeScreen);
   showLevels(selectedCategory);
 });
-document.querySelector("#menuSplashBack").addEventListener("click",()=>showScreen(welcomeScreen));
 document.querySelector("#menuDetailsBack").addEventListener("click",()=>setHomeView("menu"));
 // Ник не обязателен для игры; сохраняется локально и через Яндекс ID.
 const nickForm=document.querySelector("#nicknameForm");
