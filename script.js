@@ -124,19 +124,20 @@ function chooseNextWord() {
   return choices[Math.floor(Math.random()*choices.length)];
 }
 function showCollectionComplete() {
-  phase = "finished";
-  guessForm.hidden = true;
-  finalInput.hidden = true;
+  phase="finished";
+  guessForm.hidden=true;
+  finalInput.hidden=true;
   resultBanner.classList.remove("lose");
   resultBanner.classList.add("win");
-  resultTitle.textContent = "ВСЕ СЛОВА РАЗГАДАНЫ!";
-  resultText.textContent = "Первый уровень пройден! Все " + wordBank.length + " слов этой категории разгаданы. Можешь пройти уровень заново.";
-  nextWordButton.textContent = "Повторить уровень 1";
-  resultBackdrop.hidden = false;
-  nextWordButton.focus();
+  wordProgress.completed=true;
+  saveWordProgress();
+  resultTitle.textContent="УРОВЕНЬ "+selectedLevel+" ПРОЙДЕН!";
+  resultText.textContent="Все 20 заданий категории разгаданы!"+(selectedLevel<MAX_LEVEL?" Следующий уровень открыт.":" Категория полностью пройдена!");
+  nextWordButton.textContent="К уровням";
+  resultBackdrop.hidden=false;
 }
 
-// Русская игровая клавиатура дополняет системную клавиатуру телефона.
+// Русская игровая клавиатура// Русская игровая клавиатура дополняет системную клавиатуру телефона.
 const keyboardRows = ["ЙЦУКЕНГШЩЗХЪ", "ФЫВАПРОЛДЖЭ", "ЯЧСМИТЬБЮ"];
 const statusPriority = { unused: 0, missing: 1, present: 2, correct: 3 };
 const hintElement = document.querySelector("#hint");
@@ -163,52 +164,59 @@ let revealed = [];
 let phase = "guess";
 let previousWord = "";
 
+let currentEntry=null;
+let phraseBreaks=[];
 function startGame() {
-  const nextWord = wordProgress.active && !wordProgress.solved.has(wordProgress.active)
+  const nextWord=wordProgress.active && !wordProgress.solved.has(wordProgress.active)
     ? wordProgress.active : chooseNextWord();
   if (!nextWord) {showCollectionComplete();return;}
-  const selected = GAME_WORDS.find(w => w.word === nextWord && w.category === selectedCategory);
+  const selected=getEntry(selectedCategory,selectedLevel,nextWord);
   if (!selected) return;
-  const resume = wordProgress.round && wordProgress.round.word === nextWord ? wordProgress.round : null;
-  currentWord = nextWord;
-  previousWord = currentWord;
-  wordProgress.active = currentWord;
+  currentEntry=selected;
+  currentWord=nextWord;
+  previousWord=nextWord;
+  wordProgress.active=currentWord;
   wordProgress.attempted.add(currentWord);
-  currentAttempt = 0;
-  phase = "guess";
-  revealed = Array(currentWord.length).fill(false);
-  usedLetters = {};
-  roundGuesses = [];
-  restoringRound = true;
-  guessForm.hidden = false;
-  finalInput.value = "";
-  finalInput.hidden = true;
+  const parts=(selected.display || selected.word).split(/\s+/).map(s=>s.length);
+  phraseBreaks=[];
+  let offset=0;
+  for (let i=0;i<parts.length-1;i++) {offset+=parts[i];phraseBreaks.push(offset);}
+  const resume=wordProgress.round && wordProgress.round.word===nextWord ? wordProgress.round : null;
+  currentAttempt=0;
+  phase="guess";
+  revealed=Array(currentWord.length).fill(false);
+  usedLetters={};
+  roundGuesses=[];
+  restoringRound=true;
+  guessForm.hidden=false;
+  finalInput.value="";
+  finalInput.hidden=true;
   finalForm.classList.remove("active");
   messageElement.classList.remove("is-error");
-  resultBackdrop.hidden = true;
+  resultBackdrop.hidden=true;
   resultBanner.classList.remove("win","lose");
-  hintElement.textContent = selected.hint;
-  const category = GAME_CATEGORIES.find(c => c.id === selectedCategory);
-  document.querySelector("#activeCategoryTitle").textContent = category.icon + " " + category.title + " · Уровень 1";
-  messageElement.textContent = "Введи слово в первую строку.";
+  hintElement.textContent=selected.hint;
+  const cat=GAME_CATEGORIES.find(c=>c.id===selectedCategory);
+  document.querySelector("#activeCategoryTitle").textContent=cat.icon+" "+cat.title+" · Уровень "+selectedLevel;
+  messageElement.textContent="Угадай слово!";
   renderBoard();
   renderPreview();
   renderAlphabet();
   updateStats();
   if (resume) {
     for (const guess of resume.guesses) {
-      if (phase !== "guess") break;
+      if (phase!=="guess") break;
       checkGuess(guess);
     }
-    if (phase === "guess" && guessInput) {
-      guessInput.value = resume.draft || "";
+    if (phase==="guess" && guessInput) {
+      guessInput.value=resume.draft||"";
       syncInput();
-    } else if (phase === "final") {
-      finalInput.value = resume.finalDraft || "";
+    } else if (phase==="final") {
+      finalInput.value=resume.finalDraft||"";
       cleanFinalInput();
     }
   }
-  restoringRound = false;
+  restoringRound=false;
   saveRound();
   saveWordProgress();
 }
@@ -229,19 +237,26 @@ function createLineInput(number) {
 
 function renderBoard() {
   boardElement.replaceChildren();
-  boardElement.style.setProperty("--word-length", currentWord.length);
-  for (let r = 0; r < maxAttempts; r++) {
-    const row = document.createElement("div");
-    row.className = "row" + (r === 0 ? " active" : "");
-    row.style.setProperty("--word-length", currentWord.length);
-    for (let c = 0; c < currentWord.length; c++) {
-      const cell = document.createElement("span");
-      cell.className = "cell";
+  const long=currentWord.length>8;
+  const columns=Math.min(currentWord.length,8);
+  boardElement.classList.toggle("long-letters",long);
+  boardElement.style.setProperty("--word-length",currentWord.length);
+  boardElement.style.setProperty("--columns",columns);
+  document.querySelector(".word-panel").classList.toggle("long-puzzle",long);
+  for (let r=0;r<maxAttempts;r++) {
+    const row=document.createElement("div");
+    row.className="row"+(r===0?" active":"");
+    row.style.setProperty("--word-length",currentWord.length);
+    row.style.setProperty("--columns",columns);
+    for (let i=0;i<currentWord.length;i++) {
+      const cell=document.createElement("span");
+      cell.className="cell";
+      if (phraseBreaks.includes(i)) cell.classList.add("word-new-part");
       row.append(cell);
     }
     boardElement.append(row);
   }
-  guessInput = createLineInput(1);
+  guessInput=createLineInput(1);
   boardElement.firstElementChild.append(guessInput);
   syncInput();
 }
@@ -270,22 +285,24 @@ function activateNextRow() {
 
 function renderPreview() {
   previewElement.replaceChildren();
-  previewElement.style.setProperty("--word-length", currentWord.length);
-  const draft = finalInput.value.toLowerCase().replace(/[^а-яё]/g, "");
-  let draftIndex = 0;
-  for (let i = 0; i < currentWord.length; i++) {
-    const cell = document.createElement("span");
-    cell.className = "preview-cell";
+  previewElement.style.setProperty("--word-length",currentWord.length);
+  previewElement.style.setProperty("--columns",Math.min(currentWord.length,8));
+  previewElement.classList.toggle("long-letters",currentWord.length>8);
+  const draft=finalInput.value.toLowerCase().replace(/[^а-яё]/g,"");
+  let draftIndex=0;
+  for (let i=0;i<currentWord.length;i++) {
+    const cell=document.createElement("span");
+    cell.className="preview-cell";
+    if (phraseBreaks.includes(i)) cell.classList.add("word-new-part");
     if (revealed[i]) {
       cell.classList.add("is-known");
-      cell.textContent = currentWord[i].toUpperCase();
-    } else if (phase === "final" && draft[draftIndex]) {
+      cell.textContent=currentWord[i].toUpperCase();
+    } else if (phase==="final" && draft[draftIndex]) {
       cell.classList.add("is-draft");
-      cell.textContent = draft[draftIndex].toUpperCase();
-      draftIndex++;
+      cell.textContent=draft[draftIndex++].toUpperCase();
     } else {
-      cell.textContent = "?";
-      if (phase === "final" && draftIndex === draft.length) {
+      cell.textContent="?";
+      if (phase==="final" && draftIndex===draft.length) {
         cell.classList.add("final-next");
         draftIndex++;
       }
@@ -294,7 +311,7 @@ function renderPreview() {
   }
 }
 
-// Экранная клавиатура: буквы также можно нажимать мышкой или пальцем.
+// Экранная клавиатура:// Экранная клавиатура: буквы также можно нажимать мышкой или пальцем.
 // Обе клавиатуры редактируют одно и то же поле: у телефона и игровой клавиатуры
 // общий текст и позиция курсора, поэтому удаление работает в обе стороны.
 function activeLetterInput() {
@@ -444,8 +461,12 @@ function checkGuess(guess) {
     showInputError("Нужно слово из " + currentWord.length + " букв.");
     return;
   }
-  // Ошибочная последовательность букв не расходует попытку.
-  if (!VALID_RUSSIAN_WORDS.has(guess) && !EXTRA_VALID_WORDS.has(guess)) {
+  // На пятом уровне составные выражения проверяются по буквам и длине,
+  // обычные слова — по лицензированному словарю существительных.
+  const phrase=currentEntry?.display?.includes(" ");
+  const known=VALID_RUSSIAN_WORDS.has(guess)||VALID_LONG_WORDS.has(guess)||
+    EXTRA_VALID_WORDS.has(guess)||acceptedAnswers.has(guess);
+  if (!phrase && !known) {
     showInputError("Такого слова нет в словаре. Попробуй другое.");
     return;
   }
@@ -487,7 +508,7 @@ function beginFinalChance() {
   finalInput.hidden = false;
   finalForm.classList.add("active");
   finalInput.maxLength = revealed.filter(value => !value).length;
-  hintElement.textContent = "Подсказка: " + GAME_WORDS.find(item => item.word === currentWord).hint;
+  hintElement.textContent = "Подсказка: " + currentEntry.hint;
   messageElement.textContent = "Впиши недостающие буквы прямо в верхнюю рамку и проверь слово.";
   renderPreview();
 }
@@ -525,36 +546,35 @@ function checkFinalChance() {
 }
 
 function finishGame(won) {
-  if (phase === "finished") return;
+  if (phase==="finished") return;
   recordResult(won);
   if (won) wordProgress.solved.add(currentWord);
-  wordProgress.active = null;
-  wordProgress.round = null;
+  const complete=wordProgress.solved.size===wordBank.length;
+  if (complete) wordProgress.completed=true;
+  wordProgress.active=null;
+  wordProgress.round=null;
   saveWordProgress();
-  phase = "finished";
-  guessForm.hidden = true;
-  finalInput.hidden = true;
-  if (guessInput) { guessInput.remove(); guessInput = null; }
+  phase="finished";
+  guessForm.hidden=true;
+  finalInput.hidden=true;
+  if (guessInput) {guessInput.remove();guessInput=null;}
   finalForm.classList.remove("active");
   if (won) {
     revealed.fill(true);
-    // Подсказка остаётся на экране после завершения раунда.
-    resultTitle.textContent = "ПОЗДРАВЛЯЕМ!";
-    const remaining = wordBank.length - wordProgress.solved.size;
-    resultText.textContent = remaining
-      ? "Ты угадал слово! На первом уровне осталось: " + remaining + "."
-      : "Первый уровень пройден! Все " + wordBank.length + " слов разгаданы!";
-    nextWordButton.textContent = remaining ? "Следующее слово" : "Повторить уровень 1";
+    resultTitle.textContent=complete?"УРОВЕНЬ "+selectedLevel+" ПРОЙДЕН!":"ПОЗДРАВЛЯЕМ!";
+    resultText.textContent=complete
+      ? "Все 20 слов разгаданы!"+(selectedLevel<MAX_LEVEL?" Следующий уровень открыт.":" Все пять уровней категории завершены!")
+      : "Ты угадал слово! Осталось разгадать: "+(wordBank.length-wordProgress.solved.size)+".";
+    nextWordButton.textContent=complete?"К уровням":"Следующее слово";
     resultBanner.classList.add("win");
   } else {
-    // Не раскрываем начальные буквы даже при поражении.
-    resultTitle.textContent = "СЕГОДНЯ НЕ УГАДАЛИ";
-    resultText.textContent = "В этот раз слово осталось загадкой. Сначала будут новые слова этой категории, затем вернёмся к неразгаданным.";
-    nextWordButton.textContent = "Следующее слово";
+    resultTitle.textContent="ПОКА НЕ УГАДАНО";
+    resultText.textContent="Это слово осталось загадкой. Следующим будет новое, а затем вернёмся к неразгаданным.";
+    nextWordButton.textContent="Следующее слово";
     resultBanner.classList.add("lose");
   }
   renderPreview();
-  resultBackdrop.hidden = false;
+  resultBackdrop.hidden=false;
   nextWordButton.focus();
 }
 
@@ -570,16 +590,14 @@ finalInput.addEventListener("input", cleanFinalInput);
 finalEntry.addEventListener("click", () => {
   if (phase === "final") finalInput.focus();
 });
-nextWordButton.addEventListener("click", () => {
-  if (wordProgress.solved.size === wordBank.length) {
-    wordProgress.solved.clear();
-    wordProgress.attempted.clear();
-    wordProgress.active = null;
-    wordProgress.round = null;
-    previousWord = "";
-    saveWordProgress();
+nextWordButton.addEventListener("click",()=>{
+  if (wordProgress.completed && wordProgress.solved.size===wordBank.length) {
+    resultBackdrop.hidden=true;
+    showScreen(homeScreen);
+    showLevels(selectedCategory);
+  } else {
+    startGame();
   }
-  startGame();
 });
 // Навигация и сохранение текущего экрана между обновлениями страницы.
 const welcomeScreen = document.querySelector("#welcomeScreen");
