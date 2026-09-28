@@ -5,6 +5,8 @@
   const isYandex=host==="yandex.ru" || host==="yandex.net" ||
     host.endsWith(".yandex.ru") || host.endsWith(".yandex.net");
   let sdk=null,uiReady=false,desiredGameplay=false,gameplayActive=false;
+  let settleSdk;
+  const whenSdk=new Promise(resolve=>{settleSdk=resolve;});
   let adActive=false,finishedRounds=0,lastAd=Date.now();
   function syncGameplay() {
     if(!sdk || !uiReady)return;
@@ -17,18 +19,19 @@
     }catch(error){console.warn("GameplayAPI:",error);}
   }
   function init(){
-    if(!isYandex)return;
+    if(!isYandex){settleSdk(null);return;}
     const script=document.createElement("script");
     script.src="/sdk.js";script.async=true;
     script.onload=async()=>{
-      if(!window.YaGames){console.warn("SDK отсутствует");return;}
+      if(!window.YaGames){console.warn("SDK отсутствует");settleSdk(null);return;}
       try{
         sdk=await window.YaGames.init();
+        settleSdk(sdk);
         if(uiReady)sdk.features.LoadingAPI?.ready();
         syncGameplay();
-      }catch(error){console.warn("Ошибка инициализации SDK:",error);}
+      }catch(error){console.warn("Ошибка инициализации SDK:",error);settleSdk(null);}
     };
-    script.onerror=()=>console.warn("Не удалось загрузить /sdk.js");
+    script.onerror=()=>{console.warn("Не удалось загрузить /sdk.js");settleSdk(null);};
     document.head.append(script);
   }
   function ready(){
@@ -58,6 +61,6 @@
     });
   }
   document.addEventListener("visibilitychange",syncGameplay);
-  window.YandexPlatform={isYandex,ready,setGameplay,roundFinished,showInterstitialIfDue};
+  window.YandexPlatform={isYandex,whenSdk,ready,setGameplay,roundFinished,showInterstitialIfDue};
   init();
 })();
