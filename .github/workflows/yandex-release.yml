@@ -1,7 +1,7 @@
 name: Yandex Games release checks
 on:
   push:
-    branches: [main, feature/yandex-release, 'fix/**']
+    branches: [main, feature/yandex-release, 'feature/**', 'fix/**']
   pull_request:
     branches: [main]
   workflow_dispatch:
