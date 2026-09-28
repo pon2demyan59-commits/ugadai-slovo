@@ -123,7 +123,7 @@ function saveWordProgress() {
   } catch { /* При отключённом хранилище прогресс живёт до закрытия игры. */ }
 }
 function saveRound() {
-  if (restoringRound || !wordProgress.active || phase==="finished") return;
+  if (replayMode || restoringRound || !wordProgress.active || phase==="finished") return;
   wordProgress.round={word:currentWord,guesses:[...roundGuesses],
     draft:phase==="guess" && guessInput ? guessInput.value : "",
     finalDraft:phase==="final" ? finalInput.value : "",
@@ -131,8 +131,10 @@ function saveRound() {
   saveWordProgress();
 }
 function chooseNextWord() {
-  const fresh=wordBank.filter(w=>!wordProgress.attempted.has(w));
-  const unsolved=wordBank.filter(w=>!wordProgress.solved.has(w));
+  const attempted=replayMode?replayAttempted:wordProgress.attempted;
+  const solved=replayMode?replaySolved:wordProgress.solved;
+  const fresh=wordBank.filter(w=>!attempted.has(w));
+  const unsolved=wordBank.filter(w=>!solved.has(w));
   const pool=fresh.length?fresh:unsolved;
   if (!pool.length) return null;
   const alternatives=pool.filter(w=>w!==previousWord);
@@ -188,11 +190,16 @@ let previousWord = "";
 let roundAttemptLimit=baseAttempts;
 let roundHints={positions:[],extraAttempt:false,eliminated:[],extraClue:false};
 let revealHintMode=false,pendingUnknown=null;
+let replayMode=false;
+let replaySolved=new Set();
+let replayAttempted=new Set();
+const sessionSolvedSize=()=>replayMode?replaySolved.size:wordProgress.solved.size;
+const sessionComplete=()=>sessionSolvedSize()===wordBank.length;
 
 let currentEntry=null;
 let phraseBreaks=[];
 function startGame() {
-  const nextWord=wordProgress.active && !wordProgress.solved.has(wordProgress.active)
+  const nextWord=!replayMode && wordProgress.active && !wordProgress.solved.has(wordProgress.active)
     ? wordProgress.active : chooseNextWord();
   if (!nextWord) {showCollectionComplete();return;}
   const selected=getEntry(selectedCategory,selectedLevel,nextWord);
@@ -200,13 +207,16 @@ function startGame() {
   currentEntry=selected;
   currentWord=nextWord;
   previousWord=nextWord;
-  wordProgress.active=currentWord;
-  wordProgress.attempted.add(currentWord);
+  if(replayMode)replayAttempted.add(currentWord);
+  else{
+    wordProgress.active=currentWord;
+    wordProgress.attempted.add(currentWord);
+  }
   const parts=(selected.display || selected.word).split(/\s+/).map(s=>s.length);
   phraseBreaks=[];
   let offset=0;
   for (let i=0;i<parts.length-1;i++) {offset+=parts[i];phraseBreaks.push(offset);}
-  const resume=wordProgress.round && wordProgress.round.word===nextWord ? wordProgress.round : null;
+  const resume=!replayMode && wordProgress.round && wordProgress.round.word===nextWord ? wordProgress.round : null;
   const previousHints=resume?.hints || {};
   roundHints={
     positions:Array.isArray(previousHints.positions)?previousHints.positions.filter(i=>
@@ -735,17 +745,22 @@ function finishGame(won) {
   streakPraise.hidden=!streakPraise.textContent;
   window.GameAnalytics?.track(won?"round_win":"round_loss");
   if(won)window.GameHints.rewardForWin(score.wins);
-  if (won) wordProgress.solved.add(currentWord);
-  const complete=wordProgress.solved.size===wordBank.length;
-  if (complete) wordProgress.completed=true;
-  if(complete && won)window.GameHints.rewardForLevel(selectedCategory,selectedLevel);
-  if (complete && won) {
+  if(won){
+    if(replayMode)replaySolved.add(currentWord);
+    else wordProgress.solved.add(currentWord);
+  }
+  const complete=sessionComplete();
+  if(complete && !replayMode)wordProgress.completed=true;
+  if(complete && won && !replayMode)window.GameHints.rewardForLevel(selectedCategory,selectedLevel);
+  if (complete && won && !replayMode) {
     const completed=window.GameRewards.earnedCount(allProgress,GAME_CATEGORIES,MAX_LEVEL,wordsInCategory);
     resultText.dataset.rewardCount=completed;
     if (completed===GAME_CATEGORIES.length) window.GameRewards.ensureIssueDate();
   }
-  wordProgress.active=null;
-  wordProgress.round=null;
+  if(!replayMode){
+    wordProgress.active=null;
+    wordProgress.round=null;
+  }
   saveWordProgress();
   refreshRewardCounter();
   window.GameCloud.flush(); // Победа/поражение сразу отправляются в облако.
@@ -760,11 +775,11 @@ function finishGame(won) {
     resultQuestion.textContent=currentEntry?.hint||"";
     resultAnswer.textContent=(currentEntry?.display||currentWord).toLocaleUpperCase("ru-RU");
     revealed.fill(true);
-    resultTitle.textContent=complete?"УРОВЕНЬ "+selectedLevel+" ПРОЙДЕН!":"ПОЗДРАВЛЯЕМ!";
+    resultTitle.textContent=complete?(replayMode?"УРОВЕНЬ ПРОЙДЕН ЕЩЁ РАЗ!":"УРОВЕНЬ "+selectedLevel+" ПРОЙДЕН!"):"ПОЗДРАВЛЯЕМ!";
     resultText.textContent=complete
-      ? "Все 20 слов разгаданы!"+(selectedLevel<MAX_LEVEL?" Следующий уровень открыт.":" Все пять уровней категории завершены!")
-      : "Ты угадал слово! Осталось разгадать: "+(wordBank.length-wordProgress.solved.size)+".";
-    if (complete) {
+      ? (replayMode?"Все 20 слов снова разгаданы! Отличная тренировка.":"Все 20 слов разгаданы!"+(selectedLevel<MAX_LEVEL?" Следующий уровень открыт.":" Все пять уровней категории завершены!"))
+      : "Ты угадал слово! Осталось разгадать: "+(wordBank.length-sessionSolvedSize())+".";
+    if (complete && !replayMode) {
       resultText.textContent+= selectedLevel<MAX_LEVEL
         ? " 🧩 Найдена часть таинственной печати! Посмотри её в разделе «Тайна десяти печатей»."
         : " 🧩 Пять частей собраны! Печать категории раскрыта. Загляни в раздел «Тайна десяти печатей».";
@@ -942,7 +957,7 @@ nextWordButton.addEventListener("click",async ()=>{
   nextWordButton.disabled=true;
   try { await window.YandexPlatform.showInterstitialIfDue(); }
   finally { nextWordButton.disabled=false; }
-  if (wordProgress.completed && wordProgress.solved.size===wordBank.length) {
+  if (sessionComplete()) {
     resultBackdrop.hidden=true;
     showScreen(homeScreen);
     showLevels(selectedCategory);
@@ -1059,8 +1074,8 @@ function showLevels(id) {
     const title=document.createElement("strong");
     title.textContent=(level===5?"Мастер слов":LEVEL_NAMES[level-1]);
     const detail=document.createElement("small");
-    detail.textContent=level===5?"9+ букв и выражения":
-      (level+4)+" букв · "+(progress.completed?"Пройден":"20 заданий");
+    const levelFormat=level===5?"9+ букв и выражения":(level+4)+" букв";
+    detail.textContent=levelFormat+" · "+(progress.completed?"Пройден · можно повторить":"20 заданий");
     info.append(title,detail);
     const count=document.createElement("span");
     count.className="level-count";
@@ -1078,6 +1093,9 @@ function startLevel(id,level) {
   selectedLevel=level;
   wordProgress=allProgress[id][level];
   wordBank=wordsInCategory(id,level);
+  replayMode=wordProgress.completed && wordProgress.solved.size===wordBank.length;
+  replaySolved=new Set();
+  replayAttempted=new Set();
   previousWord="";
   startGame();
   showScreen(gameScreen);
