@@ -1,4 +1,5 @@
 /* Пасхалка «Бинарный импульс»: мобильный экран и печатная грамота А4. */
+#nicknameForm[hidden]{display:none!important}
 .nickname-form{
   display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 8px;
   margin:0 0 15px;text-align:left;color:#fff;
@@ -80,6 +81,7 @@
 @media print{
   @page{size:A4 portrait;margin:0}
   html,body{background:#fff!important;width:210mm!important;height:297mm!important;margin:0!important;padding:0!important}
+  #menuDetailsBody,.home-details,.home-card,.home-screen{overflow:visible!important;max-height:none!important;clip-path:none!important}
   body *{visibility:hidden!important}
   #certificateSheet,#certificateSheet *{visibility:visible!important}
   #certificateSheet{position:fixed!important;left:0!important;top:0!important;
