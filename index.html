@@ -54,29 +54,28 @@
         <button type="button" id="menuRules" class="home-menu-button menu-rules">? <span>КАК ИГРАТЬ</span></button>
       </nav>
       <section id="categoryScreen" class="category-screen" hidden aria-labelledby="categoryTitle">
+        <button type="button" id="categoryBack" class="nav-return">← Меню</button>
         <h3 id="categoryTitle">ВЫБОР КАТЕГОРИИ</h3>
         <p class="category-level-heading">10 КАТЕГОРИЙ · 5 УРОВНЕЙ</p>
         <div id="categoryList" class="category-list"></div>
         <p class="category-goal">1 000 слов и выражений · 20 заданий в каждом уровне</p>
-        <button type="button" id="categoryBack" class="home-back">← К меню</button>
       </section>
       <section id="levelsScreen" class="levels-screen" hidden aria-labelledby="levelsTitle">
+        <button type="button" id="levelsBack" class="nav-return">← Категории</button>
         <h3 id="levelsTitle">УРОВНИ</h3>
         <p class="levels-subtitle" id="levelsSubtitle">Выбери сложность</p>
         <div id="levelsList" class="levels-list"></div>
-        <button type="button" id="levelsBack" class="home-back">← Категории</button>
       </section>
       <section id="menuDetails" class="home-details" aria-live="polite" hidden>
+        <button type="button" id="menuDetailsBack" class="nav-return">← Меню</button>
         <h3 id="menuDetailsTitle"></h3>
         <div id="menuDetailsBody"></div>
-        <button type="button" id="menuDetailsBack" class="home-back">← К меню</button>
       </section>
-      <button type="button" id="menuSplashBack" class="home-splash-back">← На заставку</button>
     </section>
   </main>
   <main class="game" id="gameScreen" hidden>
     <section class="game-card">
-      <button type="button" id="gameMenuBack" class="game-menu-back" aria-label="Вернуться к выбору уровня">← Уровни</button>
+      <button type="button" id="gameMenuBack" class="nav-return game-menu-back" aria-label="Вернуться к выбору уровня">← Уровни</button>
       <h1>Угадай слово</h1>
       <div class="audio-controls game-audio" role="group" aria-label="Настройки звука">
         <button type="button" data-audio="music" aria-pressed="true">♫ Музыка: ВКЛ</button>
