@@ -886,3 +886,30 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
   .game .preview-cell.victory-arrived,.game .word-preview.victory-glow,
   .result-banner.win,.result-banner.win .result-ornament{animation:none!important}
 }
+
+/* Компактный набор подсказок: скрыт до нажатия, не мешает мобильному геймплею. */
+.game .row[hidden]{display:none!important}
+.game .hint-shop{margin:7px 0 10px;padding:9px 11px;border:1px solid #a7a8f16e;
+  border-radius:14px;background:#24265cbb;color:#fff9ef}
+.game .hint-shop summary{cursor:pointer;font-weight:850;font-size:15px;
+  padding:5px 2px;list-style-position:inside}
+.game .hint-shop-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;margin:12px 0}
+.game .hint-shop button,.game .hint-ad select{min-width:0;border:1px solid #e4d1a0;
+  border-radius:9px;padding:9px 7px;font:inherit;font-size:12px;font-weight:750;
+  color:#fff9e6;background:linear-gradient(125deg,#6b55bd,#364c85)}
+.game .hint-shop button:disabled{opacity:.44;cursor:not-allowed}
+.game .hint-shop button span{font-size:12px;color:#ffdd8f;white-space:nowrap}
+.game .hint-clue{padding:9px;border-radius:8px;background:#5271ab55;
+  font-weight:700;line-height:1.4}
+.game .hint-ad{display:grid;gap:7px;padding-top:10px;
+  border-top:1px solid #ddd4fb55}
+.game .hint-ad label{font-size:12px;font-weight:700}
+.game .hint-ad select{width:100%;color:#fff;background:#333b78}
+.game .hint-ad select option{color:#222;background:#fff}
+.game #hintAd{background:linear-gradient(120deg,#aa6b2d,#725097)}
+.game #hintStatus{min-height:1em;font-size:12px;color:#ffe8b5;line-height:1.4}
+.game .hint-selectable{cursor:pointer}
+.game .hint-shop[open]~.message{margin-top:5px}
+.game .hint-eliminated{opacity:.22;filter:grayscale(1);cursor:not-allowed}
+@media(max-width:355px){.game .hint-shop-grid{grid-template-columns:1fr}}
