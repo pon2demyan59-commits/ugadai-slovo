@@ -905,9 +905,35 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
 .game .hint-ad{display:grid;gap:7px;padding-top:10px;
   border-top:1px solid #ddd4fb55}
 .game .hint-ad label{font-size:12px;font-weight:700}
-.game .hint-ad select{width:100%;color:#fff;background:#333b78}
-.game .hint-ad select option{color:#222;background:#fff}
-.game #hintAd{background:linear-gradient(120deg,#aa6b2d,#725097)}
+/* Выбор награды — игровые карточки вместо системного выпадающего списка. */
+.game .bonus-choices{min-width:0;margin:0;padding:0;border:0}
+.game .bonus-choices legend{padding:0 0 9px;font-size:14px;font-weight:900;color:#ffeda6}
+.game .bonus-choices-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.game .bonus-choice{position:relative;display:block;min-width:0;cursor:pointer}
+.game .bonus-choice input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.game .bonus-choice span{display:flex;align-items:center;justify-content:center;gap:5px;
+  min-height:57px;padding:9px 5px;border:2px solid #b9a7ec;border-bottom:4px solid #544195;
+  border-radius:12px;background:linear-gradient(145deg,#675ab6,#3b4289);color:#fff;
+  text-align:center;font-size:clamp(11px,3vw,13px);font-weight:800;line-height:1.3;
+  box-shadow:inset 0 2px #ffffff44,0 3px 8px #13145055;transition:filter .15s ease,transform .15s ease}
+.game .bonus-choice strong{color:#ffe79b;font-size:15px;white-space:nowrap}
+.game .bonus-choice input:checked + span{border-color:#fff7c8;border-bottom-color:#c28b25;
+  background:linear-gradient(150deg,#ffe38c,#ffae43);color:#46317d;
+  box-shadow:0 0 0 2px #fff4af99,0 5px 13px #ffcd6580}
+.game .bonus-choice input:checked + span strong{color:#653391}
+.game .bonus-choice input:focus-visible + span{outline:3px solid #fff;outline-offset:3px}
+.game .bonus-choice:hover span{filter:brightness(1.08)}
+.game .bonus-choice:active span{transform:translateY(2px)}
+.game #hintAd{min-height:47px;font-size:14px;background:linear-gradient(155deg,#ffdf77,#ffad32);
+  color:#50317c;border:2px solid #fff6ce;border-bottom:5px solid #c17b25;
+  box-shadow:inset 0 2px #fffa,0 5px 12px #20136b66}
+.game .streak-praise{margin:0 0 17px;padding:11px 12px;border:2px solid #ffe59b;
+  border-radius:13px;background:linear-gradient(145deg,#5131aa,#7540c2);
+  color:#fff3b3;font-size:clamp(15px,4.4vw,19px);font-weight:950;text-align:center;
+  box-shadow:0 0 20px #ffdc7066;animation:streak-pop .35s ease-out both}
+.game .streak-praise[hidden]{display:none!important}
+@keyframes streak-pop{from{opacity:0;transform:scale(.93)}to{opacity:1;transform:scale(1)}}
+@media(prefers-reduced-motion:reduce){.game .streak-praise{animation:none}.game .bonus-choice span{transition:none}}
 .game #hintStatus{min-height:1em;font-size:12px;color:#ffe8b5;line-height:1.4}
 .game .hint-selectable{cursor:pointer}
 .game .hint-shop[open]~.message{margin-top:5px}
@@ -986,3 +1012,7 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
   .game .nav-return.game-menu-back{min-width:96px;min-height:35px;padding:7px 9px;font-size:13px}
 }
 @media(prefers-reduced-motion:reduce){.nav-return{transition:none}}
+
+/* Вся активная строка кликабельна, а невидимый ввод занимает её целиком. */
+.game .row.active{cursor:text}
+.game .row.active .line-input{cursor:text;touch-action:manipulation}
