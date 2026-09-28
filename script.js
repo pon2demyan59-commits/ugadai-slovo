@@ -28,7 +28,9 @@ function recordResult(won) {
 const WORD_PROGRESS_KEY = "ugadai-slovo-category-progress-v2";
 const UI_STORAGE_KEY = "ugadai-slovo-ui-v1";
 const categoryIds = new Set(GAME_CATEGORIES.map(c => c.id));
-const wordsInCategory = id => GAME_WORDS.filter(w => w.category === id).map(w => w.word);
+// Сейчас доступен первый уровень. Для следующих уровней у слов предусмотрено поле level.
+const CURRENT_LEVEL = 1;
+const wordsInCategory = id => GAME_WORDS.filter(w => w.category === id && (w.level || 1) === CURRENT_LEVEL).map(w => w.word);
 function loadAllProgress() {
   let saved = {}, fresh = false;
   try {
@@ -120,8 +122,8 @@ function showCollectionComplete() {
   resultBanner.classList.remove("lose");
   resultBanner.classList.add("win");
   resultTitle.textContent = "ВСЕ СЛОВА РАЗГАДАНЫ!";
-  resultText.textContent = "Ты разгадал все " + wordBank.length + " слов. Можешь начать новый круг!";
-  nextWordButton.textContent = "Начать заново";
+  resultText.textContent = "Первый уровень пройден! Все " + wordBank.length + " слов этой категории разгаданы. Можешь пройти уровень заново.";
+  nextWordButton.textContent = "Повторить уровень 1";
   resultBackdrop.hidden = false;
   nextWordButton.focus();
 }
@@ -179,7 +181,7 @@ function startGame() {
   resultBanner.classList.remove("win","lose");
   hintElement.textContent = selected.hint;
   const category = GAME_CATEGORIES.find(c => c.id === selectedCategory);
-  document.querySelector("#activeCategoryTitle").textContent = category.icon + " " + category.title;
+  document.querySelector("#activeCategoryTitle").textContent = category.icon + " " + category.title + " · Уровень 1";
   messageElement.textContent = "Введи слово в первую строку.";
   renderBoard();
   renderPreview();
@@ -532,9 +534,9 @@ function finishGame(won) {
     resultTitle.textContent = "ПОЗДРАВЛЯЕМ!";
     const remaining = wordBank.length - wordProgress.solved.size;
     resultText.textContent = remaining
-      ? "Ты угадал слово! Осталось разгадать: " + remaining + "."
-      : "Ты разгадал все " + wordBank.length + " слов! Поздравляем!";
-    nextWordButton.textContent = remaining ? "Следующее слово" : "Начать заново";
+      ? "Ты угадал слово! На первом уровне осталось: " + remaining + "."
+      : "Первый уровень пройден! Все " + wordBank.length + " слов разгаданы!";
+    nextWordButton.textContent = remaining ? "Следующее слово" : "Повторить уровень 1";
     resultBanner.classList.add("win");
   } else {
     // Не раскрываем начальные буквы даже при поражении.
@@ -620,7 +622,10 @@ function showCategories() {
     title.textContent = category.title;
     const subtitle = document.createElement("small");
     subtitle.textContent = category.description;
-    info.append(title,subtitle);
+    const levelTag = document.createElement("span");
+    levelTag.className = "category-level";
+    levelTag.textContent = "Уровень 1";
+    info.append(title,subtitle,levelTag);
     const count = document.createElement("span");
     count.className = "category-count";
     count.textContent = allProgress[category.id].solved.size + "/" + wordsInCategory(category.id).length;
@@ -664,7 +669,7 @@ document.querySelector("#menuStats").addEventListener("click", () => {
 document.querySelector("#menuRules").addEventListener("click", () => {
   openMenuDetails("КАК ИГРАТЬ");
   const rules = [
-    "Выбери одну из пяти категорий и угадай слово из 5 букв за 4 попытки.",
+    "На первом уровне по 20 слов в каждой из пяти категорий. Угадай слово из 5 букв за 4 попытки.",
     "Зелёная буква — на месте, жёлтая — есть в слове, серая — отсутствует.",
     "Вводи настоящие слова с игровой клавиатуры или клавиатуры телефона.",
     "После четырёх попыток получишь последний шанс вписать недостающие буквы."
