@@ -41,8 +41,8 @@
         <button type="button" data-audio="effects" aria-pressed="true">♪ Звуки: ВКЛ</button>
       </div>
       <form id="nicknameForm" class="nickname-form" autocomplete="off">
-        <label for="nicknameInput">✎ Твой ник для секретной грамоты</label>
-        <input id="nicknameInput" type="text" maxlength="24" placeholder="Придумай ник" aria-describedby="nicknameMessage" required>
+        <label for="nicknameInput">✎ Как тебя зовут в игре?</label>
+        <input id="nicknameInput" type="text" maxlength="24" placeholder="Имя игрока" aria-describedby="nicknameMessage" required>
         <button type="submit">Сохранить</button>
         <p id="nicknameMessage" class="nickname-message" role="status" aria-live="polite"></p>
       </form>
@@ -112,16 +112,18 @@
         </div>
         <p class="hint-clue" id="hintClueText" hidden></p>
         <div class="hint-ad">
-          <label for="hintAdKind">Бонус за добровольный просмотр рекламы</label>
-          <select id="hintAdKind" aria-label="Выбрать рекламную награду">
-            <option value="letter">+3 открытия букв</option>
-            <option value="first">+3 первые буквы</option>
-            <option value="vowel">+3 открытия гласных</option>
-            <option value="attempt">+2 дополнительные попытки</option>
-            <option value="eliminate">+2 удаления лишних букв</option>
-            <option value="clue">+2 подсказки о слове</option>
-          </select>
-          <button type="button" id="hintAd">▶ Смотреть рекламу и получить бонус</button>
+          <fieldset id="hintAdKind" class="bonus-choices">
+            <legend>🎁 Выбери бонус за просмотр рекламы</legend>
+            <div class="bonus-choices-grid">
+              <label class="bonus-choice"><input type="radio" name="hintAdKind" value="letter" checked><span>🔤 <strong>+3</strong> открытия букв</span></label>
+              <label class="bonus-choice"><input type="radio" name="hintAdKind" value="first"><span>🔡 <strong>+3</strong> первые буквы</span></label>
+              <label class="bonus-choice"><input type="radio" name="hintAdKind" value="vowel"><span>🅰️ <strong>+3</strong> гласные</span></label>
+              <label class="bonus-choice"><input type="radio" name="hintAdKind" value="attempt"><span>➕ <strong>+2</strong> попытки</span></label>
+              <label class="bonus-choice"><input type="radio" name="hintAdKind" value="eliminate"><span>❌ <strong>+2</strong> удаления букв</span></label>
+              <label class="bonus-choice"><input type="radio" name="hintAdKind" value="clue"><span>🔎 <strong>+2</strong> подсказки о слове</span></label>
+            </div>
+          </fieldset>
+          <button type="button" id="hintAd">▶ Получить выбранный бонус</button>
         </div>
         <p id="hintStatus" role="status" aria-live="polite"></p>
       </details>
@@ -147,6 +149,7 @@
           <strong class="result-answer" id="resultAnswer" hidden></strong>
         </div>
         <p id="resultText"></p>
+        <p id="streakPraise" class="streak-praise" role="status" aria-live="polite" hidden></p>
         <button type="button" id="nextWordButton">Следующее слово</button>
       </section>
     </div>
