@@ -89,6 +89,27 @@
           <span>Осталось: <strong id="attemptsLeft">4</strong></span>
         </div>
       </form>
+      <section class="hint-shop" id="hintShop" aria-label="Помощь в раунде">
+        <h2>💡 Подсказки</h2>
+        <div class="hint-shop-grid">
+          <button type="button" id="hintLetter">🔤 Открыть клетку <span id="hintLetterCount"></span></button>
+          <button type="button" id="hintAttempt">➕ Ещё попытка <span id="hintAttemptCount"></span></button>
+          <button type="button" id="hintEliminate">❌ Убрать лишние буквы <span id="hintEliminateCount"></span></button>
+          <button type="button" id="hintClue">🔎 Подсказка о слове <span id="hintClueCount"></span></button>
+        </div>
+        <p class="hint-clue" id="hintClueText" hidden></p>
+        <div class="hint-ad">
+          <label for="hintAdKind">Бонус за добровольный просмотр рекламы</label>
+          <select id="hintAdKind" aria-label="Выбрать рекламную награду">
+            <option value="letter">+3 открытия букв</option>
+            <option value="attempt">+2 дополнительные попытки</option>
+            <option value="eliminate">+2 удаления лишних букв</option>
+            <option value="clue">+2 подсказки о слове</option>
+          </select>
+          <button type="button" id="hintAd">▶ Смотреть рекламу и получить бонус</button>
+        </div>
+        <p id="hintStatus" role="status" aria-live="polite"></p>
+      </section>
       <p class="message" id="message" role="status" aria-live="polite"></p>
       <section class="alphabet-panel" aria-label="Алфавит">
         <div class="alphabet-grid" id="alphabet"></div>
@@ -128,7 +149,7 @@
   <script src="data/levels/cinema.js"></script>
   <script src="data/levels/sport.js"></script>
   <script src="data/levels/travel.js"></script>
-  <script src="stats.js"></script>
+  <script src="hints.js"></script>\n  <script src="analytics.js"></script>\n  <script src="stats.js"></script>
   <script src="rewards.js"></script>
   <script src="yandex-platform.js"></script>
   <script src="cloud-save.js"></script>
