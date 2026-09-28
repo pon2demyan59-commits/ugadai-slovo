@@ -6,7 +6,8 @@
   const KEYS={
     progress:"ugadai-slovo-category-level-progress-v3",
     score:"ugadai-slovo-score-v1",
-    stats:"ugadai-slovo-stats-v1"
+    stats:"ugadai-slovo-stats-v1",
+    profile:"ugadai-slovo-profile-v1"
   };
   let player=null, timer=null, pending=false, saving=false;
   function read(key){try{return JSON.parse(localStorage.getItem(key)||"null");}catch{return null;}}
@@ -65,7 +66,7 @@
     return result;
   }
   function snapshot(){
-    return {version:1,progress:read(KEYS.progress),score:read(KEYS.score),stats:read(KEYS.stats)};
+    return {version:1,progress:read(KEYS.progress),score:read(KEYS.score),stats:read(KEYS.stats),profile:read(KEYS.profile)};
   }
   async function prepare(){
     if(!window.YandexPlatform.isYandex)return;
@@ -92,6 +93,12 @@
         if(progress)write(KEYS.progress,progress);
         if(score)write(KEYS.score,score);
         if(stats)write(KEYS.stats,stats);
+        const localProfile=read(KEYS.profile)||{};
+        const remoteProfile=cloud.profile&&typeof cloud.profile==="object"?cloud.profile:{};
+        const chosenNick=typeof localProfile.nickname==="string"&&localProfile.nickname.trim()?localProfile.nickname:remoteProfile.nickname;
+        const nick=typeof chosenNick==="string"&&chosenNick.length<=24&&/^[a-zа-яё0-9 _-]{2,24}$/iu.test(chosenNick)?chosenNick:"";
+        const dates=[localProfile.certificateDate,remoteProfile.certificateDate].filter(d=>typeof d==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
+        write(KEYS.profile,{nickname:nick,certificateDate:dates[0]||""});
       }
     }catch(error){console.warn("Облачное сохранение недоступно:",error);player=null;}
   }
