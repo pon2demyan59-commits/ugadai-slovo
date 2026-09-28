@@ -137,6 +137,7 @@ function showCollectionComplete() {
   resultText.textContent="Все 20 заданий категории разгаданы!"+(selectedLevel<MAX_LEVEL?" Следующий уровень открыт.":" Категория полностью пройдена!");
   nextWordButton.textContent="К уровням";
   resultBackdrop.hidden=false;
+  window.YandexPlatform.setGameplay(false);
 }
 
 // Русская игровая клавиатура// Русская игровая клавиатура дополняет системную клавиатуру телефона.
@@ -219,6 +220,7 @@ function startGame() {
     }
   }
   restoringRound=false;
+  window.YandexPlatform.setGameplay(true);
   saveRound();
   saveWordProgress();
 }
@@ -581,6 +583,7 @@ function finishGame(won) {
   }
   renderPreview();
   resultBackdrop.hidden=false;
+  window.YandexPlatform.roundFinished();
   nextWordButton.focus();
 }
 
@@ -596,7 +599,11 @@ finalInput.addEventListener("input", cleanFinalInput);
 finalEntry.addEventListener("click", () => {
   if (phase === "final") finalInput.focus();
 });
-nextWordButton.addEventListener("click",()=>{
+nextWordButton.addEventListener("click",async ()=>{
+  if (nextWordButton.disabled) return;
+  nextWordButton.disabled=true;
+  try { await window.YandexPlatform.showInterstitialIfDue(); }
+  finally { nextWordButton.disabled=false; }
   if (wordProgress.completed && wordProgress.solved.size===wordBank.length) {
     resultBackdrop.hidden=true;
     showScreen(homeScreen);
@@ -648,6 +655,7 @@ function showScreen(screen) {
   gameScreen.hidden=screen!==gameScreen;
   if (screen===homeScreen) setHomeView("menu");
   saveUiState();
+  window.YandexPlatform.setGameplay(screen===gameScreen && phase!=="finished");
 }
 function openMenuDetails(title,view) {
   detailsTitle.textContent=title;
@@ -776,6 +784,9 @@ if (initialUiState.screen==="home") {
   else if (initialUiState.homeView==="rules") document.querySelector("#menuRules").click();
 }
 
-if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
+window.YandexPlatform.ready();
+
+// Яндекс самостоятельно управляет файлами игры; SW оставляем для GitHub Pages.
+if (!window.YandexPlatform.isYandex && "serviceWorker" in navigator && window.location.protocol !== "file:") {
   navigator.serviceWorker.register("service-worker.js").catch(() => {});
 }
