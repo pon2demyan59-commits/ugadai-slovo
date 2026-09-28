@@ -161,6 +161,8 @@ const resultBackdrop = document.querySelector("#resultBackdrop");
 const resultBanner = resultBackdrop.querySelector(".result-banner");
 const resultTitle = document.querySelector("#resultTitle");
 const resultText = document.querySelector("#resultText");
+const resultQuestion = document.querySelector("#resultQuestion");
+const resultAnswer = document.querySelector("#resultAnswer");
 const nextWordButton = document.querySelector("#nextWordButton");
 let guessInput = null;
 let currentWord = "";
@@ -200,6 +202,9 @@ function startGame() {
   finalForm.classList.remove("active");
   messageElement.classList.remove("is-error");
   resultBackdrop.hidden=true;
+  resultQuestion.hidden=true;
+  resultAnswer.hidden=true;
+  previewElement.classList.remove("victory-glow");
   resultBanner.classList.remove("win","lose");
   hintElement.textContent=selected.hint;
   const cat=GAME_CATEGORIES.find(c=>c.id===selectedCategory);
@@ -483,6 +488,8 @@ function checkGuess(guess) {
   }
   messageElement.classList.remove("is-error");
   const result = getGuessResult(guess);
+  // Снимок верхней строки до проверки нужен для анимации перелёта.
+  const previouslyRevealed=[...revealed];
   roundGuesses.push(guess);
   const row = boardElement.children[currentAttempt];
   result.forEach((item, i) => {
@@ -501,8 +508,25 @@ function checkGuess(guess) {
   updateAlphabet(result);
   currentAttempt++;
   updateStats();
+  const isWin=guess === currentWord || revealed.every(Boolean);
+  if (isWin && currentAttempt < maxAttempts && !restoringRound) {
+    // До 4-й попытки показываем именно перелёт букв, а не мгновенный результат.
+    phase="celebrating";
+    revealed=previouslyRevealed;
+    renderPreview();
+    messageElement.textContent="✨ Слово разгадано! Собираем ответ…";
+    window.YandexPlatform.setGameplay(false);
+    saveWordProgress();
+    animateWinningLetters(row).then(()=>{
+      revealed.fill(true);
+      renderPreview();
+      previewElement.classList.add("victory-glow");
+      finishGame(true);
+    });
+    return;
+  }
   renderPreview();
-  if (guess === currentWord || revealed.every(Boolean)) {
+  if (isWin) {
     finishGame(true);
   } else if (currentAttempt >= maxAttempts) {
     beginFinalChance();
@@ -511,6 +535,44 @@ function checkGuess(guess) {
     messageElement.textContent = "Правильные буквы появились в верхней рамке.";
   }
   saveRound();
+}
+
+/* Буквы летят из угаданной строки в верхний ответ с небольшим интервалом.
+   При сниженной анимации или неподдерживаемом API ответ раскрывается сразу. */
+async function animateWinningLetters(sourceRow) {
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ||
+      typeof Element==="undefined" || !Element.prototype.animate) return;
+  const source=Array.from(sourceRow.querySelectorAll(".cell"));
+  const destination=Array.from(previewElement.querySelectorAll(".preview-cell"));
+  const count=Math.min(source.length,destination.length);
+  const flights=[];
+  for (let i=0;i<count;i++) {
+    const from=source[i].getBoundingClientRect();
+    const to=destination[i].getBoundingClientRect();
+    if (!from.width || !to.width) continue;
+    const tile=source[i].cloneNode(true);
+    tile.classList.add("victory-flying-letter");
+    tile.style.cssText="position:fixed;z-index:60;left:"+from.left+"px;top:"+from.top+
+      "px;width:"+from.width+"px;height:"+from.height+"px;pointer-events:none;margin:0;";
+    document.body.append(tile);
+    const delay=i*75;
+    const flight=tile.animate([
+      {transform:"translate(0,0) scale(1)",opacity:1,filter:"brightness(1)"},
+      {transform:"translate("+(to.left-from.left)*.5+"px,"+
+        ((to.top-from.top)*.5-35)+"px) scale(1.24)",opacity:1,filter:"brightness(1.6)",offset:.58},
+      {transform:"translate("+(to.left-from.left)+"px,"+(to.top-from.top)+
+        "px) scale("+(to.width/from.width)+")",opacity:1,filter:"brightness(1.2)"}
+    ],{duration:540,delay,easing:"cubic-bezier(.22,.8,.24,1)",fill:"forwards"});
+    const done=flight.finished.catch(()=>{}).then(()=>{
+      tile.remove();
+      destination[i].textContent=currentWord[i].toUpperCase();
+      destination[i].classList.add("is-known","victory-arrived");
+    });
+    flights.push(done);
+  }
+  await Promise.all(flights);
+  // Последняя доля секунды оставляет собранное слово на экране.
+  await new Promise(resolve=>setTimeout(resolve,380));
 }
 
 function beginFinalChance() {
@@ -578,6 +640,10 @@ function finishGame(won) {
   if (guessInput) {guessInput.remove();guessInput=null;}
   finalForm.classList.remove("active");
   if (won) {
+    resultQuestion.hidden=false;
+    resultAnswer.hidden=false;
+    resultQuestion.textContent=currentEntry?.hint||"";
+    resultAnswer.textContent=(currentEntry?.display||currentWord).toLocaleUpperCase("ru-RU");
     revealed.fill(true);
     resultTitle.textContent=complete?"УРОВЕНЬ "+selectedLevel+" ПРОЙДЕН!":"ПОЗДРАВЛЯЕМ!";
     resultText.textContent=complete
@@ -587,6 +653,8 @@ function finishGame(won) {
     nextWordButton.textContent=complete?"К уровням":"Следующее слово";
     resultBanner.classList.add("win");
   } else {
+    resultQuestion.hidden=true;
+    resultAnswer.hidden=true;
     resultTitle.textContent="ПОКА НЕ УГАДАНО";
     resultText.textContent="Это слово осталось загадкой. Следующим будет новое, а затем вернёмся к неразгаданным.";
     nextWordButton.textContent="Следующее слово";
