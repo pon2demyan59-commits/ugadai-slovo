@@ -5,7 +5,7 @@ const vm=require("node:vm");
 const assert=require("node:assert/strict");
 const root=path.resolve(__dirname,"..");
 const required=[
-  "index.html","style.css","stats.css","script.js","stats.js",
+  "index.html","style.css","stats.css","rewards.css","script.js","stats.js","rewards.js",
   "yandex-platform.js","cloud-save.js","game-bootstrap.js",
   "data/words.js","data/valid-words.js","data/valid-long-words.js",
   "data/long-words-loader.js","data/DICTIONARY_LICENSE.txt",
@@ -22,13 +22,14 @@ for(const file of [...required,...categoryFiles].filter(file=>file.endsWith(".js
 const html=fs.readFileSync(path.join(root,"index.html"),"utf8");
 for(const file of [...required,...categoryFiles].filter(file=>/\.js$/.test(file)&&
   !["data/valid-long-words.js","script.js"].includes(file))){
-  if(file==="yandex-platform.js"||file==="cloud-save.js"||file==="game-bootstrap.js"||
+  if(file==="rewards.js"||file==="yandex-platform.js"||file==="cloud-save.js"||file==="game-bootstrap.js"||
     file==="data/words.js"||file==="data/valid-words.js"||file==="data/long-words-loader.js"||
     file==="stats.js"||file.startsWith("data/levels/")){
       assert(html.includes('src="'+file+'"'),"Не подключён "+file);
   }
 }
 assert(html.includes('src="game-bootstrap.js"'),"Нет загрузчика игры");
+assert(html.includes('id="nicknameInput"')&&html.includes('id="menuReward"'),"Нет ника или секретной награды");
 assert(!html.includes('<script src="script.js"'),"script.js должен загружаться после облачных сохранений");
 const context={};
 vm.createContext(context);
