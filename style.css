@@ -740,3 +740,19 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
 .category-level-heading { margin:-10px 0 15px; color:#ffe888; font-weight:950; font-size:clamp(12px,3.5vw,15px); letter-spacing:.08em; }
 .category-level { width:max-content; padding:2px 8px; border-radius:9px; background:#ffffff46; color:inherit; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.035em; }
 @media(max-width:380px) { .category-level-heading { margin:-5px 0 9px; } .category-info { gap:2px; } .category-level { font-size:10px; padding:1px 6px; } }
+
+/* Прокрутка десяти категорий на маленьком телефоне без вытеснения кнопки назад. */
+.category-screen { width:100%; }
+.category-list {
+  max-height:min(63dvh,670px); overflow-y:auto; overscroll-behavior:contain;
+  padding:4px 4px 10px; scrollbar-width:thin; scrollbar-color:#ffffff9c transparent;
+}
+.category-total { display:block; margin-top:2px; font-size:clamp(10px,2.9vw,12px); opacity:.89; font-weight:700; }
+.category-goal { margin:11px 0 0; color:#fff; font-size:clamp(12px,3.3vw,14px); font-weight:800; }
+.category-item-5 { background:linear-gradient(155deg,#54c5f9,#496de9); border-bottom-color:#3453b9; }
+.category-item-6 { background:linear-gradient(155deg,#ff7cbd,#e859a1); border-bottom-color:#be3982; }
+.category-item-7 { background:linear-gradient(155deg,#a889f9,#795bdb); border-bottom-color:#6141bf; }
+.category-item-8 { background:linear-gradient(155deg,#65d997,#2faeaa); border-bottom-color:#1b9693; }
+.category-item-9 { background:linear-gradient(155deg,#ffbc72,#ed8e5e); border-bottom-color:#cf7443; }
+@media(max-height:620px) { .category-list { max-height:min(54dvh,400px); } }
+@media(max-width:380px) { .category-item { min-height:65px; } .category-info small { font-size:10px; } .category-total { font-size:10px; } }
