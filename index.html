@@ -21,7 +21,7 @@
       </div>
       <h1 id="welcomeTitle" class="welcome-title">УГАДАЙ<br><span>СЛОВО</span></h1>
       <p class="welcome-subtitle">Найди слово за 4 попытки!</p>
-      <button id="welcomeEnter" class="welcome-button" type="button">ВХОД <span aria-hidden="true">➜</span></button>
+      <button id="welcomeEnter" class="welcome-button" type="button" disabled>ВХОД <span aria-hidden="true">➜</span></button>
     </div>
     <div class="welcome-decor welcome-decor-one" aria-hidden="true">?</div>
     <div class="welcome-decor welcome-decor-two" aria-hidden="true">✦</div>
@@ -34,6 +34,7 @@
       <nav class="home-menu" aria-label="Главное меню">
         <button type="button" id="menuPlay" class="home-menu-button menu-play">▶ <span>ИГРАТЬ</span></button>
         <button type="button" id="menuStats" class="home-menu-button menu-stats">★ <span>СТАТИСТИКА</span></button>
+        <button type="button" id="menuCloud" class="home-menu-button menu-cloud" hidden title="Войти через Яндекс ID, чтобы сохранять прогресс между устройствами">☁ <span>СОХРАНИТЬ В ОБЛАКЕ</span></button>
         <button type="button" id="menuRules" class="home-menu-button menu-rules">? <span>КАК ИГРАТЬ</span></button>
       </nav>
       <section id="categoryScreen" class="category-screen" hidden aria-labelledby="categoryTitle">
@@ -115,6 +116,7 @@
   <script src="data/levels/travel.js"></script>
   <script src="stats.js"></script>
   <script src="yandex-platform.js"></script>
-  <script src="script.js"></script>
+  <script src="cloud-save.js"></script>
+  <script src="game-bootstrap.js"></script>
 </body>
 </html>
