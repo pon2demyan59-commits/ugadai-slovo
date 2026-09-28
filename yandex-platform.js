@@ -9,6 +9,13 @@
   let settleSdk;
   const whenSdk=new Promise(resolve=>{settleSdk=resolve;});
   let adActive=false,finishedRounds=0,lastAd=Date.now();
+  function setAdActive(active){
+    const next=Boolean(active);
+    if(adActive===next)return;
+    adActive=next;
+    document.dispatchEvent(new Event(next?"game:ad-start":"game:ad-end"));
+    syncGameplay();
+  }
   function syncGameplay() {
     if(!sdk || !uiReady)return;
     const shouldRun=desiredGameplay && !document.hidden && !adActive;
@@ -54,15 +61,15 @@
   function showInterstitialIfDue(){
     if(!sdk?.adv?.showFullscreenAdv || adActive || finishedRounds<4 ||
       Date.now()-lastAd<180000)return Promise.resolve(false);
-    finishedRounds=0;lastAd=Date.now();adActive=true;syncGameplay();
+    finishedRounds=0;lastAd=Date.now();setAdActive(true);
     return new Promise(resolve=>{
       let settled=false;
       function finish(shown){
-        if(settled)return;settled=true;adActive=false;syncGameplay();resolve(Boolean(shown));
+        if(settled)return;settled=true;setAdActive(false);resolve(Boolean(shown));
       }
       try{
         sdk.adv.showFullscreenAdv({callbacks:{
-          onOpen:()=>{adActive=true;syncGameplay();},
+          onOpen:()=>setAdActive(true),
           onClose:shown=>finish(shown),
           onError:error=>{console.warn("Реклама:",error);finish(false);}
         }});
@@ -73,16 +80,16 @@
   // onRewarded, закрытие рекламы само по себе бонус не выдаёт.
   function showRewarded(){
     if(!sdk?.adv?.showRewardedVideo || adActive)return Promise.resolve(false);
-    adActive=true;syncGameplay();
+    setAdActive(true);
     return new Promise(resolve=>{
       let settled=false,rewarded=false;
       function finish(){
         if(settled)return;
-        settled=true;adActive=false;syncGameplay();resolve(rewarded);
+        settled=true;setAdActive(false);resolve(rewarded);
       }
       try{
         sdk.adv.showRewardedVideo({callbacks:{
-          onOpen:()=>{adActive=true;syncGameplay();},
+          onOpen:()=>setAdActive(true),
           onRewarded:()=>{rewarded=true;},
           onClose:finish,
           onError:error=>{console.warn("Бонусная реклама:",error);finish();}
