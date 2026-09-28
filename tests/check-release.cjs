@@ -91,6 +91,45 @@ const bridge=fs.readFileSync(path.join(root,"yandex-platform.js"),"utf8");
 assert(bridge.includes('script.src="/sdk.js"'),"SDK должен подключаться с /sdk.js");
 assert(bridge.includes("LoadingAPI")&&bridge.includes("GameplayAPI")&&bridge.includes("showFullscreenAdv"),
   "Проверьте интеграцию SDK");
+
+/* Тест пункта 2.14: SDK-язык считывается при запуске, а для неподдерживаемых
+   локализаций используется русский. Проверяем и международный домен Яндекса. */
+async function checkPlatformLanguage(){
+  for(const [hostname,portalLang,expected] of [
+    ["games.yandex.ru","ru","ru"],
+    ["games.yandex.com","en","ru"],
+    ["games.yandex.kz","kk","ru"]
+  ]){
+    let reads=0,scriptSrc="";
+    const doc={
+      hidden:false,
+      documentElement:{lang:"ru"},
+      addEventListener(){},
+      createElement(){return{};},
+      head:{append(script){scriptSrc=script.src;script.onload();}}
+    };
+    const mockSdk={
+      environment:{i18n:{get lang(){reads++;return portalLang;}}},
+      features:{LoadingAPI:{ready(){}},GameplayAPI:{start(){},stop(){}}}
+    };
+    const sandbox={
+      location:{hostname},
+      document:doc,
+      Date,Promise,console,
+      window:{YaGames:{init:async()=>mockSdk}}
+    };
+    vm.createContext(sandbox);
+    vm.runInContext(bridge,sandbox,{filename:"yandex-platform.js"});
+    assert.equal(await sandbox.window.YandexPlatform.whenSdk,mockSdk);
+    assert.equal(scriptSrc,"/sdk.js");
+    assert.equal(reads,1,"Язык необходимо читать через SDK при запуске");
+    assert.equal(sandbox.window.YandexPlatform.portalLanguage,portalLang);
+    assert.equal(sandbox.window.YandexPlatform.language,expected);
+    assert.equal(doc.documentElement.lang,expected);
+  }
+  console.log("OK: SDK i18n ru/en/kk, русский fallback, международные домены Яндекса.");
+}
+checkPlatformLanguage().catch(error=>{console.error(error);process.exitCode=1;});
 const worker=fs.readFileSync(path.join(root,"service-worker.js"),"utf8");
 assert(worker.includes('event.request.mode === "navigate"'),"Нет проверки свежего HTML");
 console.log("OK: 1000 слов, 50 уровней, SDK, ник, облачный профиль и 10 фрагментов награды.");
