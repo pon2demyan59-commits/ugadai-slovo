@@ -135,6 +135,7 @@ function showCollectionComplete() {
   resultBanner.classList.add("win");
   wordProgress.completed=true;
   saveWordProgress();
+  refreshRewardCounter();
   resultTitle.textContent="УРОВЕНЬ "+selectedLevel+" ПРОЙДЕН!";
   resultText.textContent="Все 20 заданий категории разгаданы!"+(selectedLevel<MAX_LEVEL?" Следующий уровень открыт.":" Категория полностью пройдена!");
   nextWordButton.textContent="К уровням";
@@ -561,9 +562,15 @@ function finishGame(won) {
   if (won) wordProgress.solved.add(currentWord);
   const complete=wordProgress.solved.size===wordBank.length;
   if (complete) wordProgress.completed=true;
+  if (complete && won) {
+    const completed=window.GameRewards.earnedCount(allProgress,GAME_CATEGORIES,MAX_LEVEL,wordsInCategory);
+    resultText.dataset.rewardCount=completed;
+    if (completed===GAME_CATEGORIES.length) window.GameRewards.ensureIssueDate();
+  }
   wordProgress.active=null;
   wordProgress.round=null;
   saveWordProgress();
+  refreshRewardCounter();
   window.GameCloud.flush(); // Победа/поражение сразу отправляются в облако.
   phase="finished";
   guessForm.hidden=true;
@@ -576,6 +583,7 @@ function finishGame(won) {
     resultText.textContent=complete
       ? "Все 20 слов разгаданы!"+(selectedLevel<MAX_LEVEL?" Следующий уровень открыт.":" Все пять уровней категории завершены!")
       : "Ты угадал слово! Осталось разгадать: "+(wordBank.length-wordProgress.solved.size)+".";
+    if (complete) resultText.textContent+=" 🧩 Получен фрагмент секретной благодарности!";
     nextWordButton.textContent=complete?"К уровням":"Следующее слово";
     resultBanner.classList.add("win");
   } else {
@@ -641,14 +649,15 @@ function saveUiState() {
 function setHomeView(view) {
   homeView=view;
   homeMenu.hidden=view!=="menu";
+  document.querySelector("#nicknameForm").hidden=view!=="menu";
   categoryScreen.hidden=view!=="categories";
   levelsScreen.hidden=view!=="levels";
-  details.hidden=view!=="stats" && view!=="rules";
+  details.hidden=view!=="stats" && view!=="rules" && view!=="reward";
   homeCard.classList.toggle("subview",view!=="menu");
-  homeCard.classList.toggle("stats-open",view==="stats");
+  homeCard.classList.toggle("stats-open",view==="stats" || view==="reward");
   homeCard.setAttribute("aria-labelledby",{
     menu:"homeTitle",categories:"categoryTitle",levels:"levelsTitle",
-    stats:"menuDetailsTitle",rules:"menuDetailsTitle"
+    stats:"menuDetailsTitle",rules:"menuDetailsTitle",reward:"menuDetailsTitle"
   }[view]);
   saveUiState();
 }
@@ -754,10 +763,33 @@ document.querySelector("#gameMenuBack").addEventListener("click",()=>{
 });
 document.querySelector("#menuSplashBack").addEventListener("click",()=>showScreen(welcomeScreen));
 document.querySelector("#menuDetailsBack").addEventListener("click",()=>setHomeView("menu"));
+// Ник не обязателен для игры; сохраняется локально и через Яндекс ID.
+const nickForm=document.querySelector("#nicknameForm");
+const nickInput=document.querySelector("#nicknameInput");
+const nickMessage=document.querySelector("#nicknameMessage");
+const rewardCounter=document.querySelector("#rewardCounter");
+nickInput.value=window.GameRewards.getNickname()==="Игрок"?"":window.GameRewards.getNickname();
+nickForm.addEventListener("submit",event=>{
+  event.preventDefault();
+  const saved=window.GameRewards.saveNickname(nickInput.value);
+  nickMessage.textContent=saved.ok?"✓ Ник сохранён: "+saved.nickname:saved.message;
+  if(saved.ok) nickInput.value=saved.nickname;
+});
+function refreshRewardCounter(){
+  const earned=window.GameRewards.earnedCount(allProgress,GAME_CATEGORIES,MAX_LEVEL,wordsInCategory);
+  rewardCounter.textContent=earned+"/10";
+}
+refreshRewardCounter();
+document.querySelector("#menuReward").addEventListener("click",()=>{
+  openMenuDetails("СЕКРЕТНАЯ НАГРАДА","reward");
+  window.GameRewards.render(detailsBody,allProgress,GAME_CATEGORIES,
+    MAX_LEVEL,wordsInCategory,score);
+});
 document.querySelector("#menuStats").addEventListener("click",()=>{
   openMenuDetails("МОЯ СТАТИСТИКА","stats");
   window.GameStatsPanel.render(detailsBody,score,allProgress,GAME_CATEGORIES,
     GAME_WORDS.length,MAX_LEVEL,wordsInCategory);
+  window.GameRewards.appendProgress(detailsBody,allProgress,GAME_CATEGORIES,MAX_LEVEL,wordsInCategory);
 });
 const cloudButton=document.querySelector("#menuCloud");
 if (window.YandexPlatform.isYandex && !window.GameCloud.isAuthorized()) cloudButton.hidden=false;
