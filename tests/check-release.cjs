@@ -111,7 +111,12 @@ async function checkPlatformLanguage(){
     };
     const mockSdk={
       environment:{i18n:{get lang(){reads++;return portalLang;}}},
-      features:{LoadingAPI:{ready(){}},GameplayAPI:{start(){},stop(){}}}
+      features:{LoadingAPI:{ready(){}},GameplayAPI:{start(){},stop(){}}},
+      adv:{showRewardedVideo({callbacks}){
+        callbacks.onOpen?.();
+        if(portalLang==="en")callbacks.onRewarded?.();
+        callbacks.onClose?.();
+      }}
     };
     const sandbox={
       location:{hostname},
@@ -127,6 +132,8 @@ async function checkPlatformLanguage(){
     assert.equal(sandbox.window.YandexPlatform.portalLanguage,portalLang);
     assert.equal(sandbox.window.YandexPlatform.language,expected);
     assert.equal(doc.documentElement.lang,expected);
+    assert.equal(await sandbox.window.YandexPlatform.showRewarded(),portalLang==="en",
+      "Награду выдаём только после onRewarded, а не обычного закрытия рекламы");
   }
   console.log("OK: SDK i18n ru/en/kk, русский fallback, международные домены Яндекса.");
 }
@@ -142,6 +149,22 @@ for(const screen of ["welcome","home","game"]){
 assert(script.includes('initialScreen=startupScreen(initialUiState.screen,navigationType)'));
 assert(script.includes('showScreen(initialScreen==="game"?gameScreen:'),
   "Первый экран должен зависеть от типа навигации");
+// Статистика: пятая бонусная попытка не смешивается с последним шансом.
+const statStore=new Map([["ugadai-slovo-stats-v1",JSON.stringify({
+  distribution:[1,2,3,4,5],streak:0,bestStreak:0,totalDetailed:15})]]);
+const statCtx={
+  localStorage:{getItem:k=>statStore.get(k)||null,setItem:(k,v)=>statStore.set(k,v)},
+  window:{GameCloud:{schedule(){}}},Date,console
+};
+vm.createContext(statCtx);
+vm.runInContext(fs.readFileSync(path.join(root,"stats.js"),"utf8"),statCtx);
+assert.equal(statCtx.window.GameStats.snapshot().distribution[5],5,
+  "Старый последний шанс переносится в новый шестой столбец");
+assert.equal(statCtx.window.GameStats.snapshot().distribution[4],0);
+statCtx.window.GameStats.record(true,5,false);
+assert.equal(statCtx.window.GameStats.snapshot().distribution[4],1,
+  "Пятая попытка учитывается отдельно");
+
 // Экранная клавиатура никогда не зависит от положения курсора.
 assert(script.includes("target.value += letter.toLowerCase()"),"Буквы должны добавляться в конец");
 assert(script.includes("target.value = target.value.slice(0,-1)"),"Удаление последней буквы");
