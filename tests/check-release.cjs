@@ -6,7 +6,7 @@ const assert=require("node:assert/strict");
 const root=path.resolve(__dirname,"..");
 const required=[
   "index.html","style.css","stats.css","rewards.css","script.js","stats.js","rewards.js",
-  "yandex-platform.js","cloud-save.js","game-bootstrap.js","hints.js","analytics.js",
+  "yandex-platform.js","cloud-save.js","game-bootstrap.js","hints.js","analytics.js","audio.js",
   "data/words.js","data/valid-words.js","data/valid-long-words.js",
   "data/long-words-loader.js","data/DICTIONARY_LICENSE.txt",
   "assets/icon.svg","manifest.webmanifest"
@@ -23,7 +23,7 @@ const html=fs.readFileSync(path.join(root,"index.html"),"utf8");
 for(const file of [...required,...categoryFiles].filter(file=>/\.js$/.test(file)&&
   !["data/valid-long-words.js","script.js"].includes(file))){
   if(file==="rewards.js"||file==="yandex-platform.js"||file==="cloud-save.js"||file==="game-bootstrap.js"||
-    file==="hints.js"||file==="analytics.js"||
+    file==="hints.js"||file==="analytics.js"||file==="audio.js"||
     file==="data/words.js"||file==="data/valid-words.js"||file==="data/long-words-loader.js"||
     file==="stats.js"||file.startsWith("data/levels/")){
       assert(html.includes('src="'+file+'"'),"Не подключён "+file);
@@ -105,7 +105,7 @@ async function checkPlatformLanguage(){
     const doc={
       hidden:false,
       documentElement:{lang:"ru"},
-      addEventListener(){},
+      addEventListener(){},dispatchEvent(){},
       createElement(){return{};},
       head:{append(script){scriptSrc=script.src;script.onload();}}
     };
@@ -121,7 +121,7 @@ async function checkPlatformLanguage(){
     const sandbox={
       location:{hostname},
       document:doc,
-      Date,Promise,console,
+      Date,Promise,console,Event:class{constructor(type){this.type=type;}},
       window:{YaGames:{init:async()=>mockSdk}}
     };
     vm.createContext(sandbox);
@@ -177,7 +177,8 @@ const keyboardContext={
     dispatchEvent(){}},
   finalInput:null,
   Event:class{constructor(type,options){this.type=type;this.options=options;}},
-  messageElement:{classList:{remove(){}}}
+  messageElement:{classList:{remove(){}}},
+  window:{GameAudio:{play(){}}}
 };
 vm.createContext(keyboardContext);
 vm.runInContext(keyboardCode,keyboardContext);
@@ -216,6 +217,70 @@ for(const id of ["hintLetter","hintFirst","hintVowel","hintAttempt","hintElimina
 assert(bridge.includes("showRewardedVideo")&&bridge.includes("onRewarded"),
   "Бонусная реклама должна выдавать награду только после SDK onRewarded");
 console.log("OK: подсказки, награды, пятая попытка, словарь и рекламный SDK.");
+// Ретро-аркада: настройки сохраняются, музыка не стартует до действия игрока,
+// рекламный ролик приостанавливает музыку, звуки можно выключать независимо.
+assert(html.includes('src="audio.js"'),"Не подключён звуковой движок");
+assert.equal((html.match(/data-audio="music"/g)||[]).length,3);
+assert.equal((html.match(/data-audio="effects"/g)||[]).length,3);
+assert(script.includes('window.GameAudio?.play("win"') ||
+  script.includes('window.GameAudio?.play(won?"win":"wrong")'),
+  "Победа должна запускать отдельную мелодию");
+assert(bridge.includes('game:ad-start')&&bridge.includes('game:ad-end'),
+  "Реклама должна приостанавливать музыку");
+let createdAudio=0,scheduledMusic=null,activeContext=null;
+const audioListeners={};
+const audioSaved=new Map();
+const fakeDocument={
+  hidden:false,
+  addEventListener:(name,callback)=>{audioListeners[name]=callback;},
+  querySelectorAll:()=>[],
+};
+class FakeAudioContext{
+  constructor(){
+    createdAudio++;activeContext=this;this.currentTime=1;this.state="running";
+    this.destination={};
+  }
+  createGain(){return {gain:{value:0,setValueAtTime(){},
+    exponentialRampToValueAtTime(){}},connect(){}};}
+  createOscillator(){return {frequency:{setValueAtTime(){}},
+    connect(){},start(){},stop(){}};}
+  resume(){this.state="running";return Promise.resolve();}
+  suspend(){this.state="suspended";return Promise.resolve();}
+}
+const audioSandbox={
+  window:{AudioContext:FakeAudioContext},
+  document:fakeDocument,
+  localStorage:{getItem:key=>audioSaved.get(key)||null,
+    setItem:(key,value)=>audioSaved.set(key,value)},
+  setInterval:fn=>{scheduledMusic=fn;return 1;},
+  console
+};
+vm.createContext(audioSandbox);
+vm.runInContext(fs.readFileSync(path.join(root,"audio.js"),"utf8"),audioSandbox);
+const audio=audioSandbox.window.GameAudio;
+assert.equal(createdAudio,0,"Автовоспроизведение до пользовательского жеста запрещено");
+audio.setScene("home");
+assert.equal(createdAudio,0);
+audioListeners.pointerdown();
+assert.equal(createdAudio,1);
+assert.equal(typeof scheduledMusic,"function");
+scheduledMusic();
+audio.toggle("music");
+assert.equal(audio.getSettings().music,false);
+assert.equal(JSON.parse(audioSaved.get("ugadai-slovo-audio-v1")).music,false);
+assert.equal(audio.getSettings().effects,true,"У музыки и эффектов разные выключатели");
+audio.toggle("music");
+audioListeners["game:ad-start"]();
+assert.equal(activeContext.state,"suspended");
+audioListeners["game:ad-end"]();
+assert.equal(activeContext.state,"running");
+audioListeners.visibilitychange();
+assert(!!audioSaved.get("ugadai-slovo-audio-v1"));
+console.log("OK: ретро-аудио, независимые настройки, запрет автозапуска и пауза во время рекламы.");
+const workflow=fs.readFileSync(path.join(root,".github/workflows/yandex-release.yml"),"utf8");
+assert(workflow.includes("analytics.js audio.js"),"Звук не включён в сборку Яндекс Игр");
 const worker=fs.readFileSync(path.join(root,"service-worker.js"),"utf8");
 assert(worker.includes('event.request.mode === "navigate"'),"Нет проверки свежего HTML");
+assert(worker.includes('"./audio.js"')&&worker.includes('"./hints.js"'),
+  "Новые скрипты должны кэшироваться для офлайн-запуска");
 console.log("OK: 1000 слов, 50 уровней, SDK, ник, облачный профиль и 10 фрагментов награды.");

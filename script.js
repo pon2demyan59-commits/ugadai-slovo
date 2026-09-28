@@ -152,6 +152,7 @@ function showCollectionComplete() {
   resultText.textContent="Все 20 заданий категории разгаданы!"+(selectedLevel<MAX_LEVEL?" Следующий уровень открыт.":" Категория полностью пройдена!");
   nextWordButton.textContent="К уровням";
   resultBackdrop.hidden=false;
+  window.GameAudio?.play("puzzle");
   window.YandexPlatform.setGameplay(false);
 }
 
@@ -236,6 +237,7 @@ function startGame() {
   const cat=GAME_CATEGORIES.find(c=>c.id===selectedCategory);
   document.querySelector("#activeCategoryTitle").textContent=cat.icon+" "+cat.title+" · Уровень "+selectedLevel;
   messageElement.textContent="Угадай слово!";
+  window.GameAudio?.setScene("game");
   renderBoard();
   renderPreview();
   renderAlphabet();
@@ -286,7 +288,8 @@ function createLineInput(number) {
       input.setSelectionRange(input.value.length,input.value.length);
     }
   });
-  input.addEventListener("input", () => {
+  input.addEventListener("input", event => {
+    if(event.isTrusted)window.GameAudio?.play(event.inputType==="deleteContentBackward"?"erase":"key");
     syncInput();
     input.setSelectionRange(input.value.length,input.value.length);
     saveRound();
@@ -379,6 +382,7 @@ function renderPreview() {
         }
         if(!window.GameHints.spend("letter"))return;
         roundHints.positions.push(i);
+        window.GameAudio?.play("hint");
         revealed[i]=true;
         renderPreview();renderHints();saveRound();
         window.GameAnalytics?.track("hint_used");
@@ -402,6 +406,7 @@ function typeKeyboardLetter(letter) {
   target.value += letter.toLowerCase();
   target.setSelectionRange(target.value.length,target.value.length);
   target.dispatchEvent(new Event("input", { bubbles: true }));
+  window.GameAudio?.play("key");
   messageElement.classList.remove("is-error");
 }
 
@@ -411,10 +416,12 @@ function eraseKeyboardLetter() {
   target.value = target.value.slice(0,-1);
   target.setSelectionRange(target.value.length,target.value.length);
   target.dispatchEvent(new Event("input", { bubbles: true }));
+  window.GameAudio?.play("erase");
   messageElement.classList.remove("is-error");
 }
 
 function showInputError(text) {
+  window.GameAudio?.play("wrong");
   messageElement.textContent = text;
   messageElement.classList.add("is-error");
 }
@@ -558,6 +565,7 @@ function checkGuess(guess) {
   pendingUnknown=null;
   messageElement.classList.remove("is-error");
   const result = getGuessResult(guess);
+  window.GameAudio?.play("check");
   // Снимок верхней строки до проверки нужен для анимации перелёта.
   const previouslyRevealed=[...revealed];
   roundGuesses.push(guess);
@@ -579,6 +587,8 @@ function checkGuess(guess) {
   currentAttempt++;
   updateStats();
   const isWin=guess === currentWord || revealed.every(Boolean);
+  if(!isWin && result.some(item=>item.status==="correct"))window.GameAudio?.play("correct");
+  else if(!isWin)window.GameAudio?.play("wrong");
   if (isWin && currentAttempt < baseAttempts && !restoringRound) {
     // До 4-й попытки показываем именно перелёт букв, а не мгновенный результат.
     phase="celebrating";
@@ -690,6 +700,7 @@ function checkFinalChance() {
 
 function finishGame(won) {
   if (phase==="finished") return;
+  window.GameAudio?.play(won?"win":"wrong");
   recordResult(won);
   window.GameAnalytics?.track(won?"round_win":"round_loss");
   if(won)window.GameHints.rewardForWin(score.wins);
@@ -722,7 +733,10 @@ function finishGame(won) {
     resultText.textContent=complete
       ? "Все 20 слов разгаданы!"+(selectedLevel<MAX_LEVEL?" Следующий уровень открыт.":" Все пять уровней категории завершены!")
       : "Ты угадал слово! Осталось разгадать: "+(wordBank.length-wordProgress.solved.size)+".";
-    if (complete) resultText.textContent+=" 🧩 Получен фрагмент секретной благодарности!";
+    if (complete) {
+      resultText.textContent+=" 🧩 Получен фрагмент секретной благодарности!";
+      window.GameAudio?.play("puzzle");
+    }
     nextWordButton.textContent=complete?"К уровням":"Следующее слово";
     resultBanner.classList.add("win");
   } else {
@@ -791,6 +805,7 @@ function revealAutomatic(kind,index){
      revealed[index]||revealed.filter(x=>!x).length<=1||
      !window.GameHints.spend(kind))return;
   roundHints.positions.push(index);
+  window.GameAudio?.play("hint");
   revealed[index]=true;
   renderPreview();renderHints();saveRound();
   window.GameAnalytics?.track("hint_used");
@@ -805,6 +820,7 @@ hintButtons.vowel.addEventListener("click",()=>{
 });
 hintButtons.attempt.addEventListener("click",()=>{
   if(phase!=="guess"||roundHints.extraAttempt||!window.GameHints.spend("attempt"))return;
+  window.GameAudio?.play("hint");
   roundHints.extraAttempt=true;roundAttemptLimit=baseAttempts+1;
   const lastRow=boardElement.children[baseAttempts];
   if(lastRow)lastRow.hidden=false;
@@ -818,6 +834,7 @@ hintButtons.eliminate.addEventListener("click",()=>{
   const candidates=alphabet.filter(letter=>
     letter!=="Е"&&!currentWord.toUpperCase().includes(letter)&&
     !usedLetters[letter]);
+  window.GameAudio?.play("hint");
   roundHints.eliminated=candidates.sort(()=>Math.random()-.5).slice(0,8);
   renderAlphabet();renderHints();saveRound();
   window.GameAnalytics?.track("hint_used");
@@ -825,6 +842,7 @@ hintButtons.eliminate.addEventListener("click",()=>{
 });
 hintButtons.clue.addEventListener("click",()=>{
   if(phase!=="guess"||roundHints.extraClue||!window.GameHints.spend("clue"))return;
+  window.GameAudio?.play("hint");
   roundHints.extraClue=true;renderHints();saveRound();
   window.GameAnalytics?.track("hint_used");
 });
@@ -839,6 +857,7 @@ adButton.addEventListener("click",async()=>{
   try{
     const rewarded=await window.YandexPlatform.showRewarded();
     if(rewarded){
+      window.GameAudio?.play("hint");
       const amount=["letter","first","vowel"].includes(kind)?3:2;
       window.GameHints.grant(kind,amount);
       window.GameAnalytics?.track("reward_ad_rewarded");
@@ -859,7 +878,10 @@ finalForm.addEventListener("submit", event => {
   event.preventDefault();
   checkFinalChance();
 });
-finalInput.addEventListener("input", cleanFinalInput);
+finalInput.addEventListener("input", event=>{
+  if(event.isTrusted)window.GameAudio?.play(event.inputType==="deleteContentBackward"?"erase":"key");
+  cleanFinalInput();
+});
 finalEntry.addEventListener("click", () => {
   if (phase === "final") finalInput.focus();
 });
@@ -921,6 +943,7 @@ function showScreen(screen) {
   if (screen===homeScreen) setHomeView("menu");
   saveUiState();
   window.YandexPlatform.setGameplay(screen===gameScreen && phase!=="finished");
+  window.GameAudio?.setScene(screen===gameScreen?"game":screen===homeScreen?"home":"welcome");
 }
 function openMenuDetails(title,view) {
   detailsTitle.textContent=title;
