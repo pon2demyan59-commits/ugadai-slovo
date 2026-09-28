@@ -31,6 +31,13 @@ for(const file of [...required,...categoryFiles].filter(file=>/\.js$/.test(file)
 }
 assert(html.includes('src="game-bootstrap.js"'),"Нет загрузчика игры");
 assert(html.includes('id="nicknameInput"')&&html.includes('id="menuReward"'),"Нет ника или секретной награды");
+// UI: рекламная награда выбирается игровыми карточками; имя не раскрывает пасхалку.
+assert(html.includes('id="hintAdKind" class="bonus-choices"') &&
+  (html.match(/name="hintAdKind"/g)||[]).length===6,
+  "Должно быть шесть карточек рекламных бонусов");
+assert(html.includes('id="streakPraise"'),"Нет блока похвалы за серию побед");
+assert(html.includes("Как тебя зовут в игре?") && !html.includes("Твой ник для секретной грамоты"),
+  "Поле ника не должно раскрывать секретную награду");
 assert(!html.includes('<script src="script.js"'),"script.js должен загружаться после облачных сохранений");
 const context={};
 vm.createContext(context);
@@ -89,6 +96,16 @@ assert.equal(rewards.saveNickname("<script>").ok,false,"Ник должен бы
 assert(JSON.parse(storage.get("ugadai-slovo-profile-v1")).nickname==="Варрон",
   "Ник не записан в локальное хранилище");
 const script=fs.readFileSync(path.join(root,"script.js"),"utf8");
+// Слова из серии берём из постоянной статистики, начиная со второй победы.
+const praiseMatch=script.match(/function praiseForStreak\(streak\)\{[\s\S]*?\n\}/);
+assert(praiseMatch,"Не найдена логика похвалы за серию побед");
+const praise=vm.runInNewContext(praiseMatch[0]+";praiseForStreak");
+assert.equal(praise(1),"");
+for(const streak of [2,3,4,5,7,10,15,20])
+  assert(praise(streak).length>0,"Нет похвалы за "+streak+" побед подряд");
+assert(script.includes("focusTypingInput(true)") && script.includes('row.addEventListener("click"'),
+  "Поле ввода должно быть доступно по всей строке и автофокусом на ПК");
+
 assert(script.includes('phase="celebrating"')&&script.includes('animateWinningLetters(row).then'),
   "Ранние победы должны запускать перелёт букв");
 assert(script.includes('resultQuestion.textContent=currentEntry?.hint||""'),
