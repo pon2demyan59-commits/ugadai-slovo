@@ -73,7 +73,7 @@
     if(!remote||remote.version!==1)return local;
     if(!local||local.version!==1)return remote;
     const balances={};
-    for(const key of ["letter","attempt","eliminate","clue"]){
+    for(const key of ["letter","first","vowel","attempt","eliminate","clue"]){
       balances[key]=Math.max(nonnegative(local.balances?.[key]),
         nonnegative(remote.balances?.[key]));
     }
