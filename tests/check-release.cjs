@@ -188,7 +188,7 @@ assert(script.includes('const maxAttempts = 5')&&script.includes('roundAttemptLi
   "Дополнительная попытка должна добавлять пятую строку");
 assert(script.includes('pendingUnknown=guess')&&script.includes('if(pendingUnknown!==guess)'),
   "Неизвестное слово должно приниматься после явного подтверждения");
-for(const id of ["hintLetter","hintAttempt","hintEliminate","hintClue","hintAd","hintAdKind"])
+for(const id of ["hintLetter","hintFirst","hintVowel","hintAttempt","hintEliminate","hintClue","hintAd","hintAdKind"])
   assert(html.includes('id="'+id+'"'),"Нет элемента "+id);
 assert(bridge.includes("showRewardedVideo")&&bridge.includes("onRewarded"),
   "Бонусная реклама должна выдавать награду только после SDK onRewarded");
