@@ -361,4 +361,16 @@ const worker=fs.readFileSync(path.join(root,"service-worker.js"),"utf8");
 assert(worker.includes('event.request.mode === "navigate"'),"Нет проверки свежего HTML");
 assert(worker.includes('"./audio.js"')&&worker.includes('"./hints.js"'),
   "Новые скрипты должны кэшироваться для офлайн-запуска");
+
+// Повторное прохождение: завершённый уровень должен запускаться заново без сброса основного прогресса.
+assert(script.includes("let replayMode=false"),"Нет режима повторного прохождения");
+assert(script.includes("replaySolved=new Set()")&&script.includes("replayAttempted=new Set()"),
+  "Повторное прохождение должно иметь отдельный временный прогресс");
+assert(script.includes("Пройден · можно повторить"),
+  "Завершённый уровень должен явно показывать возможность повтора");
+assert(script.includes("УРОВЕНЬ ПРОЙДЕН ЕЩЁ РАЗ!"),
+  "Нет отдельного результата повторного прохождения");
+assert(script.includes("if(complete && won && !replayMode)window.GameHints.rewardForLevel"),
+  "Повторное прохождение не должно повторно выдавать награду за уровень");
+
 console.log("OK: 1000 слов, 50 уровней, SDK, ник, облачный профиль и 10 фрагментов награды.");
