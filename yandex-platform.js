@@ -8,7 +8,13 @@
   let portalLanguage=null,gameLanguage="ru";
   let settleSdk;
   const whenSdk=new Promise(resolve=>{settleSdk=resolve;});
-  let adActive=false,finishedRounds=0,lastAd=Date.now();
+  // Показываем на естественной паузе после трёх завершённых раундов.
+  // Платформа может отказать в показе (нет подходящей рекламы, частотный лимит).
+  // В этом случае сохраняем счётчик и повторяем не раньше, чем через минуту,
+  // на следующем переходе, но НИКОГДА не запускаем рекламу по таймеру.
+  const ROUNDS_PER_AD=3,MIN_AD_INTERVAL=180000,RETRY_INTERVAL=60000;
+  let adActive=false,finishedRounds=0,lastAd=0,lastRequest=0;
+  let adStatus="waiting";
   function setAdActive(active){
     const next=Boolean(active);
     if(adActive===next)return;
@@ -58,19 +64,46 @@
   }
   function setGameplay(active){desiredGameplay=Boolean(active);syncGameplay();}
   function roundFinished(){finishedRounds++;setGameplay(false);}
+  function adDebugStatus(){
+    const now=Date.now();
+    return {sdkReady:Boolean(sdk),rounds:finishedRounds,
+      targetRounds:ROUNDS_PER_AD,active:adActive,status:adStatus,
+      untilEligibleMs:lastAd?Math.max(0,MIN_AD_INTERVAL-(now-lastAd)):0,
+      retryInMs:Math.max(0,RETRY_INTERVAL-(now-lastRequest))};
+  }
   function showInterstitialIfDue(){
-    if(!sdk?.adv?.showFullscreenAdv || adActive || finishedRounds<4 ||
-      Date.now()-lastAd<180000)return Promise.resolve(false);
-    finishedRounds=0;lastAd=Date.now();setAdActive(true);
+    const now=Date.now();
+    // Даже если реклама недоступна, новый раунд начинается сразу.
+    if(!sdk?.adv?.showFullscreenAdv){adStatus="sdk_unavailable";return Promise.resolve(false);}
+    if(adActive){adStatus="ad_in_progress";return Promise.resolve(false);}
+    if(finishedRounds<ROUNDS_PER_AD){adStatus="not_enough_rounds";return Promise.resolve(false);}
+    if(lastAd&&now-lastAd<MIN_AD_INTERVAL){adStatus="min_interval";return Promise.resolve(false);}
+    if(lastRequest&&now-lastRequest<RETRY_INTERVAL){adStatus="retry_interval";return Promise.resolve(false);}
+    lastRequest=now;
+    adStatus="requested";
+    setAdActive(true);
     return new Promise(resolve=>{
       let settled=false;
       function finish(shown){
-        if(settled)return;settled=true;setAdActive(false);resolve(Boolean(shown));
+        if(settled)return;
+        settled=true;
+        if(shown){
+          finishedRounds=0;
+          lastAd=Date.now();
+          adStatus="shown";
+        }else{
+          // При onClose(false) или onError Яндекс не показал объявление.
+          // Не теряем набранные раунды: следующий шанс будет на новой паузе.
+          adStatus="not_shown";
+          console.info("Яндекс не показал рекламу; повторим на следующем переходе.",adDebugStatus());
+        }
+        setAdActive(false);
+        resolve(Boolean(shown));
       }
       try{
         sdk.adv.showFullscreenAdv({callbacks:{
-          onOpen:()=>setAdActive(true),
-          onClose:shown=>finish(shown),
+          onOpen:()=>{adStatus="opened";setAdActive(true);},
+          onClose:shown=>finish(shown===true),
           onError:error=>{console.warn("Реклама:",error);finish(false);}
         }});
       }catch(error){console.warn("Ошибка рекламы:",error);finish(false);}
@@ -99,6 +132,6 @@
   }
   document.addEventListener("visibilitychange",syncGameplay);
   window.YandexPlatform={isYandex,whenSdk,ready,setGameplay,roundFinished,showInterstitialIfDue,
-    showRewarded,portalLanguage,language:gameLanguage};
+    showRewarded,adDebugStatus,portalLanguage,language:gameLanguage};
   init();
 })();
