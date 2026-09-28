@@ -927,7 +927,7 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
 .game #hintAd{min-height:47px;font-size:14px;background:linear-gradient(155deg,#ffdf77,#ffad32);
   color:#50317c;border:2px solid #fff6ce;border-bottom:5px solid #c17b25;
   box-shadow:inset 0 2px #fffa,0 5px 12px #20136b66}
-.game .streak-praise{margin:0 0 17px;padding:11px 12px;border:2px solid #ffe59b;
+.game .result-banner .streak-praise{margin:0 0 17px;padding:11px 12px;border:2px solid #ffe59b;
   border-radius:13px;background:linear-gradient(145deg,#5131aa,#7540c2);
   color:#fff3b3;font-size:clamp(15px,4.4vw,19px);font-weight:950;text-align:center;
   box-shadow:0 0 20px #ffdc7066;animation:streak-pop .35s ease-out both}
