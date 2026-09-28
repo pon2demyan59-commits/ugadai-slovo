@@ -77,9 +77,10 @@ function loadUiState() {
     const s = JSON.parse(localStorage.getItem(UI_STORAGE_KEY) || "{}");
     return {
       category:categoryIds.has(s.category) ? s.category : "animals",
-      screen:["welcome","home","game"].includes(s.screen) ? s.screen : "welcome"
+      screen:["welcome","home","game"].includes(s.screen) ? s.screen : "welcome",
+      homeView:["menu","categories","stats","rules"].includes(s.homeView) ? s.homeView : "menu"
     };
-  } catch {return {category:"animals",screen:"welcome"};}
+  } catch {return {category:"animals",screen:"welcome",homeView:"menu"};}
 }
 const allProgress = loadAllProgress();
 const initialUiState = loadUiState();
@@ -577,37 +578,52 @@ nextWordButton.addEventListener("click", () => {
 const welcomeScreen = document.querySelector("#welcomeScreen");
 const homeScreen = document.querySelector("#homeScreen");
 const gameScreen = document.querySelector("#gameScreen");
+const homeCard = document.querySelector(".home-card");
 const details = document.querySelector("#menuDetails");
 const detailsTitle = document.querySelector("#menuDetailsTitle");
 const detailsBody = document.querySelector("#menuDetailsBody");
 const homeMenu = document.querySelector(".home-menu");
 const categoryScreen = document.querySelector("#categoryScreen");
 const categoryList = document.querySelector("#categoryList");
-function closeMenuDetails() {details.hidden = true;homeMenu.hidden = false;}
-function closeCategories() {categoryScreen.hidden = true;homeMenu.hidden = false;}
+let homeView = "menu";
+
+// Запоминаем не только экран, но и открытую вкладку внутри главного меню.
+function saveUiState() {
+  try {
+    localStorage.setItem(UI_STORAGE_KEY,JSON.stringify({
+      category:selectedCategory,
+      screen:gameScreen.hidden ? (homeScreen.hidden ? "welcome" : "home") : "game",
+      homeView
+    }));
+  } catch {}
+}
+function setHomeView(view) {
+  homeView = view;
+  homeMenu.hidden = view !== "menu";
+  categoryScreen.hidden = view !== "categories";
+  details.hidden = view !== "stats" && view !== "rules";
+  homeCard.classList.toggle("subview",view !== "menu");
+  homeCard.setAttribute("aria-labelledby",
+    view === "categories" ? "categoryTitle" :
+    view === "stats" || view === "rules" ? "menuDetailsTitle" : "homeTitle");
+  saveUiState();
+}
+function closeMenuDetails() {setHomeView("menu");}
+function closeCategories() {setHomeView("menu");}
 function showScreen(screen) {
   welcomeScreen.hidden = screen !== welcomeScreen;
   homeScreen.hidden = screen !== homeScreen;
   gameScreen.hidden = screen !== gameScreen;
-  if (screen === homeScreen) {closeMenuDetails();closeCategories();}
-  try {
-    localStorage.setItem(UI_STORAGE_KEY,JSON.stringify({
-      category:selectedCategory,
-      screen:screen === gameScreen ? "game" : screen === homeScreen ? "home" : "welcome"
-    }));
-  } catch {}
+  if (screen === homeScreen) setHomeView("menu");
+  saveUiState();
 }
-function openMenuDetails(title) {
-  closeCategories();
+function openMenuDetails(title,view) {
   detailsTitle.textContent = title;
-  details.hidden = false;
-  homeMenu.hidden = true;
   detailsBody.replaceChildren();
+  setHomeView(view);
 }
 function showCategories() {
-  closeMenuDetails();
-  categoryScreen.hidden = false;
-  homeMenu.hidden = true;
+  setHomeView("categories");
   categoryList.replaceChildren();
   GAME_CATEGORIES.forEach((category,index) => {
     const button = document.createElement("button");
@@ -655,7 +671,7 @@ document.querySelector("#gameMenuBack").addEventListener("click", () => showScre
 document.querySelector("#menuSplashBack").addEventListener("click", () => showScreen(welcomeScreen));
 document.querySelector("#menuDetailsBack").addEventListener("click",closeMenuDetails);
 document.querySelector("#menuStats").addEventListener("click", () => {
-  openMenuDetails("СТАТИСТИКА");
+  openMenuDetails("СТАТИСТИКА","stats");
   const lines = [["Угадано",score.wins],["Не угадано",score.losses],
     ["Доступно заданий",GAME_WORDS.length + " / " + (GAME_CATEGORIES.length * 5 * 20)],
     ...GAME_CATEGORIES.map(c => [c.icon + " " + c.title,
@@ -672,7 +688,7 @@ document.querySelector("#menuStats").addEventListener("click", () => {
   }
 });
 document.querySelector("#menuRules").addEventListener("click", () => {
-  openMenuDetails("КАК ИГРАТЬ");
+  openMenuDetails("КАК ИГРАТЬ","rules");
   const rules = [
     "В каждой из 10 категорий запланировано по 5 уровней. Пока открыт первый: 20 слов из 5 букв за 4 попытки.",
     "Зелёная буква — на месте, жёлтая — есть в слове, серая — отсутствует.",
@@ -690,6 +706,12 @@ document.querySelector("#menuRules").addEventListener("click", () => {
 startGame();
 showScreen(initialUiState.screen === "game" ? gameScreen :
   initialUiState.screen === "home" ? homeScreen : welcomeScreen);
+// Если обновили страницу в выборе категорий, статистике или правилах — возвращаем именно туда.
+if (initialUiState.screen === "home") {
+  if (initialUiState.homeView === "categories") showCategories();
+  else if (initialUiState.homeView === "stats") document.querySelector("#menuStats").click();
+  else if (initialUiState.homeView === "rules") document.querySelector("#menuRules").click();
+}
 
 if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
   navigator.serviceWorker.register("service-worker.js").catch(() => {});
