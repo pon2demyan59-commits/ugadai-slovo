@@ -17,7 +17,7 @@
   function nonnegative(n){return Number.isSafeInteger(n)&&n>=0?n:0;}
   function mergeProgress(local,remote){
     if(!remote||typeof remote!=="object")return local||null;
-    const merged=local&&typeof local==="object"?structuredClone(local):{};
+    const merged=local&&typeof local==="object"?JSON.parse(JSON.stringify(local)):{};
     for(const [category,levels] of Object.entries(remote)){
       if(!levels||typeof levels!=="object")continue;
       if(!merged[category])merged[category]={};
