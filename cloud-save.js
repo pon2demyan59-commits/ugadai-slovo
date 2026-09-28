@@ -76,13 +76,14 @@
     ]);
     if(!sdk)return;
     try{
-      const candidate=await sdk.getPlayer();
+      const candidate=await Promise.race([sdk.getPlayer(),new Promise(resolve=>setTimeout(()=>resolve(null),6000))]);
       if(!candidate?.isAuthorized?.())return;
       player=candidate;
       const response=await Promise.race([
         player.getData([CLOUD_KEY]),
         new Promise(resolve=>setTimeout(()=>resolve(null),6000))
       ]);
+      if(response===null){player=null;return;} // Сетевая ошибка: не перезаписываем неизвестное облачное состояние.
       const cloud=response?.[CLOUD_KEY];
       if(cloud&&typeof cloud==="object"&&cloud.version===1){
         const progress=mergeProgress(read(KEYS.progress),cloud.progress);
@@ -112,5 +113,17 @@
     if(timer)clearTimeout(timer);
     timer=setTimeout(flush,7000);
   }
-  window.GameCloud={prepare,schedule,flush,mergeProgress};
+  async function signIn(){
+    if(!window.YandexPlatform.isYandex)return false;
+    const sdk=await window.YandexPlatform.whenSdk;
+    if(!sdk?.auth?.openAuthDialog)return false;
+    try{
+      await sdk.auth.openAuthDialog();
+      const candidate=await sdk.getPlayer();
+      if(!candidate?.isAuthorized?.())return false;
+      location.reload(); // После явного входа объединяем локальные и облачные данные.
+      return true;
+    }catch(error){console.warn("Вход через Яндекс ID:",error);return false;}
+  }
+  window.GameCloud={prepare,schedule,flush,signIn,isAuthorized:()=>Boolean(player),mergeProgress};
 })();
