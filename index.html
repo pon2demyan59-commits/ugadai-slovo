@@ -9,6 +9,7 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="stats.css">
+  <link rel="stylesheet" href="rewards.css">
 </head>
 <body>
   <!-- Стартовая заставка → главное меню → игровое поле. -->
@@ -31,9 +32,16 @@
       <div class="home-tiles" aria-hidden="true"><span>У</span><span>Г</span><span>А</span><span>Д</span><span>АЙ</span></div>
       <h2 id="homeTitle" class="home-title">ГЛАВНОЕ МЕНЮ</h2>
       <p class="home-tagline">Собери слово. Победи загадку!</p>
+      <form id="nicknameForm" class="nickname-form" autocomplete="off">
+        <label for="nicknameInput">✎ Твой ник для секретной грамоты</label>
+        <input id="nicknameInput" type="text" maxlength="24" placeholder="Придумай ник" aria-describedby="nicknameMessage" required>
+        <button type="submit">Сохранить</button>
+        <p id="nicknameMessage" class="nickname-message" role="status" aria-live="polite"></p>
+      </form>
       <nav class="home-menu" aria-label="Главное меню">
         <button type="button" id="menuPlay" class="home-menu-button menu-play">▶ <span>ИГРАТЬ</span></button>
         <button type="button" id="menuStats" class="home-menu-button menu-stats">★ <span>СТАТИСТИКА</span></button>
+        <button type="button" id="menuReward" class="home-menu-button menu-reward">🧩 <span>СЕКРЕТНАЯ НАГРАДА</span> <span id="rewardCounter">0/10</span></button>
         <button type="button" id="menuCloud" class="home-menu-button menu-cloud" hidden title="Войти через Яндекс ID, чтобы сохранять прогресс между устройствами">☁ <span>СОХРАНИТЬ В ОБЛАКЕ</span></button>
         <button type="button" id="menuRules" class="home-menu-button menu-rules">? <span>КАК ИГРАТЬ</span></button>
       </nav>
@@ -115,6 +123,7 @@
   <script src="data/levels/sport.js"></script>
   <script src="data/levels/travel.js"></script>
   <script src="stats.js"></script>
+  <script src="rewards.js"></script>
   <script src="yandex-platform.js"></script>
   <script src="cloud-save.js"></script>
   <script src="game-bootstrap.js"></script>
