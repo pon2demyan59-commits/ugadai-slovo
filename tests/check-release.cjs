@@ -78,6 +78,15 @@ assert.equal(rewards.getNickname(),"Варрон");
 assert.equal(rewards.saveNickname("<script>").ok,false,"Ник должен быть безопасным");
 assert(JSON.parse(storage.get("ugadai-slovo-profile-v1")).nickname==="Варрон",
   "Ник не записан в локальное хранилище");
+const script=fs.readFileSync(path.join(root,"script.js"),"utf8");
+assert(script.includes('phase="celebrating"')&&script.includes('animateWinningLetters(row).then'),
+  "Ранние победы должны запускать перелёт букв");
+assert(script.includes('resultQuestion.textContent=currentEntry?.hint||""'),
+  "На победном экране должна отображаться загадка");
+assert(script.includes('resultAnswer.textContent=(currentEntry?.display||currentWord)'),
+  "На победном экране должен отображаться крупный ответ");
+assert(html.includes('id="resultQuestion"')&&html.includes('id="resultAnswer"'),
+  "Отсутствует разметка загадки и ответа");
 const bridge=fs.readFileSync(path.join(root,"yandex-platform.js"),"utf8");
 assert(bridge.includes('script.src="/sdk.js"'),"SDK должен подключаться с /sdk.js");
 assert(bridge.includes("LoadingAPI")&&bridge.includes("GameplayAPI")&&bridge.includes("showFullscreenAdv"),
