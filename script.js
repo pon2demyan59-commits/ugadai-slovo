@@ -15,6 +15,8 @@ function loadScore() {
 const score = loadScore();
 
 function recordResult(won) {
+  // Последний шанс — отдельная категория статистики (после четырёх попыток).
+  window.GameStats.record(won,currentAttempt,phase==="final");
   if (won) score.wins++;
   else score.losses++;
   try {
@@ -741,27 +743,9 @@ document.querySelector("#gameMenuBack").addEventListener("click",()=>{
 document.querySelector("#menuSplashBack").addEventListener("click",()=>showScreen(welcomeScreen));
 document.querySelector("#menuDetailsBack").addEventListener("click",()=>setHomeView("menu"));
 document.querySelector("#menuStats").addEventListener("click",()=>{
-  openMenuDetails("СТАТИСТИКА","stats");
-  const solved=GAME_CATEGORIES.reduce((sum,c)=>
-    sum+Array.from({length:MAX_LEVEL},(_,i)=>i+1)
-      .reduce((n,l)=>n+allProgress[c.id][l].solved.size,0),0);
-  const lines=[
-    ["Угадано",score.wins],["Не угадано",score.losses],
-    ["Всего разгадано",solved+"/"+GAME_WORDS.length],
-    ...GAME_CATEGORIES.map(c=>[c.icon+" "+c.title,
-      Array.from({length:MAX_LEVEL},(_,i)=>i+1)
-        .reduce((n,l)=>n+allProgress[c.id][l].solved.size,0)+"/100"])
-  ];
-  for (const [label,value] of lines) {
-    const line=document.createElement("div");
-    line.className="home-stat-line";
-    const name=document.createElement("span");
-    name.textContent=label;
-    const number=document.createElement("strong");
-    number.textContent=value;
-    line.append(name,number);
-    detailsBody.append(line);
-  }
+  openMenuDetails("МОЯ СТАТИСТИКА","stats");
+  window.GameStatsPanel.render(detailsBody,score,allProgress,GAME_CATEGORIES,
+    GAME_WORDS.length,MAX_LEVEL,wordsInCategory);
 });
 document.querySelector("#menuRules").addEventListener("click",()=>{
   openMenuDetails("КАК ИГРАТЬ","rules");
