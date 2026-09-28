@@ -24,39 +24,92 @@ function recordResult(won) {
   }
 }
 
-// Отдельный от статистики список уже показанных и разгаданных слов.
-const WORD_PROGRESS_KEY = "ugadai-slovo-word-progress-v1";
-const wordBank = [...new Set(GAME_WORDS.map(item => item.word.toLowerCase().trim()))];
-function loadWordProgress() {
+// Раздельный прогресс пяти категорий с переносом старых достижений.
+const WORD_PROGRESS_KEY = "ugadai-slovo-category-progress-v2";
+const UI_STORAGE_KEY = "ugadai-slovo-ui-v1";
+const categoryIds = new Set(GAME_CATEGORIES.map(c => c.id));
+const wordsInCategory = id => GAME_WORDS.filter(w => w.category === id).map(w => w.word);
+function loadAllProgress() {
+  let saved = {}, fresh = false;
   try {
-    const saved = JSON.parse(localStorage.getItem(WORD_PROGRESS_KEY) || "{}");
-    const valid = new Set(wordBank);
-    return {
-      attempted: new Set(Array.isArray(saved.attempted) ? saved.attempted.filter(w => valid.has(w)) : []),
-      solved: new Set(Array.isArray(saved.solved) ? saved.solved.filter(w => valid.has(w)) : []),
-      active: valid.has(saved.active) ? saved.active : null
-    };
-  } catch {
-    return { attempted: new Set(), solved: new Set(), active: null };
+    const raw = localStorage.getItem(WORD_PROGRESS_KEY);
+    fresh = raw !== null;
+    saved = raw ? JSON.parse(raw) : {};
+  } catch {}
+  if (!fresh) {
+    try {
+      const old = JSON.parse(localStorage.getItem("ugadai-slovo-word-progress-v1") || "{}");
+      for (const c of GAME_CATEGORIES) {
+        const valid = new Set(wordsInCategory(c.id));
+        saved[c.id] = {
+          attempted:(old.attempted || []).filter(w => valid.has(w)),
+          solved:(old.solved || []).filter(w => valid.has(w)),
+          active:valid.has(old.active) ? old.active : null
+        };
+      }
+    } catch {}
   }
+  const progress = {};
+  for (const c of GAME_CATEGORIES) {
+    const entry = saved[c.id] || {};
+    const valid = new Set(wordsInCategory(c.id));
+    const solved = new Set(Array.isArray(entry.solved) ? entry.solved.filter(w => valid.has(w)) : []);
+    const attempted = new Set(Array.isArray(entry.attempted) ? entry.attempted.filter(w => valid.has(w)) : []);
+    for (const w of solved) attempted.add(w);
+    const active = valid.has(entry.active) && !solved.has(entry.active) ? entry.active : null;
+    const oldRound = entry.round || {};
+    const round = active && oldRound.word === active ? {
+      word:active,
+      guesses:Array.isArray(oldRound.guesses)
+        ? oldRound.guesses.filter(g => typeof g === "string" && g.length === 5 &&
+            VALID_RUSSIAN_WORDS.has(g) && g !== active).slice(0,maxAttempts) : [],
+      draft:typeof oldRound.draft === "string" ? oldRound.draft : "",
+      finalDraft:typeof oldRound.finalDraft === "string" ? oldRound.finalDraft : ""
+    } : null;
+    progress[c.id] = {attempted,solved,active,round};
+  }
+  return progress;
 }
-const wordProgress = loadWordProgress();
-for (const word of wordProgress.solved) wordProgress.attempted.add(word);
+function loadUiState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(UI_STORAGE_KEY) || "{}");
+    return {
+      category:categoryIds.has(s.category) ? s.category : "animals",
+      screen:["welcome","home","game"].includes(s.screen) ? s.screen : "welcome"
+    };
+  } catch {return {category:"animals",screen:"welcome"};}
+}
+const allProgress = loadAllProgress();
+const initialUiState = loadUiState();
+let selectedCategory = initialUiState.category;
+let wordProgress = allProgress[selectedCategory];
+let wordBank = wordsInCategory(selectedCategory);
+let roundGuesses = [];
+let restoringRound = false;
 function saveWordProgress() {
   try {
-    localStorage.setItem(WORD_PROGRESS_KEY, JSON.stringify({
-      attempted: [...wordProgress.attempted],
-      solved: [...wordProgress.solved],
-      active: wordProgress.active
-    }));
-  } catch { /* Прогресс останется доступен до обновления страницы. */ }
+    const stored = {};
+    for (const c of GAME_CATEGORIES) {
+      const entry = allProgress[c.id];
+      stored[c.id] = {attempted:[...entry.attempted],solved:[...entry.solved],
+        active:entry.active,round:entry.round};
+    }
+    localStorage.setItem(WORD_PROGRESS_KEY,JSON.stringify(stored));
+  } catch {}
+}
+function saveRound() {
+  if (restoringRound || !wordProgress.active || phase === "finished") return;
+  wordProgress.round = {word:currentWord,guesses:[...roundGuesses],
+    draft:phase === "guess" && guessInput ? guessInput.value : "",
+    finalDraft:phase === "final" ? finalInput.value : ""};
+  saveWordProgress();
 }
 function chooseNextWord() {
-  const fresh = wordBank.filter(word => !wordProgress.attempted.has(word));
-  const unfinished = wordBank.filter(word => !wordProgress.solved.has(word));
+  const fresh = wordBank.filter(w => !wordProgress.attempted.has(w));
+  const unfinished = wordBank.filter(w => !wordProgress.solved.has(w));
   const pool = fresh.length ? fresh : unfinished;
   if (!pool.length) return null;
-  const alternatives = pool.filter(word => word !== previousWord);
+  const alternatives = pool.filter(w => w !== previousWord);
   const choices = alternatives.length ? alternatives : pool;
   return choices[Math.floor(Math.random() * choices.length)];
 }
@@ -73,7 +126,7 @@ function showCollectionComplete() {
   nextWordButton.focus();
 }
 
-// Экранная русская клавиатура — единственный способ вводить буквы на телефоне.
+// Русская игровая клавиатура дополняет системную клавиатуру телефона.
 const keyboardRows = ["ЙЦУКЕНГШЩЗХЪ", "ФЫВАПРОЛДЖЭ", "ЯЧСМИТЬБЮ"];
 const statusPriority = { unused: 0, missing: 1, present: 2, correct: 3 };
 const hintElement = document.querySelector("#hint");
@@ -101,36 +154,53 @@ let phase = "guess";
 let previousWord = "";
 
 function startGame() {
-  // Незаконченное слово остаётся текущим после обновления страницы.
   const nextWord = wordProgress.active && !wordProgress.solved.has(wordProgress.active)
     ? wordProgress.active : chooseNextWord();
-  if (!nextWord) {
-    showCollectionComplete();
-    return;
-  }
-  const selected = GAME_WORDS.find(item => item.word.toLowerCase().trim() === nextWord);
+  if (!nextWord) {showCollectionComplete();return;}
+  const selected = GAME_WORDS.find(w => w.word === nextWord && w.category === selectedCategory);
+  if (!selected) return;
+  const resume = wordProgress.round && wordProgress.round.word === nextWord ? wordProgress.round : null;
   currentWord = nextWord;
   previousWord = currentWord;
   wordProgress.active = currentWord;
   wordProgress.attempted.add(currentWord);
-  saveWordProgress();
   currentAttempt = 0;
   phase = "guess";
   revealed = Array(currentWord.length).fill(false);
   usedLetters = {};
+  roundGuesses = [];
+  restoringRound = true;
   guessForm.hidden = false;
   finalInput.value = "";
   finalInput.hidden = true;
   finalForm.classList.remove("active");
   messageElement.classList.remove("is-error");
   resultBackdrop.hidden = true;
-  resultBanner.classList.remove("win", "lose");
+  resultBanner.classList.remove("win","lose");
   hintElement.textContent = selected.hint;
+  const category = GAME_CATEGORIES.find(c => c.id === selectedCategory);
+  document.querySelector("#activeCategoryTitle").textContent = category.icon + " " + category.title;
   messageElement.textContent = "Введи слово в первую строку.";
   renderBoard();
   renderPreview();
   renderAlphabet();
   updateStats();
+  if (resume) {
+    for (const guess of resume.guesses) {
+      if (phase !== "guess") break;
+      checkGuess(guess);
+    }
+    if (phase === "guess" && guessInput) {
+      guessInput.value = resume.draft || "";
+      syncInput();
+    } else if (phase === "final") {
+      finalInput.value = resume.finalDraft || "";
+      cleanFinalInput();
+    }
+  }
+  restoringRound = false;
+  saveRound();
+  saveWordProgress();
 }
 
 function createLineInput(number) {
@@ -143,7 +213,7 @@ function createLineInput(number) {
   input.spellcheck = false;
   input.maxLength = currentWord.length;
   input.setAttribute("aria-label", "Введите слово, попытка " + number);
-  input.addEventListener("input", syncInput);
+  input.addEventListener("input", () => {syncInput();saveRound();});
   return input;
 }
 
@@ -371,6 +441,7 @@ function checkGuess(guess) {
   }
   messageElement.classList.remove("is-error");
   const result = getGuessResult(guess);
+  roundGuesses.push(guess);
   const row = boardElement.children[currentAttempt];
   result.forEach((item, i) => {
     const cell = row.children[i];
@@ -397,6 +468,7 @@ function checkGuess(guess) {
     activateNextRow();
     messageElement.textContent = "Правильные буквы появились в верхней рамке.";
   }
+  saveRound();
 }
 
 function beginFinalChance() {
@@ -414,6 +486,7 @@ function cleanFinalInput() {
   const clean = finalInput.value.toLowerCase().replace(/[^а-яё]/g, "").slice(0, finalInput.maxLength);
   if (finalInput.value !== clean) finalInput.value = clean;
   renderPreview();
+  saveRound();
 }
 
 function checkFinalChance() {
@@ -446,6 +519,7 @@ function finishGame(won) {
   recordResult(won);
   if (won) wordProgress.solved.add(currentWord);
   wordProgress.active = null;
+  wordProgress.round = null;
   saveWordProgress();
   phase = "finished";
   guessForm.hidden = true;
@@ -465,7 +539,7 @@ function finishGame(won) {
   } else {
     // Не раскрываем начальные буквы даже при поражении.
     resultTitle.textContent = "СЕГОДНЯ НЕ УГАДАЛИ";
-    resultText.textContent = "В этот раз слово осталось загадкой. Сначала будут новые слова, затем вернёмся к неразгаданным.";
+    resultText.textContent = "В этот раз слово осталось загадкой. Сначала будут новые слова этой категории, затем вернёмся к неразгаданным.";
     nextWordButton.textContent = "Следующее слово";
     resultBanner.classList.add("lose");
   }
@@ -491,13 +565,13 @@ nextWordButton.addEventListener("click", () => {
     wordProgress.solved.clear();
     wordProgress.attempted.clear();
     wordProgress.active = null;
+    wordProgress.round = null;
     previousWord = "";
     saveWordProgress();
   }
   startGame();
 });
-// Навигация внутри страницы: заставка -> меню -> игра.
-// Возврат в меню не сбрасывает текущий раунд и статистику.
+// Навигация и сохранение текущего экрана между обновлениями страницы.
 const welcomeScreen = document.querySelector("#welcomeScreen");
 const homeScreen = document.querySelector("#homeScreen");
 const gameScreen = document.querySelector("#gameScreen");
@@ -505,53 +579,93 @@ const details = document.querySelector("#menuDetails");
 const detailsTitle = document.querySelector("#menuDetailsTitle");
 const detailsBody = document.querySelector("#menuDetailsBody");
 const homeMenu = document.querySelector(".home-menu");
+const categoryScreen = document.querySelector("#categoryScreen");
+const categoryList = document.querySelector("#categoryList");
+function closeMenuDetails() {details.hidden = true;homeMenu.hidden = false;}
+function closeCategories() {categoryScreen.hidden = true;homeMenu.hidden = false;}
 function showScreen(screen) {
   welcomeScreen.hidden = screen !== welcomeScreen;
   homeScreen.hidden = screen !== homeScreen;
   gameScreen.hidden = screen !== gameScreen;
-  if (screen === homeScreen) {
-    closeMenuDetails();
-    document.querySelector("#menuPlay").focus({ preventScroll:true });
-  }
-}
-function closeMenuDetails() {
-  details.hidden = true;
-  homeMenu.hidden = false;
+  if (screen === homeScreen) {closeMenuDetails();closeCategories();}
+  try {
+    localStorage.setItem(UI_STORAGE_KEY,JSON.stringify({
+      category:selectedCategory,
+      screen:screen === gameScreen ? "game" : screen === homeScreen ? "home" : "welcome"
+    }));
+  } catch {}
 }
 function openMenuDetails(title) {
+  closeCategories();
   detailsTitle.textContent = title;
   details.hidden = false;
   homeMenu.hidden = true;
   detailsBody.replaceChildren();
 }
+function showCategories() {
+  closeMenuDetails();
+  categoryScreen.hidden = false;
+  homeMenu.hidden = true;
+  categoryList.replaceChildren();
+  GAME_CATEGORIES.forEach((category,index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "category-item category-item-" + index;
+    const icon = document.createElement("span");
+    icon.className = "category-icon";
+    icon.textContent = category.icon;
+    const info = document.createElement("span");
+    info.className = "category-info";
+    const title = document.createElement("strong");
+    title.textContent = category.title;
+    const subtitle = document.createElement("small");
+    subtitle.textContent = category.description;
+    info.append(title,subtitle);
+    const count = document.createElement("span");
+    count.className = "category-count";
+    count.textContent = allProgress[category.id].solved.size + "/" + wordsInCategory(category.id).length;
+    button.append(icon,info,count);
+    button.addEventListener("click", () => {
+      if (selectedCategory !== category.id) {
+        saveRound();
+        selectedCategory = category.id;
+        wordProgress = allProgress[category.id];
+        wordBank = wordsInCategory(selectedCategory);
+        previousWord = "";
+        startGame();
+      }
+      showScreen(gameScreen);
+    });
+    categoryList.append(button);
+  });
+}
 document.querySelector("#welcomeEnter").addEventListener("click", () => showScreen(homeScreen));
-document.querySelector("#menuPlay").addEventListener("click", () => showScreen(gameScreen));
+document.querySelector("#menuPlay").addEventListener("click",showCategories);
+document.querySelector("#categoryBack").addEventListener("click",closeCategories);
 document.querySelector("#gameMenuBack").addEventListener("click", () => showScreen(homeScreen));
 document.querySelector("#menuSplashBack").addEventListener("click", () => showScreen(welcomeScreen));
-document.querySelector("#menuDetailsBack").addEventListener("click", closeMenuDetails);
+document.querySelector("#menuDetailsBack").addEventListener("click",closeMenuDetails);
 document.querySelector("#menuStats").addEventListener("click", () => {
   openMenuDetails("СТАТИСТИКА");
-  const lines = [
-    ["Угадано", score.wins],
-    ["Не угадано", score.losses],
-    ["Разгадано разных слов", wordProgress.solved.size + " / " + wordBank.length]
-  ];
-  for (const [label, value] of lines) {
+  const lines = [["Угадано",score.wins],["Не угадано",score.losses],
+    ...GAME_CATEGORIES.map(c => [c.icon + " " + c.title,
+      allProgress[c.id].solved.size + " / " + wordsInCategory(c.id).length])];
+  for (const [label,value] of lines) {
     const line = document.createElement("div");
     line.className = "home-stat-line";
     const name = document.createElement("span");
     name.textContent = label;
     const number = document.createElement("strong");
     number.textContent = value;
-    line.append(name, number);
+    line.append(name,number);
     detailsBody.append(line);
   }
 });
 document.querySelector("#menuRules").addEventListener("click", () => {
   openMenuDetails("КАК ИГРАТЬ");
   const rules = [
-    "Угадай слово из 5 букв за 4 попытки.",
-    "Зелёная буква — на своём месте, жёлтая — есть в слове, серая — отсутствует.",
+    "Выбери одну из пяти категорий и угадай слово из 5 букв за 4 попытки.",
+    "Зелёная буква — на месте, жёлтая — есть в слове, серая — отсутствует.",
     "Вводи настоящие слова с игровой клавиатуры или клавиатуры телефона.",
     "После четырёх попыток получишь последний шанс вписать недостающие буквы."
   ];
@@ -564,6 +678,9 @@ document.querySelector("#menuRules").addEventListener("click", () => {
   detailsBody.append(list);
 });
 startGame();
+showScreen(initialUiState.screen === "game" ? gameScreen :
+  initialUiState.screen === "home" ? homeScreen : welcomeScreen);
+
 if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
   navigator.serviceWorker.register("service-worker.js").catch(() => {});
 }
