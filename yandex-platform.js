@@ -13,7 +13,7 @@
   // В этом случае сохраняем счётчик и повторяем не раньше, чем через минуту,
   // на следующем переходе, но НИКОГДА не запускаем рекламу по таймеру.
   const ROUNDS_PER_AD=3,MIN_AD_INTERVAL=180000,RETRY_INTERVAL=60000;
-  let adActive=false,finishedRounds=0,lastAd=Date.now(),lastRequest=0;
+  let adActive=false,finishedRounds=0,lastAd=0,lastRequest=0;
   let adStatus="waiting";
   function setAdActive(active){
     const next=Boolean(active);
@@ -68,7 +68,7 @@
     const now=Date.now();
     return {sdkReady:Boolean(sdk),rounds:finishedRounds,
       targetRounds:ROUNDS_PER_AD,active:adActive,status:adStatus,
-      untilEligibleMs:Math.max(0,MIN_AD_INTERVAL-(now-lastAd)),
+      untilEligibleMs:lastAd?Math.max(0,MIN_AD_INTERVAL-(now-lastAd)):0,
       retryInMs:Math.max(0,RETRY_INTERVAL-(now-lastRequest))};
   }
   function showInterstitialIfDue(){
@@ -77,7 +77,7 @@
     if(!sdk?.adv?.showFullscreenAdv){adStatus="sdk_unavailable";return Promise.resolve(false);}
     if(adActive){adStatus="ad_in_progress";return Promise.resolve(false);}
     if(finishedRounds<ROUNDS_PER_AD){adStatus="not_enough_rounds";return Promise.resolve(false);}
-    if(now-lastAd<MIN_AD_INTERVAL){adStatus="min_interval";return Promise.resolve(false);}
+    if(lastAd&&now-lastAd<MIN_AD_INTERVAL){adStatus="min_interval";return Promise.resolve(false);}
     if(lastRequest&&now-lastRequest<RETRY_INTERVAL){adStatus="retry_interval";return Promise.resolve(false);}
     lastRequest=now;
     adStatus="requested";
