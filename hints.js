@@ -4,8 +4,8 @@
 (function(){
   "use strict";
   const KEY="ugadai-slovo-hints-v1";
-  const TYPES=["letter","attempt","eliminate","clue"];
-  const START={letter:8,attempt:3,eliminate:4,clue:4};
+  const TYPES=["letter","first","vowel","attempt","eliminate","clue"];
+  const START={letter:8,first:4,vowel:4,attempt:3,eliminate:4,clue:4};
   function validCount(n){return Number.isSafeInteger(n)&&n>=0?Math.min(n,10000):0;}
   function read(){
     let saved=null;
@@ -50,7 +50,7 @@
     if(current<=old)return false;
     for(let n=old+1;n<=current;n++){
       data.balances.letter+=2;
-      const type=["attempt","eliminate","clue"][(n-1)%3];
+      const type=["first","vowel","attempt","eliminate","clue"][(n-1)%5];
       data.balances[type]++;
     }
     data.rewardedWins=wins;
@@ -63,6 +63,8 @@
     if(data.rewardedLevels.includes(key))return false;
     data.rewardedLevels.push(key);
     data.balances.letter+=3;
+    data.balances.first++;
+    data.balances.vowel++;
     data.balances.attempt++;
     data.balances.eliminate++;
     data.balances.clue++;
