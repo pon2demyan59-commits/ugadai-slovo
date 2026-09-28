@@ -822,3 +822,8 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
   .game .long-letters .cell,.game .long-letters .preview-cell { min-height:27px; }
 }
 @media(max-height:670px) { .levels-list { gap:5px; } .level-card { min-height:55px; padding:6px 10px; } .level-number { height:36px; flex-basis:36px; } }
+
+/* Облачное сохранение показывается только гостям на Яндекс Играх. */
+#menuCloud[hidden]{display:none!important}
+.menu-cloud{background:linear-gradient(135deg,#5acdb8,#369bdf);color:#fff}
+#welcomeEnter:disabled{opacity:.65;cursor:wait}
