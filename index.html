@@ -89,8 +89,8 @@
           <span>Осталось: <strong id="attemptsLeft">4</strong></span>
         </div>
       </form>
-      <section class="hint-shop" id="hintShop" aria-label="Помощь в раунде">
-        <h2>💡 Подсказки</h2>
+      <details class="hint-shop" id="hintShop">
+        <summary>💡 Подсказки — открыть помощь</summary>
         <div class="hint-shop-grid">
           <button type="button" id="hintLetter">🔤 Открыть клетку <span id="hintLetterCount"></span></button>
           <button type="button" id="hintAttempt">➕ Ещё попытка <span id="hintAttemptCount"></span></button>
@@ -109,7 +109,7 @@
           <button type="button" id="hintAd">▶ Смотреть рекламу и получить бонус</button>
         </div>
         <p id="hintStatus" role="status" aria-live="polite"></p>
-      </section>
+      </details>
       <p class="message" id="message" role="status" aria-live="polite"></p>
       <section class="alphabet-panel" aria-label="Алфавит">
         <div class="alphabet-grid" id="alphabet"></div>
