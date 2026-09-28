@@ -3,26 +3,65 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#111216">
+  <meta name="theme-color" content="#714eea">
   <title>Угадай слово</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="stats.css">
 </head>
 <body>
-  <main class="game">
-    <section class="game-card">
-      <h1>Угадай слово</h1>
-      <section class="scoreboard" aria-label="Статистика угаданных слов">
-        <div class="score-tile score-win">
-          <span class="score-label">Угадано</span>
-          <strong id="winsCount" class="score-number">0</strong>
-        </div>
-        <div class="score-tile score-loss">
-          <span class="score-label">Не угадано</span>
-          <strong id="lossesCount" class="score-number">0</strong>
-        </div>
+  <!-- Стартовая заставка → главное меню → игровое поле. -->
+  <section class="welcome-screen" id="welcomeScreen" aria-labelledby="welcomeTitle">
+    <div class="welcome-glow welcome-glow-left" aria-hidden="true"></div>
+    <div class="welcome-glow welcome-glow-right" aria-hidden="true"></div>
+    <div class="welcome-content">
+      <div class="welcome-tiles" aria-hidden="true">
+        <span>С</span><span>Л</span><span>О</span><span>В</span><span>О</span>
+      </div>
+      <h1 id="welcomeTitle" class="welcome-title">УГАДАЙ<br><span>СЛОВО</span></h1>
+      <p class="welcome-subtitle">Найди слово за 4 попытки!</p>
+      <button id="welcomeEnter" class="welcome-button" type="button">ВХОД <span aria-hidden="true">➜</span></button>
+    </div>
+    <div class="welcome-decor welcome-decor-one" aria-hidden="true">?</div>
+    <div class="welcome-decor welcome-decor-two" aria-hidden="true">✦</div>
+  </section>
+  <main class="home-screen" id="homeScreen" hidden>
+    <section class="home-card" aria-labelledby="homeTitle">
+      <div class="home-tiles" aria-hidden="true"><span>У</span><span>Г</span><span>А</span><span>Д</span><span>АЙ</span></div>
+      <h2 id="homeTitle" class="home-title">ГЛАВНОЕ МЕНЮ</h2>
+      <p class="home-tagline">Собери слово. Победи загадку!</p>
+      <nav class="home-menu" aria-label="Главное меню">
+        <button type="button" id="menuPlay" class="home-menu-button menu-play">▶ <span>ИГРАТЬ</span></button>
+        <button type="button" id="menuStats" class="home-menu-button menu-stats">★ <span>СТАТИСТИКА</span></button>
+        <button type="button" id="menuRules" class="home-menu-button menu-rules">? <span>КАК ИГРАТЬ</span></button>
+      </nav>
+      <section id="categoryScreen" class="category-screen" hidden aria-labelledby="categoryTitle">
+        <h3 id="categoryTitle">ВЫБОР КАТЕГОРИИ</h3>
+        <p class="category-level-heading">10 КАТЕГОРИЙ · 5 УРОВНЕЙ</p>
+        <div id="categoryList" class="category-list"></div>
+        <p class="category-goal">1 000 слов и выражений · 20 заданий в каждом уровне</p>
+        <button type="button" id="categoryBack" class="home-back">← К меню</button>
       </section>
+      <section id="levelsScreen" class="levels-screen" hidden aria-labelledby="levelsTitle">
+        <h3 id="levelsTitle">УРОВНИ</h3>
+        <p class="levels-subtitle" id="levelsSubtitle">Выбери сложность</p>
+        <div id="levelsList" class="levels-list"></div>
+        <button type="button" id="levelsBack" class="home-back">← Категории</button>
+      </section>
+      <section id="menuDetails" class="home-details" aria-live="polite" hidden>
+        <h3 id="menuDetailsTitle"></h3>
+        <div id="menuDetailsBody"></div>
+        <button type="button" id="menuDetailsBack" class="home-back">← К меню</button>
+      </section>
+      <button type="button" id="menuSplashBack" class="home-splash-back">← На заставку</button>
+    </section>
+  </main>
+  <main class="game" id="gameScreen" hidden>
+    <section class="game-card">
+      <button type="button" id="gameMenuBack" class="game-menu-back" aria-label="Вернуться к выбору уровня">← Уровни</button>
+      <h1>Угадай слово</h1>
+      <p id="activeCategoryTitle" class="game-category-label"></p>
       <section class="word-panel" aria-label="Подсказка">
         <form id="finalForm" class="final-form" autocomplete="off">
           <div class="final-entry" id="finalEntry">
@@ -63,6 +102,18 @@
   </main>
   <script src="data/words.js"></script>
   <script src="data/valid-words.js"></script>
+  <script src="data/long-words-loader.js"></script>
+  <script src="data/levels/animals.js"></script>
+  <script src="data/levels/nature.js"></script>
+  <script src="data/levels/food.js"></script>
+  <script src="data/levels/home.js"></script>
+  <script src="data/levels/city.js"></script>
+  <script src="data/levels/tech.js"></script>
+  <script src="data/levels/slang.js"></script>
+  <script src="data/levels/cinema.js"></script>
+  <script src="data/levels/sport.js"></script>
+  <script src="data/levels/travel.js"></script>
+  <script src="stats.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
