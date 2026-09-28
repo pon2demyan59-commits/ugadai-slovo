@@ -54,8 +54,11 @@
     for(const key of ["bestStreak","bestDays","totalDetailed"]){
       result[key]=Math.max(nonnegative(a?.[key]),nonnegative(b[key]));
     }
-    result.distribution=Array.from({length:5},(_,i)=>
-      Math.max(nonnegative(a?.distribution?.[i]),nonnegative(b.distribution?.[i])));
+    const norm=x=>x?.distribution?.length===5?
+      [...x.distribution.slice(0,4),0,x.distribution[4]]:x?.distribution||[];
+    const da=norm(a),db=norm(b);
+    result.distribution=Array.from({length:6},(_,i)=>
+      Math.max(nonnegative(da[i]),nonnegative(db[i])));
     result.recentDays={...(b.recentDays||{}),...(a?.recentDays||{})};
     for(const [day,count] of Object.entries(b.recentDays||{})){
       result.recentDays[day]=Math.max(nonnegative(result.recentDays[day]),nonnegative(count));
@@ -108,6 +111,7 @@
         if(stats)write(KEYS.stats,stats);
         const hints=mergeHints(read(KEYS.hints),cloud.hints);
         if(hints)write(KEYS.hints,hints);
+        window.GameStats?.reload?.();
         const localProfile=read(KEYS.profile)||{};
         const remoteProfile=cloud.profile&&typeof cloud.profile==="object"?cloud.profile:{};
         const chosenNick=typeof localProfile.nickname==="string"&&localProfile.nickname.trim()?localProfile.nickname:remoteProfile.nickname;
