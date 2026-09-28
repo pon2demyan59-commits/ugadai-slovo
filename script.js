@@ -24,7 +24,7 @@ function recordResult(won) {
   }
 }
 
-// Раздельный прогресс пяти категорий с переносом старых достижений.
+// Раздельный прогресс десяти категорий с переносом старых достижений.
 const WORD_PROGRESS_KEY = "ugadai-slovo-category-progress-v2";
 const UI_STORAGE_KEY = "ugadai-slovo-ui-v1";
 const categoryIds = new Set(GAME_CATEGORIES.map(c => c.id));
@@ -64,7 +64,7 @@ function loadAllProgress() {
       word:active,
       guesses:Array.isArray(oldRound.guesses)
         ? oldRound.guesses.filter(g => typeof g === "string" && g.length === 5 &&
-            VALID_RUSSIAN_WORDS.has(g) && g !== active).slice(0,maxAttempts) : [],
+            (VALID_RUSSIAN_WORDS.has(g) || EXTRA_VALID_WORDS.has(g)) && g !== active).slice(0,maxAttempts) : [],
       draft:typeof oldRound.draft === "string" ? oldRound.draft : "",
       finalDraft:typeof oldRound.finalDraft === "string" ? oldRound.finalDraft : ""
     } : null;
@@ -437,7 +437,7 @@ function checkGuess(guess) {
     return;
   }
   // Ошибочная последовательность букв не расходует попытку.
-  if (!VALID_RUSSIAN_WORDS.has(guess)) {
+  if (!VALID_RUSSIAN_WORDS.has(guess) && !EXTRA_VALID_WORDS.has(guess)) {
     showInputError("Такого слова нет в словаре. Попробуй другое.");
     return;
   }
@@ -624,11 +624,15 @@ function showCategories() {
     subtitle.textContent = category.description;
     const levelTag = document.createElement("span");
     levelTag.className = "category-level";
-    levelTag.textContent = "Уровень 1";
+    levelTag.textContent = "Уровень 1 из 5";
     info.append(title,subtitle,levelTag);
     const count = document.createElement("span");
     count.className = "category-count";
     count.textContent = allProgress[category.id].solved.size + "/" + wordsInCategory(category.id).length;
+    const future = document.createElement("small");
+    future.className = "category-total";
+    future.textContent = "Доступно 20 из 100 заданий";
+    info.append(future);
     button.append(icon,info,count);
     button.addEventListener("click", () => {
       if (selectedCategory !== category.id) {
@@ -653,6 +657,7 @@ document.querySelector("#menuDetailsBack").addEventListener("click",closeMenuDet
 document.querySelector("#menuStats").addEventListener("click", () => {
   openMenuDetails("СТАТИСТИКА");
   const lines = [["Угадано",score.wins],["Не угадано",score.losses],
+    ["Доступно заданий",GAME_WORDS.length + " / " + (GAME_CATEGORIES.length * 5 * 20)],
     ...GAME_CATEGORIES.map(c => [c.icon + " " + c.title,
       allProgress[c.id].solved.size + " / " + wordsInCategory(c.id).length])];
   for (const [label,value] of lines) {
@@ -669,7 +674,7 @@ document.querySelector("#menuStats").addEventListener("click", () => {
 document.querySelector("#menuRules").addEventListener("click", () => {
   openMenuDetails("КАК ИГРАТЬ");
   const rules = [
-    "На первом уровне по 20 слов в каждой из пяти категорий. Угадай слово из 5 букв за 4 попытки.",
+    "В каждой из 10 категорий запланировано по 5 уровней. Пока открыт первый: 20 слов из 5 букв за 4 попытки.",
     "Зелёная буква — на месте, жёлтая — есть в слове, серая — отсутствует.",
     "Вводи настоящие слова с игровой клавиатуры или клавиатуры телефона.",
     "После четырёх попыток получишь последний шанс вписать недостающие буквы."
