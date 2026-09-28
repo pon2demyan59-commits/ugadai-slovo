@@ -7,7 +7,8 @@
     progress:"ugadai-slovo-category-level-progress-v3",
     score:"ugadai-slovo-score-v1",
     stats:"ugadai-slovo-stats-v1",
-    profile:"ugadai-slovo-profile-v1"
+    profile:"ugadai-slovo-profile-v1",
+    hints:"ugadai-slovo-hints-v1"
   };
   let player=null, timer=null, pending=false, saving=false;
   function read(key){try{return JSON.parse(localStorage.getItem(key)||"null");}catch{return null;}}
@@ -65,8 +66,20 @@
     result.consecutiveDays=nonnegative(newer?.consecutiveDays);
     return result;
   }
+  function mergeHints(local,remote){
+    if(!remote||remote.version!==1)return local;
+    if(!local||local.version!==1)return remote;
+    const balances={};
+    for(const key of ["letter","attempt","eliminate","clue"]){
+      balances[key]=Math.max(nonnegative(local.balances?.[key]),
+        nonnegative(remote.balances?.[key]));
+    }
+    return {version:1,balances,
+      rewardedWins:Math.max(nonnegative(local.rewardedWins),nonnegative(remote.rewardedWins)),
+      rewardedLevels:arrayUnion(local.rewardedLevels,remote.rewardedLevels)};
+  }
   function snapshot(){
-    return {version:1,progress:read(KEYS.progress),score:read(KEYS.score),stats:read(KEYS.stats),profile:read(KEYS.profile)};
+    return {version:1,progress:read(KEYS.progress),score:read(KEYS.score),stats:read(KEYS.stats),profile:read(KEYS.profile),hints:read(KEYS.hints)};
   }
   async function prepare(){
     if(!window.YandexPlatform.isYandex)return;
@@ -93,6 +106,8 @@
         if(progress)write(KEYS.progress,progress);
         if(score)write(KEYS.score,score);
         if(stats)write(KEYS.stats,stats);
+        const hints=mergeHints(read(KEYS.hints),cloud.hints);
+        if(hints)write(KEYS.hints,hints);
         const localProfile=read(KEYS.profile)||{};
         const remoteProfile=cloud.profile&&typeof cloud.profile==="object"?cloud.profile:{};
         const chosenNick=typeof localProfile.nickname==="string"&&localProfile.nickname.trim()?localProfile.nickname:remoteProfile.nickname;
