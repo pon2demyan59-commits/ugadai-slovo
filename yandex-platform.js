@@ -30,7 +30,8 @@
         // П. 2.14: читаем язык платформы на старте, даже при единственной локализации.
         // Сейчас доступен только русский; другие языки используют русский как резервный.
         portalLanguage=sdk.environment.i18n.lang;
-        gameLanguage=portalLanguage==="ru"?"ru":"ru";
+        const supportedLanguages=["ru"];
+        gameLanguage=supportedLanguages.includes(portalLanguage)?portalLanguage:"ru";
         document.documentElement.lang=gameLanguage;
         window.YandexPlatform.portalLanguage=portalLanguage;
         window.YandexPlatform.language=gameLanguage;
