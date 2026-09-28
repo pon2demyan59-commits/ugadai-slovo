@@ -599,143 +599,192 @@ nextWordButton.addEventListener("click",()=>{
     startGame();
   }
 });
-// Навигация и сохранение текущего экрана между обновлениями страницы.
-const welcomeScreen = document.querySelector("#welcomeScreen");
-const homeScreen = document.querySelector("#homeScreen");
-const gameScreen = document.querySelector("#gameScreen");
-const homeCard = document.querySelector(".home-card");
-const details = document.querySelector("#menuDetails");
-const detailsTitle = document.querySelector("#menuDetailsTitle");
-const detailsBody = document.querySelector("#menuDetailsBody");
-const homeMenu = document.querySelector(".home-menu");
-const categoryScreen = document.querySelector("#categoryScreen");
-const categoryList = document.querySelector("#categoryList");
-let homeView = "menu";
-
-// Запоминаем не только экран, но и открытую вкладку внутри главного меню.
+// Сохраняем открытый раздел меню, категорию, уровень и незаконченный раунд.
+const welcomeScreen=document.querySelector("#welcomeScreen");
+const homeScreen=document.querySelector("#homeScreen");
+const gameScreen=document.querySelector("#gameScreen");
+const homeCard=document.querySelector(".home-card");
+const homeMenu=document.querySelector(".home-menu");
+const categoryScreen=document.querySelector("#categoryScreen");
+const categoryList=document.querySelector("#categoryList");
+const levelsScreen=document.querySelector("#levelsScreen");
+const levelsList=document.querySelector("#levelsList");
+const details=document.querySelector("#menuDetails");
+const detailsTitle=document.querySelector("#menuDetailsTitle");
+const detailsBody=document.querySelector("#menuDetailsBody");
+let homeView="menu";
 function saveUiState() {
   try {
     localStorage.setItem(UI_STORAGE_KEY,JSON.stringify({
-      category:selectedCategory,
-      screen:gameScreen.hidden ? (homeScreen.hidden ? "welcome" : "home") : "game",
+      category:selectedCategory,level:selectedLevel,
+      screen:gameScreen.hidden?(homeScreen.hidden?"welcome":"home"):"game",
       homeView
     }));
   } catch {}
 }
 function setHomeView(view) {
-  homeView = view;
-  homeMenu.hidden = view !== "menu";
-  categoryScreen.hidden = view !== "categories";
-  details.hidden = view !== "stats" && view !== "rules";
-  homeCard.classList.toggle("subview",view !== "menu");
-  homeCard.setAttribute("aria-labelledby",
-    view === "categories" ? "categoryTitle" :
-    view === "stats" || view === "rules" ? "menuDetailsTitle" : "homeTitle");
+  homeView=view;
+  homeMenu.hidden=view!=="menu";
+  categoryScreen.hidden=view!=="categories";
+  levelsScreen.hidden=view!=="levels";
+  details.hidden=view!=="stats" && view!=="rules";
+  homeCard.classList.toggle("subview",view!=="menu");
+  homeCard.setAttribute("aria-labelledby",{
+    menu:"homeTitle",categories:"categoryTitle",levels:"levelsTitle",
+    stats:"menuDetailsTitle",rules:"menuDetailsTitle"
+  }[view]);
   saveUiState();
 }
-function closeMenuDetails() {setHomeView("menu");}
-function closeCategories() {setHomeView("menu");}
 function showScreen(screen) {
-  welcomeScreen.hidden = screen !== welcomeScreen;
-  homeScreen.hidden = screen !== homeScreen;
-  gameScreen.hidden = screen !== gameScreen;
-  if (screen === homeScreen) setHomeView("menu");
+  welcomeScreen.hidden=screen!==welcomeScreen;
+  homeScreen.hidden=screen!==homeScreen;
+  gameScreen.hidden=screen!==gameScreen;
+  if (screen===homeScreen) setHomeView("menu");
   saveUiState();
 }
 function openMenuDetails(title,view) {
-  detailsTitle.textContent = title;
+  detailsTitle.textContent=title;
   detailsBody.replaceChildren();
   setHomeView(view);
 }
 function showCategories() {
   setHomeView("categories");
   categoryList.replaceChildren();
-  GAME_CATEGORIES.forEach((category,index) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "category-item category-item-" + index;
-    const icon = document.createElement("span");
-    icon.className = "category-icon";
-    icon.textContent = category.icon;
-    const info = document.createElement("span");
-    info.className = "category-info";
-    const title = document.createElement("strong");
-    title.textContent = category.title;
-    const subtitle = document.createElement("small");
-    subtitle.textContent = category.description;
-    const levelTag = document.createElement("span");
-    levelTag.className = "category-level";
-    levelTag.textContent = "Уровень 1 из 5";
-    info.append(title,subtitle,levelTag);
-    const count = document.createElement("span");
-    count.className = "category-count";
-    count.textContent = allProgress[category.id].solved.size + "/" + wordsInCategory(category.id).length;
-    const future = document.createElement("small");
-    future.className = "category-total";
-    future.textContent = "Доступно 20 из 100 заданий";
-    info.append(future);
+  GAME_CATEGORIES.forEach((cat,index)=>{
+    const button=document.createElement("button");
+    button.type="button";
+    button.className="category-item category-item-"+index;
+    const icon=document.createElement("span");
+    icon.className="category-icon";
+    icon.textContent=cat.icon;
+    const info=document.createElement("span");
+    info.className="category-info";
+    const title=document.createElement("strong");
+    title.textContent=cat.title;
+    const subtitle=document.createElement("small");
+    subtitle.textContent=cat.description;
+    const completed=Array.from({length:MAX_LEVEL},(_,i)=>i+1).filter(l=>allProgress[cat.id][l].completed).length;
+    const level=document.createElement("span");
+    level.className="category-level";
+    level.textContent=completed===MAX_LEVEL?"Все уровни пройдены":completed+" из "+MAX_LEVEL+" уровней";
+    const total=Array.from({length:MAX_LEVEL},(_,i)=>i+1)
+      .reduce((sum,l)=>sum+allProgress[cat.id][l].solved.size,0);
+    const future=document.createElement("small");
+    future.className="category-total";
+    future.textContent="20 заданий на каждом уровне";
+    info.append(title,subtitle,level,future);
+    const count=document.createElement("span");
+    count.className="category-count";
+    count.textContent=total+"/100";
     button.append(icon,info,count);
-    button.addEventListener("click", () => {
-      if (selectedCategory !== category.id) {
-        saveRound();
-        selectedCategory = category.id;
-        wordProgress = allProgress[category.id];
-        wordBank = wordsInCategory(selectedCategory);
-        previousWord = "";
-        startGame();
-      }
-      showScreen(gameScreen);
-    });
+    button.addEventListener("click",()=>showLevels(cat.id));
     categoryList.append(button);
   });
 }
-document.querySelector("#welcomeEnter").addEventListener("click", () => showScreen(homeScreen));
+function showLevels(id) {
+  saveRound();
+  selectedCategory=id;
+  const cat=GAME_CATEGORIES.find(c=>c.id===id);
+  document.querySelector("#levelsTitle").textContent=cat.icon+" "+cat.title;
+  document.querySelector("#levelsSubtitle").textContent="Пять уровней · 100 заданий";
+  levelsList.replaceChildren();
+  for (let level=1;level<=MAX_LEVEL;level++) {
+    const unlocked=levelUnlocked(id,level);
+    const progress=allProgress[id][level];
+    const button=document.createElement("button");
+    button.type="button";
+    button.className="level-card";
+    button.disabled=!unlocked;
+    const badge=document.createElement("span");
+    badge.className="level-number";
+    badge.textContent=unlocked?String(level):"🔒";
+    const info=document.createElement("span");
+    info.className="level-info";
+    const title=document.createElement("strong");
+    title.textContent=(level===5?"Мастер слов":LEVEL_NAMES[level-1]);
+    const detail=document.createElement("small");
+    detail.textContent=level===5?"9+ букв и выражения":
+      (level+4)+" букв · "+(progress.completed?"Пройден":"20 заданий");
+    info.append(title,detail);
+    const count=document.createElement("span");
+    count.className="level-count";
+    count.textContent=progress.solved.size+"/"+wordsInCategory(id,level).length;
+    button.append(badge,info,count);
+    if (unlocked) button.addEventListener("click",()=>startLevel(id,level));
+    levelsList.append(button);
+  }
+  setHomeView("levels");
+}
+function startLevel(id,level) {
+  if (!levelUnlocked(id,level)) return;
+  saveRound();
+  selectedCategory=id;
+  selectedLevel=level;
+  wordProgress=allProgress[id][level];
+  wordBank=wordsInCategory(id,level);
+  previousWord="";
+  startGame();
+  showScreen(gameScreen);
+}
+document.querySelector("#welcomeEnter").addEventListener("click",()=>showScreen(homeScreen));
 document.querySelector("#menuPlay").addEventListener("click",showCategories);
-document.querySelector("#categoryBack").addEventListener("click",closeCategories);
-document.querySelector("#gameMenuBack").addEventListener("click", () => showScreen(homeScreen));
-document.querySelector("#menuSplashBack").addEventListener("click", () => showScreen(welcomeScreen));
-document.querySelector("#menuDetailsBack").addEventListener("click",closeMenuDetails);
-document.querySelector("#menuStats").addEventListener("click", () => {
+document.querySelector("#categoryBack").addEventListener("click",()=>setHomeView("menu"));
+document.querySelector("#levelsBack").addEventListener("click",showCategories);
+document.querySelector("#gameMenuBack").addEventListener("click",()=>{
+  showScreen(homeScreen);
+  showLevels(selectedCategory);
+});
+document.querySelector("#menuSplashBack").addEventListener("click",()=>showScreen(welcomeScreen));
+document.querySelector("#menuDetailsBack").addEventListener("click",()=>setHomeView("menu"));
+document.querySelector("#menuStats").addEventListener("click",()=>{
   openMenuDetails("СТАТИСТИКА","stats");
-  const lines = [["Угадано",score.wins],["Не угадано",score.losses],
-    ["Доступно заданий",GAME_WORDS.length + " / " + (GAME_CATEGORIES.length * 5 * 20)],
-    ...GAME_CATEGORIES.map(c => [c.icon + " " + c.title,
-      allProgress[c.id].solved.size + " / " + wordsInCategory(c.id).length])];
+  const solved=GAME_CATEGORIES.reduce((sum,c)=>
+    sum+Array.from({length:MAX_LEVEL},(_,i)=>i+1)
+      .reduce((n,l)=>n+allProgress[c.id][l].solved.size,0),0);
+  const lines=[
+    ["Угадано",score.wins],["Не угадано",score.losses],
+    ["Всего разгадано",solved+"/"+GAME_WORDS.length],
+    ...GAME_CATEGORIES.map(c=>[c.icon+" "+c.title,
+      Array.from({length:MAX_LEVEL},(_,i)=>i+1)
+        .reduce((n,l)=>n+allProgress[c.id][l].solved.size,0)+"/100"])
+  ];
   for (const [label,value] of lines) {
-    const line = document.createElement("div");
-    line.className = "home-stat-line";
-    const name = document.createElement("span");
-    name.textContent = label;
-    const number = document.createElement("strong");
-    number.textContent = value;
+    const line=document.createElement("div");
+    line.className="home-stat-line";
+    const name=document.createElement("span");
+    name.textContent=label;
+    const number=document.createElement("strong");
+    number.textContent=value;
     line.append(name,number);
     detailsBody.append(line);
   }
 });
-document.querySelector("#menuRules").addEventListener("click", () => {
+document.querySelector("#menuRules").addEventListener("click",()=>{
   openMenuDetails("КАК ИГРАТЬ","rules");
-  const rules = [
-    "В каждой из 10 категорий запланировано по 5 уровней. Пока открыт первый: 20 слов из 5 букв за 4 попытки.",
-    "Зелёная буква — на месте, жёлтая — есть в слове, серая — отсутствует.",
-    "Вводи настоящие слова с игровой клавиатуры или клавиатуры телефона.",
-    "После четырёх попыток получишь последний шанс вписать недостающие буквы."
+  const rules=[
+    "Выбери категорию и проходи уровни последовательно. На каждом по 20 заданий.",
+    "Уровень 1 — 5 букв, уровень 2 — 6, уровень 3 — 7, уровень 4 — 8.",
+    "Уровень 5 — длинные слова и составные выражения. Пробелы уже отмечены на игровом поле.",
+    "Зелёная буква стоит на месте, жёлтая есть в слове, серая отсутствует.",
+    "У тебя 4 попытки и последний шанс вписать недостающие буквы.",
+    "После разгадки всех 20 заданий откроется следующий уровень в этой категории."
   ];
-  const list = document.createElement("ol");
+  const list=document.createElement("ol");
   for (const rule of rules) {
-    const item = document.createElement("li");
-    item.textContent = rule;
+    const item=document.createElement("li");
+    item.textContent=rule;
     list.append(item);
   }
   detailsBody.append(list);
 });
 startGame();
-showScreen(initialUiState.screen === "game" ? gameScreen :
-  initialUiState.screen === "home" ? homeScreen : welcomeScreen);
-// Если обновили страницу в выборе категорий, статистике или правилах — возвращаем именно туда.
-if (initialUiState.screen === "home") {
-  if (initialUiState.homeView === "categories") showCategories();
-  else if (initialUiState.homeView === "stats") document.querySelector("#menuStats").click();
-  else if (initialUiState.homeView === "rules") document.querySelector("#menuRules").click();
+showScreen(initialUiState.screen==="game"?gameScreen:
+  initialUiState.screen==="home"?homeScreen:welcomeScreen);
+if (initialUiState.screen==="home") {
+  if (initialUiState.homeView==="categories") showCategories();
+  else if (initialUiState.homeView==="levels") showLevels(selectedCategory);
+  else if (initialUiState.homeView==="stats") document.querySelector("#menuStats").click();
+  else if (initialUiState.homeView==="rules") document.querySelector("#menuRules").click();
 }
 
 if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
