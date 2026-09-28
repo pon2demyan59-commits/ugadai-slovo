@@ -93,6 +93,8 @@
         <summary>💡 Подсказки — открыть помощь</summary>
         <div class="hint-shop-grid">
           <button type="button" id="hintLetter">🔤 Открыть клетку <span id="hintLetterCount"></span></button>
+          <button type="button" id="hintFirst">🔡 Первая буква <span id="hintFirstCount"></span></button>
+          <button type="button" id="hintVowel">🅰️ Открыть гласную <span id="hintVowelCount"></span></button>
           <button type="button" id="hintAttempt">➕ Ещё попытка <span id="hintAttemptCount"></span></button>
           <button type="button" id="hintEliminate">❌ Убрать лишние буквы <span id="hintEliminateCount"></span></button>
           <button type="button" id="hintClue">🔎 Подсказка о слове <span id="hintClueCount"></span></button>
@@ -102,6 +104,8 @@
           <label for="hintAdKind">Бонус за добровольный просмотр рекламы</label>
           <select id="hintAdKind" aria-label="Выбрать рекламную награду">
             <option value="letter">+3 открытия букв</option>
+            <option value="first">+3 первые буквы</option>
+            <option value="vowel">+3 открытия гласных</option>
             <option value="attempt">+2 дополнительные попытки</option>
             <option value="eliminate">+2 удаления лишних букв</option>
             <option value="clue">+2 подсказки о слове</option>
