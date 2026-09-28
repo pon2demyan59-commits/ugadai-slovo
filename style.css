@@ -936,8 +936,17 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
 .welcome-audio{margin:20px auto 0}
 .welcome-audio button{background:linear-gradient(145deg,#7755bb,#433b83)}
 .home-audio{margin:6px auto 12px}
-.game .game-audio{margin:3px auto 7px;gap:6px}
-.game .game-audio button{min-height:32px;padding:5px 7px;font-size:11px}
+/* В строке с кнопкой «Уровни», без увеличения высоты игрового экрана. */
+.game .game-card{position:relative}
+.game .game-audio{
+  position:absolute;top:clamp(11px,3vw,18px);right:clamp(6px,2.5vw,15px);
+  width:min(205px,calc(100% - 115px));margin:0;gap:4px;flex-wrap:nowrap;
+}
+.game .game-audio button{flex:1 1 0;min-width:0;min-height:33px;padding:5px 3px;font-size:10px}
+@media(max-width:380px){
+  .game .game-audio{top:11px;right:7px;width:min(205px,calc(100% - 102px))}
+  .game .game-audio button{font-size:9px;min-height:30px}
+}
 @media(max-width:355px){
   .audio-controls{gap:5px}
   .audio-controls button{flex-basis:120px;font-size:11px}
