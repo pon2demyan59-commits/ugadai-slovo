@@ -48,10 +48,40 @@ for(const cat of bank.categories){
     if(level<5)assert(words.every(w=>w.word.length===level+4),"Неверная длина слова");
   }
 }
+// Пасхалка не хранит отдельные фрагменты: они зависят от пройденных категорий.
+const storage=new Map();
+context.localStorage={
+  getItem:key=>storage.get(key)||null,
+  setItem:(key,value)=>storage.set(key,value)
+};
+context.window={GameCloud:{schedule(){}}};
+vm.runInContext(fs.readFileSync(path.join(root,"rewards.js"),"utf8"),context,
+  {filename:"rewards.js"});
+const rewards=context.window.GameRewards;
+const emptyProgress={};
+const fullProgress={};
+for(const cat of bank.categories){
+  emptyProgress[cat.id]={};fullProgress[cat.id]={};
+  for(let level=1;level<=5;level++){
+    emptyProgress[cat.id][level]={solved:new Set()};
+    fullProgress[cat.id][level]={
+      solved:new Set(bank.words.filter(w=>w.category===cat.id&&w.level===level).map(w=>w.word))
+    };
+  }
+}
+const categoryWords=(id,level)=>bank.words.filter(w=>w.category===id&&w.level===level).map(w=>w.word);
+assert.equal(rewards.earnedCount(emptyProgress,bank.categories,5,categoryWords),0);
+assert.equal(rewards.earnedCount(fullProgress,bank.categories,5,categoryWords),10);
+const nameResult=rewards.saveNickname("Варрон");
+assert.equal(nameResult.ok,true);
+assert.equal(rewards.getNickname(),"Варрон");
+assert.equal(rewards.saveNickname("<script>").ok,false,"Ник должен быть безопасным");
+assert(JSON.parse(storage.get("ugadai-slovo-profile-v1")).nickname==="Варрон",
+  "Ник не записан в локальное хранилище");
 const bridge=fs.readFileSync(path.join(root,"yandex-platform.js"),"utf8");
 assert(bridge.includes('script.src="/sdk.js"'),"SDK должен подключаться с /sdk.js");
 assert(bridge.includes("LoadingAPI")&&bridge.includes("GameplayAPI")&&bridge.includes("showFullscreenAdv"),
   "Проверьте интеграцию SDK");
 const worker=fs.readFileSync(path.join(root,"service-worker.js"),"utf8");
 assert(worker.includes('event.request.mode === "navigate"'),"Нет проверки свежего HTML");
-console.log("OK: 1000 уникальных заданий, 50 уровней, 10 категорий, JS, ресурсы и SDK.");
+console.log("OK: 1000 слов, 50 уровней, SDK, ник, облачный профиль и 10 фрагментов награды.");
