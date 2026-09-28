@@ -1,4 +1,5 @@
-const maxAttempts = 4;
+const maxAttempts = 5; // Максимум с бонусом; стандартно у игрока 4 попытки.
+const baseAttempts = 4;
 const SCORE_STORAGE_KEY = "ugadai-slovo-score-v1";
 
 function loadScore() {
@@ -125,7 +126,8 @@ function saveRound() {
   if (restoringRound || !wordProgress.active || phase==="finished") return;
   wordProgress.round={word:currentWord,guesses:[...roundGuesses],
     draft:phase==="guess" && guessInput ? guessInput.value : "",
-    finalDraft:phase==="final" ? finalInput.value : ""};
+    finalDraft:phase==="final" ? finalInput.value : "",
+    hints:JSON.parse(JSON.stringify(roundHints))};
   saveWordProgress();
 }
 function chooseNextWord() {
@@ -181,6 +183,9 @@ let usedLetters = {};
 let revealed = [];
 let phase = "guess";
 let previousWord = "";
+let roundAttemptLimit=baseAttempts;
+let roundHints={positions:[],extraAttempt:false,eliminated:[],extraClue:false};
+let revealHintMode=false,pendingUnknown=null;
 
 let currentEntry=null;
 let phraseBreaks=[];
@@ -200,6 +205,17 @@ function startGame() {
   let offset=0;
   for (let i=0;i<parts.length-1;i++) {offset+=parts[i];phraseBreaks.push(offset);}
   const resume=wordProgress.round && wordProgress.round.word===nextWord ? wordProgress.round : null;
+  const previousHints=resume?.hints || {};
+  roundHints={
+    positions:Array.isArray(previousHints.positions)?previousHints.positions.filter(i=>
+      Number.isInteger(i)&&i>=0&&i<nextWord.length):[],
+    extraAttempt:previousHints.extraAttempt===true,
+    eliminated:Array.isArray(previousHints.eliminated)?previousHints.eliminated.filter(x=>
+      typeof x==="string"&&x.length===1):[],
+    extraClue:previousHints.extraClue===true
+  };
+  roundAttemptLimit=baseAttempts+(roundHints.extraAttempt?1:0);
+  revealHintMode=false;pendingUnknown=null;
   currentAttempt=0;
   phase="guess";
   revealed=Array(currentWord.length).fill(false);
@@ -229,6 +245,11 @@ function startGame() {
       if (phase!=="guess") break;
       checkGuess(guess);
     }
+    for(const position of roundHints.positions)revealed[position]=true;
+    if(roundHints.positions.length)renderPreview();
+    if (phase==="final") {
+      finalInput.maxLength=revealed.filter(value=>!value).length;
+    }
     if (phase==="guess" && guessInput) {
       guessInput.value=resume.draft||"";
       syncInput();
@@ -238,6 +259,8 @@ function startGame() {
     }
   }
   restoringRound=false;
+  renderHints();
+  window.GameAnalytics?.track("game_start");
   window.YandexPlatform.setGameplay(true);
   saveRound();
   saveWordProgress();
@@ -282,6 +305,7 @@ function renderBoard() {
   for (let r=0;r<maxAttempts;r++) {
     const row=document.createElement("div");
     row.className="row"+(r===0?" active":"");
+    if(r===baseAttempts)row.hidden=!roundHints.extraAttempt;
     row.style.setProperty("--word-length",currentWord.length);
     row.style.setProperty("--columns",columns);
     for (let i=0;i<currentWord.length;i++) {
@@ -342,6 +366,24 @@ function renderPreview() {
         cell.classList.add("final-next");
         draftIndex++;
       }
+    }
+    if(phase==="guess"&&!revealed[i]){
+      cell.classList.add("hint-selectable");
+      cell.title="Выбрать клетку для открытия";
+      cell.addEventListener("click",()=>{
+        if(!revealHintMode)return;
+        revealHintMode=false;
+        if(revealed[i] || roundHints.positions.length>=3 || revealed.filter(x=>!x).length<=1){
+          hintStatus.textContent="Нужно оставить хотя бы одну неизвестную букву.";
+          return;
+        }
+        if(!window.GameHints.spend("letter"))return;
+        roundHints.positions.push(i);
+        revealed[i]=true;
+        renderPreview();renderHints();saveRound();
+        window.GameAnalytics?.track("hint_used");
+        hintStatus.textContent="Открыта буква «"+currentWord[i].toUpperCase()+"».";
+      });
     }
     previewElement.append(cell);
   }
@@ -415,6 +457,9 @@ function renderAlphabet() {
             ? usedLetters["Е"] || "unused" : usedLetters["Ё"] || "unused")
         : usedLetters[letter] || "unused";
       cell.className = "alphabet-letter" + (status === "unused" ? "" : " " + status);
+      if(roundHints.eliminated.includes(letter)){
+        cell.disabled=true;cell.classList.add("hint-eliminated");
+      }
       cell.textContent = combined ? "Е/Ё" : letter;
       cell.setAttribute("aria-label", (combined ? "Выбрать Е или Ё" : letter) + ": " + ({
         unused: "ещё не использована", missing: "отсутствует",
@@ -451,8 +496,8 @@ function renderAlphabet() {
 }
 
 function updateStats() {
-  currentAttemptElement.textContent = Math.min(currentAttempt + 1, maxAttempts);
-  attemptsLeftElement.textContent = maxAttempts - currentAttempt;
+  currentAttemptElement.textContent = Math.min(currentAttempt + 1, roundAttemptLimit);
+  attemptsLeftElement.textContent = roundAttemptLimit - currentAttempt;
 }
 
 function getGuessResult(guess) {
@@ -498,14 +543,19 @@ function checkGuess(guess) {
   const phrase=currentEntry?.display?.includes(" ");
   const known=VALID_RUSSIAN_WORDS.has(guess)||VALID_LONG_WORDS.has(guess)||
     EXTRA_VALID_WORDS.has(guess)||acceptedAnswers.has(guess);
-  if (!phrase && !known) {
-    if (guess.length > 5 && !longDictionaryReady) {
-      showInputError("Словарь загружается. Повтори попытку чуть позже.");
+  if(!phrase && !known){
+    // Расширяем словарь в отдельном обновлении. Сейчас не отклоняем реальные
+    // слова: два одинаковых нажатия «Проверить» явно подтверждают попытку.
+    if(pendingUnknown!==guess){
+      pendingUnknown=guess;
+      showInputError(longDictionaryReady?
+        "Нет в словаре. Нажми «Проверить» ещё раз, чтобы засчитать попытку.":
+        "Словарь загружается. Можно проверить слово повторным нажатием.");
       return;
     }
-    showInputError("Такого слова нет в словаре. Попробуй другое.");
-    return;
+    window.GameAnalytics?.track("dictionary_miss");
   }
+  pendingUnknown=null;
   messageElement.classList.remove("is-error");
   const result = getGuessResult(guess);
   // Снимок верхней строки до проверки нужен для анимации перелёта.
@@ -529,7 +579,7 @@ function checkGuess(guess) {
   currentAttempt++;
   updateStats();
   const isWin=guess === currentWord || revealed.every(Boolean);
-  if (isWin && currentAttempt < maxAttempts && !restoringRound) {
+  if (isWin && currentAttempt < baseAttempts && !restoringRound) {
     // До 4-й попытки показываем именно перелёт букв, а не мгновенный результат.
     phase="celebrating";
     revealed=previouslyRevealed;
@@ -548,7 +598,7 @@ function checkGuess(guess) {
   renderPreview();
   if (isWin) {
     finishGame(true);
-  } else if (currentAttempt >= maxAttempts) {
+  } else if (currentAttempt >= roundAttemptLimit) {
     beginFinalChance();
   } else {
     activateNextRow();
@@ -641,9 +691,12 @@ function checkFinalChance() {
 function finishGame(won) {
   if (phase==="finished") return;
   recordResult(won);
+  window.GameAnalytics?.track(won?"round_win":"round_loss");
+  if(won)window.GameHints.rewardForWin(score.wins);
   if (won) wordProgress.solved.add(currentWord);
   const complete=wordProgress.solved.size===wordBank.length;
   if (complete) wordProgress.completed=true;
+  if(complete && won)window.GameHints.rewardForLevel(selectedCategory,selectedLevel);
   if (complete && won) {
     const completed=window.GameRewards.earnedCount(allProgress,GAME_CATEGORIES,MAX_LEVEL,wordsInCategory);
     resultText.dataset.rewardCount=completed;
@@ -682,10 +735,122 @@ function finishGame(won) {
   }
   renderPreview();
   resultBackdrop.hidden=false;
+  renderHints();
   window.YandexPlatform.roundFinished();
   nextWordButton.focus();
 }
 
+// Щедрый набор подсказок. Расходуем не более двух открытий букв за раунд,
+// оставляем хотя бы одну неизвестную букву и не включаем подсказки после победы.
+const hintStatus=document.querySelector("#hintStatus");
+const hintClueText=document.querySelector("#hintClueText");
+const hintButtons={
+  letter:document.querySelector("#hintLetter"),
+  first:document.querySelector("#hintFirst"),
+  vowel:document.querySelector("#hintVowel"),
+  attempt:document.querySelector("#hintAttempt"),
+  eliminate:document.querySelector("#hintEliminate"),
+  clue:document.querySelector("#hintClue")
+};
+const hintCounts={
+  letter:document.querySelector("#hintLetterCount"),
+  first:document.querySelector("#hintFirstCount"),
+  vowel:document.querySelector("#hintVowelCount"),
+  attempt:document.querySelector("#hintAttemptCount"),
+  eliminate:document.querySelector("#hintEliminateCount"),
+  clue:document.querySelector("#hintClueCount")
+};
+function renderHints(){
+  const stock=window.GameHints.balances();
+  for(const type of Object.keys(hintButtons))hintCounts[type].textContent="×"+stock[type];
+  hintButtons.letter.disabled=phase!=="guess"||stock.letter<1||
+    roundHints.positions.length>=3||revealed.filter(x=>!x).length<=1;
+  hintButtons.first.disabled=phase!=="guess"||stock.first<1||
+    roundHints.positions.length>=3||revealed[0]||revealed.filter(x=>!x).length<=1;
+  hintButtons.vowel.disabled=phase!=="guess"||stock.vowel<1||
+    roundHints.positions.length>=3||!Array.from(currentWord).some((c,i)=>
+      /[аеёиоуыэюя]/.test(c)&&!revealed[i])||revealed.filter(x=>!x).length<=1;
+  hintButtons.attempt.disabled=phase!=="guess"||stock.attempt<1||
+    roundHints.extraAttempt||currentAttempt>=baseAttempts;
+  hintButtons.eliminate.disabled=phase!=="guess"||stock.eliminate<1||
+    roundHints.eliminated.length>0;
+  hintButtons.clue.disabled=phase!=="guess"||stock.clue<1||roundHints.extraClue;
+  if(roundHints.extraClue){
+    const vowels=(currentWord.match(/[аеёиоуыэюя]/g)||[]).length;
+    hintClueText.textContent="Дополнительно: в ответе "+vowels+
+      " гласных букв"+(phraseBreaks.length?" и "+(phraseBreaks.length+1)+" слова.":".");
+    hintClueText.hidden=false;
+  }else hintClueText.hidden=true;
+}
+hintButtons.letter.addEventListener("click",()=>{
+  revealHintMode=true;
+  hintStatus.textContent="Нажми на вопросительный знак нужной клетки в верхнем ответе.";
+});
+function revealAutomatic(kind,index){
+  if(phase!=="guess"||index<0||roundHints.positions.length>=3||
+     revealed[index]||revealed.filter(x=>!x).length<=1||
+     !window.GameHints.spend(kind))return;
+  roundHints.positions.push(index);
+  revealed[index]=true;
+  renderPreview();renderHints();saveRound();
+  window.GameAnalytics?.track("hint_used");
+  hintStatus.textContent="Открыта буква «"+currentWord[index].toUpperCase()+"».";
+}
+hintButtons.first.addEventListener("click",()=>revealAutomatic("first",0));
+hintButtons.vowel.addEventListener("click",()=>{
+  const positions=Array.from(currentWord).map((c,i)=>
+    /[аеёиоуыэюя]/.test(c)&&!revealed[i]?i:-1).filter(i=>i>=0);
+  if(positions.length)revealAutomatic("vowel",
+    positions[Math.floor(Math.random()*positions.length)]);
+});
+hintButtons.attempt.addEventListener("click",()=>{
+  if(phase!=="guess"||roundHints.extraAttempt||!window.GameHints.spend("attempt"))return;
+  roundHints.extraAttempt=true;roundAttemptLimit=baseAttempts+1;
+  const lastRow=boardElement.children[baseAttempts];
+  if(lastRow)lastRow.hidden=false;
+  updateStats();renderHints();saveRound();
+  window.GameAnalytics?.track("hint_used");
+  hintStatus.textContent="Получена пятая попытка!";
+});
+hintButtons.eliminate.addEventListener("click",()=>{
+  if(phase!=="guess"||roundHints.eliminated.length||!window.GameHints.spend("eliminate"))return;
+  const alphabet=keyboardRows.join("").split("");
+  const candidates=alphabet.filter(letter=>
+    letter!=="Е"&&!currentWord.toUpperCase().includes(letter)&&
+    !usedLetters[letter]);
+  roundHints.eliminated=candidates.sort(()=>Math.random()-.5).slice(0,8);
+  renderAlphabet();renderHints();saveRound();
+  window.GameAnalytics?.track("hint_used");
+  hintStatus.textContent="С клавиатуры убраны лишние буквы.";
+});
+hintButtons.clue.addEventListener("click",()=>{
+  if(phase!=="guess"||roundHints.extraClue||!window.GameHints.spend("clue"))return;
+  roundHints.extraClue=true;renderHints();saveRound();
+  window.GameAnalytics?.track("hint_used");
+});
+const adButton=document.querySelector("#hintAd");
+adButton.disabled=!window.YandexPlatform.isYandex;
+adButton.addEventListener("click",async()=>{
+  if(adButton.disabled)return;
+  adButton.disabled=true;
+  const kind=document.querySelector("#hintAdKind").value;
+  hintStatus.textContent="Запрашиваем добровольную рекламу…";
+  window.GameAnalytics?.track("reward_ad_open");
+  try{
+    const rewarded=await window.YandexPlatform.showRewarded();
+    if(rewarded){
+      const amount=["letter","first","vowel"].includes(kind)?3:2;
+      window.GameHints.grant(kind,amount);
+      window.GameAnalytics?.track("reward_ad_rewarded");
+      hintStatus.textContent="Бонус получен: +"+amount+" подсказки!";
+    }else{
+      window.GameAnalytics?.track("reward_ad_error");
+      hintStatus.textContent="Реклама недоступна или не досмотрена. Баланс не изменился.";
+    }
+  }finally{
+    adButton.disabled=false;renderHints();
+  }
+});
 guessForm.addEventListener("submit", event => {
   event.preventDefault();
   if (phase === "guess" && guessInput) checkGuess(guessInput.value.trim().toLowerCase());

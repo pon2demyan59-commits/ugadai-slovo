@@ -69,8 +69,29 @@
       }catch(error){console.warn("Ошибка рекламы:",error);finish(false);}
     });
   }
+  // Бонусная реклама всегда добровольная. Награда подтверждается только
+  // onRewarded, закрытие рекламы само по себе бонус не выдаёт.
+  function showRewarded(){
+    if(!sdk?.adv?.showRewardedVideo || adActive)return Promise.resolve(false);
+    adActive=true;syncGameplay();
+    return new Promise(resolve=>{
+      let settled=false,rewarded=false;
+      function finish(){
+        if(settled)return;
+        settled=true;adActive=false;syncGameplay();resolve(rewarded);
+      }
+      try{
+        sdk.adv.showRewardedVideo({callbacks:{
+          onOpen:()=>{adActive=true;syncGameplay();},
+          onRewarded:()=>{rewarded=true;},
+          onClose:finish,
+          onError:error=>{console.warn("Бонусная реклама:",error);finish();}
+        }});
+      }catch(error){console.warn("Бонусная реклама:",error);finish();}
+    });
+  }
   document.addEventListener("visibilitychange",syncGameplay);
   window.YandexPlatform={isYandex,whenSdk,ready,setGameplay,roundFinished,showInterstitialIfDue,
-    portalLanguage,language:gameLanguage};
+    showRewarded,portalLanguage,language:gameLanguage};
   init();
 })();

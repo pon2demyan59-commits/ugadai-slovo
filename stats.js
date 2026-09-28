@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const KEY = "ugadai-slovo-stats-v1";
-  const empty = () => ({ distribution:[0,0,0,0,0], streak:0, bestStreak:0,
+  const empty = () => ({ distribution:[0,0,0,0,0,0], streak:0, bestStreak:0,
     recentDays:{}, lastWinDay:null, consecutiveDays:0, bestDays:0, totalDetailed:0 });
   function load() {
     try {
@@ -12,8 +12,12 @@
       for(const field of ["streak","bestStreak","consecutiveDays","bestDays","totalDetailed"]) {
         if(Number.isSafeInteger(raw[field]) && raw[field]>=0) result[field]=raw[field];
       }
-      if(Array.isArray(raw.distribution)) result.distribution=result.distribution.map((_,i)=>
-        Number.isSafeInteger(raw.distribution[i]) && raw.distribution[i]>=0 ? raw.distribution[i] : 0);
+      if(Array.isArray(raw.distribution)){
+        result.distribution=result.distribution.map((_,i)=>
+          Number.isSafeInteger(raw.distribution[i]) && raw.distribution[i]>=0 ? raw.distribution[i] : 0);
+        // В прежней версии индекс 4 означал последний шанс.
+        if(raw.distribution.length===5){result.distribution[5]=result.distribution[4];result.distribution[4]=0;}
+      }
       if(raw.recentDays && typeof raw.recentDays==="object") {
         for(const [day,count] of Object.entries(raw.recentDays)) {
           if(/^\d{4}-\d{2}-\d{2}$/.test(day) && Number.isSafeInteger(count) && count>=0)
@@ -25,7 +29,7 @@
       return result;
     } catch { return empty(); }
   }
-  const data=load();
+  let data=load();
   function localDay(date=new Date()) {
     return date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");
   }
@@ -38,7 +42,7 @@
     if(won) {
       data.streak++;
       data.bestStreak=Math.max(data.bestStreak,data.streak);
-      const bucket=finalChance ? 4 : Math.max(0,Math.min(3,attempts-1));
+      const bucket=finalChance ? 5 : Math.max(0,Math.min(4,attempts-1));
       data.distribution[bucket]++;
       const today=localDay();
       data.recentDays[today]=(data.recentDays[today]||0)+1;
@@ -59,7 +63,7 @@
       consecutiveDays:data.lastWinDay===today||data.lastWinDay===previousDay(today)?data.consecutiveDays:0,
       distribution:[...data.distribution],recentDays:{...data.recentDays}};
   }
-  window.GameStats={record,snapshot,localDay};
+  window.GameStats={record,snapshot,localDay,reload:()=>{data=load();}};
 })();
 
 /* Экран статистики без сторонних библиотек, полностью адаптивный. */
@@ -118,10 +122,10 @@
     total.append(tally);
     const distribution=section(target,"С какой попытки угадываешь",
       "Подробные данные собираются с этого обновления. Последний шанс учитывается отдельно.");
-    const names=["С первой попытки","Со второй","С третьей","С четвёртой","Последний шанс"];
-    for(let i=0;i<5;i++)bar(distribution,names[i],data.distribution[i],Math.max(1,...data.distribution));
-    const regular=data.distribution.slice(0,4).reduce((sum,n,i)=>sum+n*(i+1),0);
-    const regularCount=detailWins-data.distribution[4];
+    const names=["С первой попытки","Со второй","С третьей","С четвёртой","С пятой (бонус)","Последний шанс"];
+    for(let i=0;i<6;i++)bar(distribution,names[i],data.distribution[i],Math.max(1,...data.distribution));
+    const regular=data.distribution.slice(0,5).reduce((sum,n,i)=>sum+n*(i+1),0);
+    const regularCount=detailWins-data.distribution[5];
     distribution.append(el("p","insight-note",regularCount
       ?"Среднее число попыток (без последнего шанса): "+(regular/regularCount).toFixed(1)
       :"Первые результаты появятся после новой победы."));
