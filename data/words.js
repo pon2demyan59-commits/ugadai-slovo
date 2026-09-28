@@ -11,7 +11,7 @@ const GAME_WORDS = [
   {category:"animals",word:"зебра",hint:"Полосатая родственница лошади."},
   {category:"animals",word:"белка",hint:"Прыгает по деревьям и прячет орехи."},
   {category:"animals",word:"лемур",hint:"Зверёк с большими глазами и длинным хвостом."},
-  {category:"animals",word:"хорек",hint:"Шустрый пушистый зверёк из семейства куньих."},
+  {category:"animals",word:"хомяк",hint:"Маленький грызун с пухлыми щёчками."},
   {category:"animals",word:"выдра",hint:"Хорошо плавает и охотится на рыбу."},
   {category:"animals",word:"кабан",hint:"Дикий лесной родственник свиньи."},
   {category:"animals",word:"баран",hint:"Самец овцы с густой шерстью."},
