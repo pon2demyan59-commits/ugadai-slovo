@@ -756,3 +756,10 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
 .category-item-9 { background:linear-gradient(155deg,#ffbc72,#ed8e5e); border-bottom-color:#cf7443; }
 @media(max-height:620px) { .category-list { max-height:min(54dvh,400px); } }
 @media(max-width:380px) { .category-item { min-height:65px; } .category-info small { font-size:10px; } .category-total { font-size:10px; } }
+
+/* Во вложенных экранах больше не повторяем заголовок «Главное меню». */
+.home-card.subview .home-tiles,
+.home-card.subview > .home-title,
+.home-card.subview > .home-tagline,
+.home-card.subview > .home-splash-back { display:none!important; }
+.home-card.subview { padding-top:clamp(18px,4vw,26px); }
