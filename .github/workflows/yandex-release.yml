@@ -27,14 +27,7 @@ jobs:
             yandex-platform.js cloud-save.js game-bootstrap.js \
             manifest.webmanifest assets data
           test "$(unzip -Z1 dist/ugadai-slovo-yandex.zip | grep -cx 'index.html')" -eq 1
-          test "$(unzip -Z1 dist/ugadai-slovo-yandex.zip | grep -Ec '(^|/)index.html
-      - name: Upload release archive
-        uses: actions/upload-artifact@v4
-        with:
-          name: ugadai-slovo-yandex
-          path: dist/ugadai-slovo-yandex.zip
-          retention-days: 30
-)" -eq 1
+          test "$(unzip -Z1 dist/ugadai-slovo-yandex.zip | grep -Ec '(^|/)index.html$')" -eq 1
       - name: Upload release archive
         uses: actions/upload-artifact@v4
         with:
