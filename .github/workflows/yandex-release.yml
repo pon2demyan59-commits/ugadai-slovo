@@ -1,0 +1,35 @@
+name: Yandex Games release checks
+on:
+  push:
+    branches: [main, feature/yandex-release]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-and-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate game data and scripts
+        run: node tests/check-release.cjs
+      - name: Prepare Yandex Games ZIP
+        run: |
+          mkdir -p dist
+          zip -q -9 -r dist/ugadai-slovo-yandex.zip \
+            index.html style.css stats.css script.js stats.js \
+            yandex-platform.js cloud-save.js game-bootstrap.js \
+            manifest.webmanifest assets data
+          unzip -l dist/ugadai-slovo-yandex.zip | grep 'index.html'
+      - name: Upload release archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: ugadai-slovo-yandex
+          path: dist/ugadai-slovo-yandex.zip
+          retention-days: 30
