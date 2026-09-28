@@ -21,6 +21,7 @@ function recordResult(won) {
   else score.losses++;
   try {
     localStorage.setItem(SCORE_STORAGE_KEY, JSON.stringify(score));
+    window.GameCloud.schedule();
   } catch {
     // Если хранилище недоступно, счётчики сохраняются до перезагрузки.
   }
@@ -107,6 +108,7 @@ function saveWordProgress() {
       }
     }
     localStorage.setItem(WORD_PROGRESS_KEY,JSON.stringify(data));
+    window.GameCloud.schedule();
   } catch { /* При отключённом хранилище прогресс живёт до закрытия игры. */ }
 }
 function saveRound() {
@@ -562,6 +564,7 @@ function finishGame(won) {
   wordProgress.active=null;
   wordProgress.round=null;
   saveWordProgress();
+  window.GameCloud.flush(); // Победа/поражение сразу отправляются в облако.
   phase="finished";
   guessForm.hidden=true;
   finalInput.hidden=true;
@@ -755,6 +758,18 @@ document.querySelector("#menuStats").addEventListener("click",()=>{
   openMenuDetails("МОЯ СТАТИСТИКА","stats");
   window.GameStatsPanel.render(detailsBody,score,allProgress,GAME_CATEGORIES,
     GAME_WORDS.length,MAX_LEVEL,wordsInCategory);
+});
+const cloudButton=document.querySelector("#menuCloud");
+if (window.YandexPlatform.isYandex && !window.GameCloud.isAuthorized()) cloudButton.hidden=false;
+cloudButton.addEventListener("click",async ()=>{
+  cloudButton.disabled=true;
+  try {
+    const signedIn=await window.GameCloud.signIn();
+    if(!signedIn){cloudButton.disabled=false;}
+  } catch(error) {
+    console.warn("Не удалось войти:",error);
+    cloudButton.disabled=false;
+  }
 });
 document.querySelector("#menuRules").addEventListener("click",()=>{
   openMenuDetails("КАК ИГРАТЬ","rules");
