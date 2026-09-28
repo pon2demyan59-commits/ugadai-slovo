@@ -288,7 +288,8 @@ function createLineInput(number) {
       input.setSelectionRange(input.value.length,input.value.length);
     }
   });
-  input.addEventListener("input", () => {
+  input.addEventListener("input", event => {
+    if(event.isTrusted)window.GameAudio?.play(event.inputType==="deleteContentBackward"?"erase":"key");
     syncInput();
     input.setSelectionRange(input.value.length,input.value.length);
     saveRound();
@@ -877,7 +878,10 @@ finalForm.addEventListener("submit", event => {
   event.preventDefault();
   checkFinalChance();
 });
-finalInput.addEventListener("input", cleanFinalInput);
+finalInput.addEventListener("input", event=>{
+  if(event.isTrusted)window.GameAudio?.play(event.inputType==="deleteContentBackward"?"erase":"key");
+  cleanFinalInput();
+});
 finalEntry.addEventListener("click", () => {
   if (phase === "final") finalInput.focus();
 });
