@@ -2,9 +2,10 @@
 (function () {
   "use strict";
   const host=location.hostname.toLowerCase();
-  const isYandex=host==="yandex.ru" || host==="yandex.net" ||
-    host.endsWith(".yandex.ru") || host.endsWith(".yandex.net");
+  // Яндекс Игры могут открываться не только на yandex.ru.
+  const isYandex=/(^|\.)yandex\.(ru|com|net|by|kz|uz)$/.test(host);
   let sdk=null,uiReady=false,desiredGameplay=false,gameplayActive=false;
+  let portalLanguage=null,gameLanguage="ru";
   let settleSdk;
   const whenSdk=new Promise(resolve=>{settleSdk=resolve;});
   let adActive=false,finishedRounds=0,lastAd=Date.now();
@@ -26,6 +27,13 @@
       if(!window.YaGames){console.warn("SDK отсутствует");settleSdk(null);return;}
       try{
         sdk=await window.YaGames.init();
+        // П. 2.14: читаем язык платформы на старте, даже при единственной локализации.
+        // Сейчас доступен только русский; другие языки используют русский как резервный.
+        portalLanguage=sdk.environment.i18n.lang;
+        gameLanguage=portalLanguage==="ru"?"ru":"ru";
+        document.documentElement.lang=gameLanguage;
+        window.YandexPlatform.portalLanguage=portalLanguage;
+        window.YandexPlatform.language=gameLanguage;
         settleSdk(sdk);
         if(uiReady)sdk.features.LoadingAPI?.ready();
         syncGameplay();
@@ -61,6 +69,7 @@
     });
   }
   document.addEventListener("visibilitychange",syncGameplay);
-  window.YandexPlatform={isYandex,whenSdk,ready,setGameplay,roundFinished,showInterstitialIfDue};
+  window.YandexPlatform={isYandex,whenSdk,ready,setGameplay,roundFinished,showInterstitialIfDue,
+    portalLanguage,language:gameLanguage};
   init();
 })();
