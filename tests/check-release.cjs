@@ -6,7 +6,7 @@ const assert=require("node:assert/strict");
 const root=path.resolve(__dirname,"..");
 const required=[
   "index.html","style.css","stats.css","rewards.css","script.js","stats.js","rewards.js",
-  "yandex-platform.js","cloud-save.js","game-bootstrap.js",
+  "yandex-platform.js","cloud-save.js","game-bootstrap.js","hints.js","analytics.js",
   "data/words.js","data/valid-words.js","data/valid-long-words.js",
   "data/long-words-loader.js","data/DICTIONARY_LICENSE.txt",
   "assets/icon.svg","manifest.webmanifest"
@@ -23,6 +23,7 @@ const html=fs.readFileSync(path.join(root,"index.html"),"utf8");
 for(const file of [...required,...categoryFiles].filter(file=>/\.js$/.test(file)&&
   !["data/valid-long-words.js","script.js"].includes(file))){
   if(file==="rewards.js"||file==="yandex-platform.js"||file==="cloud-save.js"||file==="game-bootstrap.js"||
+    file==="hints.js"||file==="analytics.js"||
     file==="data/words.js"||file==="data/valid-words.js"||file==="data/long-words-loader.js"||
     file==="stats.js"||file.startsWith("data/levels/")){
       assert(html.includes('src="'+file+'"'),"Не подключён "+file);
@@ -164,6 +165,34 @@ vm.runInContext('typeKeyboardLetter("Л")',keyboardContext);
 assert.equal(keyboardContext.guessInput.value,"кол","Добавляем букву в конец даже если курсор в начале");
 assert.equal(keyboardContext.guessInput.selectionStart,3);
 console.log("OK: экранная клавиатура удаляет последнюю букву и печатает в конец.");
+// Щедрые подсказки: стартовый запас, награды и отсутствие двойной выдачи.
+const hintStorage=new Map();
+const hintContext={
+  localStorage:{getItem:key=>hintStorage.get(key)||null,
+    setItem:(key,value)=>hintStorage.set(key,value)},
+  window:{GameCloud:{schedule(){}}}
+};
+vm.createContext(hintContext);
+vm.runInContext(fs.readFileSync(path.join(root,"hints.js"),"utf8"),hintContext);
+const hint=hintContext.window.GameHints;
+assert.equal(hint.balances().letter,8);
+assert(hint.spend("letter"));
+assert.equal(hint.balances().letter,7);
+assert.equal(hint.rewardForWin(3),true);
+assert.equal(hint.balances().letter,9);
+assert.equal(hint.rewardForWin(3),false,"Не выдавать награду за одни победы дважды");
+assert.equal(hint.rewardForLevel("animals",1),true);
+assert.equal(hint.rewardForLevel("animals",1),false,"Не выдавать награду за уровень дважды");
+assert.equal(hint.balances().letter,12);
+assert(script.includes('const maxAttempts = 5')&&script.includes('roundAttemptLimit=baseAttempts+1'),
+  "Дополнительная попытка должна добавлять пятую строку");
+assert(script.includes('pendingUnknown=guess')&&script.includes('if(pendingUnknown!==guess)'),
+  "Неизвестное слово должно приниматься после явного подтверждения");
+for(const id of ["hintLetter","hintAttempt","hintEliminate","hintClue","hintAd","hintAdKind"])
+  assert(html.includes('id="'+id+'"'),"Нет элемента "+id);
+assert(bridge.includes("showRewardedVideo")&&bridge.includes("onRewarded"),
+  "Бонусная реклама должна выдавать награду только после SDK onRewarded");
+console.log("OK: подсказки, награды, пятая попытка, словарь и рекламный SDK.");
 const worker=fs.readFileSync(path.join(root,"service-worker.js"),"utf8");
 assert(worker.includes('event.request.mode === "navigate"'),"Нет проверки свежего HTML");
 console.log("OK: 1000 слов, 50 уровней, SDK, ник, облачный профиль и 10 фрагментов награды.");
