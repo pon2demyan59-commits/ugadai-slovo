@@ -763,3 +763,62 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
 .home-card.subview > .home-tagline,
 .home-card.subview > .home-splash-back { display:none!important; }
 .home-card.subview { padding-top:clamp(18px,4vw,26px); }
+
+/* Пять уровней в каждой категории. Короткие карточки и крупные кнопки для пальца. */
+.levels-screen[hidden] { display:none!important; }
+.levels-screen { width:100%; text-align:center; }
+.levels-screen h3 { margin:0 0 8px; color:#fff; font-size:clamp(22px,6vw,29px); font-weight:1000; text-shadow:0 3px #37228c88; }
+.levels-subtitle { margin:0 0 16px; font-size:clamp(13px,3.5vw,16px); color:#ffefba; font-weight:800; }
+.levels-list { display:grid; gap:10px; }
+.level-card {
+  display:flex; align-items:center; gap:12px; width:100%; min-height:76px;
+  padding:11px 13px; border:2px solid #fffc; border-bottom:5px solid #b6a0ea;
+  border-radius:17px; text-align:left; color:#fff; background:linear-gradient(140deg,#a289fc,#6755dc);
+  box-shadow:inset 0 2px #ffffff74,0 6px 14px #37239f48;
+  cursor:pointer; touch-action:manipulation;
+}
+.level-card:nth-child(2) { background:linear-gradient(145deg,#73b3ff,#4b80e2); border-bottom-color:#3a60c3; }
+.level-card:nth-child(3) { background:linear-gradient(145deg,#ab8af7,#8759d7); border-bottom-color:#693cbb; }
+.level-card:nth-child(4) { background:linear-gradient(145deg,#ffc275,#e89353); border-bottom-color:#cf7841; }
+.level-card:nth-child(5) { background:linear-gradient(145deg,#f998c1,#db64a3); border-bottom-color:#be4687; }
+.level-card:disabled { opacity:.6; cursor:not-allowed; filter:saturate(.7); }
+.level-card:not(:disabled):hover { filter:brightness(1.06); transform:translateY(-2px); }
+.level-card:focus-visible { outline:3px solid #fff38d; outline-offset:3px; }
+.level-number { flex:0 0 48px; height:48px; display:grid; place-items:center; border-radius:14px;
+  background:#ffffff35; font-size:25px; font-weight:1000; border:1px solid #fffb; }
+.level-info { flex:1; display:grid; gap:4px; min-width:0; }
+.level-info strong { font-size:clamp(16px,4.2vw,19px); font-weight:1000; }
+.level-info small { color:#fff; font-size:clamp(11px,3vw,13px); font-weight:750; }
+.level-count { flex:0 0 auto; min-width:52px; padding:6px 8px; border-radius:11px; background:#ffffff43; font-size:clamp(12px,3.2vw,15px); font-weight:950; }
+.levels-screen .home-back { width:100%; margin-top:18px; }
+.home-card.subview .levels-screen { display:block; }
+.category-item { flex-shrink:0; }
+.category-list { max-height:min(61dvh,610px); }
+.category-count { white-space:nowrap; }
+.game .game-card { min-width:0; }
+.game .word-preview,.game .board { max-width:100%; }
+.game .word-preview.long-letters { grid-template-columns:repeat(var(--columns),minmax(0,1fr)); max-width:min(100%,370px); }
+.game .board.long-letters { max-width:min(100%,370px); }
+.game .board.long-letters .row {
+  grid-template-columns:repeat(var(--columns),minmax(0,1fr));
+  grid-auto-rows:auto;
+  min-height:0;
+  gap:clamp(3px,1vw,5px);
+  margin-bottom:clamp(2px,.8vw,5px);
+}
+.game .long-letters .cell,.game .long-letters .preview-cell {
+  min-height:clamp(28px,8vw,39px); height:auto; max-height:none;
+  aspect-ratio:1; font-size:clamp(15px,4.6vw,22px);
+}
+.game .word-preview .word-new-part,.game .board .word-new-part { grid-column:1; }
+.game .board.long-letters { gap:4px; margin:10px auto 6px; }
+.game .long-letters .row.active .cell.next::before { height:24px; top:4px; }
+.game .word-panel.long-puzzle { padding:9px 7px; }
+@media(max-width:380px) {
+  .level-card { min-height:65px; padding:8px; gap:8px; border-radius:13px; }
+  .level-number { flex-basis:39px; height:39px; font-size:21px; }
+  .level-count { padding:5px; min-width:47px; }
+  .levels-list { gap:7px; }
+  .game .long-letters .cell,.game .long-letters .preview-cell { min-height:27px; }
+}
+@media(max-height:670px) { .levels-list { gap:5px; } .level-card { min-height:55px; padding:6px 10px; } .level-number { height:36px; flex-basis:36px; } }
