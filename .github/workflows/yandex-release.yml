@@ -24,7 +24,7 @@ jobs:
           mkdir -p dist
           zip -q -9 -r dist/ugadai-slovo-yandex.zip \
             index.html style.css stats.css rewards.css script.js stats.js rewards.js \
-            yandex-platform.js cloud-save.js game-bootstrap.js \
+            yandex-platform.js cloud-save.js game-bootstrap.js hints.js analytics.js \
             manifest.webmanifest assets data
           test "$(unzip -Z1 dist/ugadai-slovo-yandex.zip | grep -cx 'index.html')" -eq 1
           test "$(unzip -Z1 dist/ugadai-slovo-yandex.zip | grep -Ec '(^|/)index.html$')" -eq 1
