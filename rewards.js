@@ -1,6 +1,5 @@
-/* Фирменная пасхалка «Бинарный импульс».
-   Фрагменты вычисляются из уже сохранённого прохождения категорий:
-   дополнительные счётчики не нужны, поэтому прогресс не теряется. */
+/* «Тайна десяти печатей»: пять частей за уровни каждой категории.
+   Части вычисляются из сохранённого прохождения: старый прогресс не теряется. */
 (function () {
   "use strict";
   const KEY="ugadai-slovo-profile-v1";
@@ -45,6 +44,13 @@
   function earnedCount(progress,categories,maxLevel,wordsInCategory){
     return completedCategories(progress,categories,maxLevel,wordsInCategory).length;
   }
+  function earnedParts(progress,categories,maxLevel,wordsInCategory){
+    return categories.reduce((total,category)=>total+
+      Array.from({length:maxLevel},(_,index)=>index+1).filter(level=>{
+        const words=wordsInCategory(category.id,level);
+        return words.length>0 && progress[category.id]?.[level]?.solved?.size===words.length;
+      }).length,0);
+  }
   function ensureIssueDate(){
     if(!profile.certificateDate){
       const now=new Date();
@@ -60,23 +66,38 @@
     if(content!==undefined)el.textContent=String(content);
     return el;
   }
-  function addPuzzle(container,count,categories,doneIds){
+  function addPuzzle(container,progress,categories,maxLevel,wordsInCategory){
+    const seals=earnedCount(progress,categories,maxLevel,wordsInCategory);
+    const parts=earnedParts(progress,categories,maxLevel,wordsInCategory);
     const shell=tag("section","reward-puzzle");
-    shell.append(tag("h4","reward-heading","🧩 Секретная благодарность"),
+    shell.append(tag("h4","reward-heading","🧩 Тайна десяти печатей"),
       tag("p","reward-description",
-        "Заверши пять уровней в каждой категории. За каждую получишь часть секретной грамоты."),
-      tag("p","reward-count",count+" / 10 фрагментов"));
+        "Каждый уровень раскрывает часть печати. Собери пять частей одной категории, чтобы получить целую печать. Десять печатей откроют секретную именную награду."),
+      tag("p","reward-count",parts+" / 50 частей · "+seals+" / 10 печатей"));
     const grid=tag("div","reward-puzzle-grid");
     categories.forEach((cat,index)=>{
-      const unlocked=doneIds.has(cat.id);
+      const levels=Array.from({length:maxLevel},(_,i)=>i+1);
+      const completed=levels.map(level=>{
+        const words=wordsInCategory(cat.id,level);
+        return words.length>0 && progress[cat.id]?.[level]?.solved?.size===words.length;
+      });
+      const unlocked=completed.every(Boolean);
       const piece=tag("div","reward-piece"+(unlocked?" reward-piece-unlocked":""));
-      piece.setAttribute("aria-label",cat.title+": "+(unlocked?"получен":"закрыт"));
-      piece.append(tag("span","reward-piece-icon",unlocked?cat.icon:"🔒"),
+      piece.setAttribute("aria-label",cat.title+": "+completed.filter(Boolean).length+" из "+maxLevel+" частей");
+      piece.append(tag("span","reward-piece-icon",unlocked?cat.icon:"✦"),
         tag("small","reward-piece-label",(index+1)+". "+cat.title));
+      const fragments=tag("div","reward-piece-fragments");
+      completed.forEach((ready,i)=>{
+        const part=tag("span","reward-fragment"+(ready?" reward-fragment-found":""),ready?"◆":"·");
+        part.setAttribute("aria-label","Уровень "+(i+1)+": "+(ready?"часть найдена":"закрыт"));
+        fragments.append(part);
+      });
+      piece.append(fragments,tag("small","reward-piece-label",
+        unlocked?"Печать раскрыта":completed.filter(Boolean).length+" / "+maxLevel+" частей"));
       grid.append(piece);
     });
     shell.append(grid);
-    if(count===10)shell.append(tag("p","reward-complete","Все части собраны! Твоя грамота готова к печати."));
+    if(seals===categories.length)shell.append(tag("p","reward-complete","Все десять печатей раскрыты! Твоя именная награда готова к печати."));
     container.append(shell);
   }
   function createCertificate(solved,wins,losses){
@@ -121,12 +142,11 @@
   function render(target,progress,categories,maxLevel,wordsInCategory,score){
     target.replaceChildren();
     const completed=completedCategories(progress,categories,maxLevel,wordsInCategory);
-    const ids=new Set(completed.map(cat=>cat.id));
-    addPuzzle(target,completed.length,categories,ids);
+    addPuzzle(target,progress,categories,maxLevel,wordsInCategory);
     if(completed.length!==categories.length){
       target.append(tag("p","reward-locked",
-        "Грамота откроется, когда будут разгаданы все 1000 заданий. " +
-        "Собранные фрагменты никуда не исчезнут."));
+        "Секретная награда откроется, когда соберёшь десять печатей и разгадаешь все 1000 заданий. " +
+        "Найденные части сохраняются вместе с игровым прогрессом."));
       return;
     }
     ensureIssueDate();
@@ -147,9 +167,8 @@
   }
   function appendProgress(target,progress,categories,maxLevel,wordsInCategory){
     const completed=completedCategories(progress,categories,maxLevel,wordsInCategory);
-    const ids=new Set(completed.map(cat=>cat.id));
-    addPuzzle(target,completed.length,categories,ids);
+    addPuzzle(target,progress,categories,maxLevel,wordsInCategory);
   }
-  window.GameRewards={getNickname,saveNickname,earnedCount,render,appendProgress,
+  window.GameRewards={getNickname,saveNickname,earnedCount,earnedParts,render,appendProgress,
     completedCategories,ensureIssueDate};
 })();

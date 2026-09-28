@@ -149,7 +149,7 @@ function showCollectionComplete() {
   saveWordProgress();
   refreshRewardCounter();
   resultTitle.textContent="УРОВЕНЬ "+selectedLevel+" ПРОЙДЕН!";
-  resultText.textContent="Все 20 заданий категории разгаданы!"+(selectedLevel<MAX_LEVEL?" Следующий уровень открыт.":" Категория полностью пройдена!");
+  resultText.textContent="Все 20 заданий категории разгаданы!"+(selectedLevel<MAX_LEVEL?" Следующий уровень открыт. Первая часть печати уже ждёт тебя в разделе «Тайна десяти печатей».":" Категория полностью пройдена! Все пять частей печати собраны.");
   nextWordButton.textContent="К уровням";
   resultBackdrop.hidden=false;
   window.GameAudio?.play("puzzle");
@@ -734,7 +734,9 @@ function finishGame(won) {
       ? "Все 20 слов разгаданы!"+(selectedLevel<MAX_LEVEL?" Следующий уровень открыт.":" Все пять уровней категории завершены!")
       : "Ты угадал слово! Осталось разгадать: "+(wordBank.length-wordProgress.solved.size)+".";
     if (complete) {
-      resultText.textContent+=" 🧩 Получен фрагмент секретной благодарности!";
+      resultText.textContent+= selectedLevel<MAX_LEVEL
+        ? " 🧩 Найдена часть таинственной печати! Посмотри её в разделе «Тайна десяти печатей»."
+        : " 🧩 Пять частей собраны! Печать категории раскрыта. Загляни в раздел «Тайна десяти печатей».";
       window.GameAudio?.play("puzzle");
     }
     nextWordButton.textContent=complete?"К уровням":"Следующее слово";
@@ -1053,11 +1055,12 @@ nickForm.addEventListener("submit",event=>{
 });
 function refreshRewardCounter(){
   const earned=window.GameRewards.earnedCount(allProgress,GAME_CATEGORIES,MAX_LEVEL,wordsInCategory);
-  rewardCounter.textContent=earned+"/10";
+  const parts=window.GameRewards.earnedParts(allProgress,GAME_CATEGORIES,MAX_LEVEL,wordsInCategory);
+  rewardCounter.textContent=earned+"/10 · "+parts+"/50";
 }
 refreshRewardCounter();
 document.querySelector("#menuReward").addEventListener("click",()=>{
-  openMenuDetails("СЕКРЕТНАЯ НАГРАДА","reward");
+  openMenuDetails("ТАЙНА ДЕСЯТИ ПЕЧАТЕЙ","reward");
   window.GameRewards.render(detailsBody,allProgress,GAME_CATEGORIES,
     MAX_LEVEL,wordsInCategory,score);
 });

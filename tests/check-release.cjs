@@ -49,7 +49,7 @@ for(const cat of bank.categories){
     if(level<5)assert(words.every(w=>w.word.length===level+4),"Неверная длина слова");
   }
 }
-// Пасхалка не хранит отдельные фрагменты: они зависят от пройденных категорий.
+// Части десяти печатей вычисляются из пройденных уровней, включая старые сохранения.
 const storage=new Map();
 context.localStorage={
   getItem:key=>storage.get(key)||null,
@@ -73,6 +73,15 @@ for(const cat of bank.categories){
 const categoryWords=(id,level)=>bank.words.filter(w=>w.category===id&&w.level===level).map(w=>w.word);
 assert.equal(rewards.earnedCount(emptyProgress,bank.categories,5,categoryWords),0);
 assert.equal(rewards.earnedCount(fullProgress,bank.categories,5,categoryWords),10);
+assert.equal(rewards.earnedParts(emptyProgress,bank.categories,5,categoryWords),0);
+assert.equal(rewards.earnedParts(fullProgress,bank.categories,5,categoryWords),50);
+const oneLevelProgress={...emptyProgress,animals:{...emptyProgress.animals,
+  1:{solved:new Set(categoryWords("animals",1))}}};
+assert.equal(rewards.earnedParts(oneLevelProgress,bank.categories,5,categoryWords),1,
+  "За двадцать слов должна появляться первая часть печати");
+assert.equal(rewards.earnedCount(oneLevelProgress,bank.categories,5,categoryWords),0,
+  "Целая печать открывается только после пяти уровней");
+
 const nameResult=rewards.saveNickname("Варрон");
 assert.equal(nameResult.ok,true);
 assert.equal(rewards.getNickname(),"Варрон");

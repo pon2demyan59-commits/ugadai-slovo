@@ -24,6 +24,9 @@
 .reward-piece-unlocked{border:2px solid #ffdf8b;background:linear-gradient(145deg,#ffffff45,#e4c57655);
   opacity:1;box-shadow:0 3px 10px #36217366}
 .reward-piece-icon{font-size:27px}.reward-piece-label{font-size:11px;line-height:1.35;font-weight:750}
+.reward-piece-fragments{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;width:100%;margin:5px 0}
+.reward-fragment{min-width:0;padding:3px 0;border:1px dashed #f4e9ff77;border-radius:6px;background:#30236c99;color:#ffffff88;font-size:18px;line-height:1.1}
+.reward-fragment-found{background:linear-gradient(135deg,#fff2b6,#dcae5f);border:1px solid #fff4c7;color:#614080;box-shadow:0 1px 5px #f6d58a70}
 .reward-complete{text-align:center;color:#ffe9a3;font-size:14px;font-weight:900;margin:14px 0 0}
 .reward-locked{padding:15px;color:#fff3d4;font-size:14px;line-height:1.5}
 .reward-personal-note{color:#fef3d9;font-size:13px;line-height:1.5}
