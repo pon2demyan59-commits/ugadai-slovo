@@ -16,11 +16,11 @@
         Number.isSafeInteger(raw.distribution[i]) && raw.distribution[i]>=0 ? raw.distribution[i] : 0);
       if(raw.recentDays && typeof raw.recentDays==="object") {
         for(const [day,count] of Object.entries(raw.recentDays)) {
-          if(/^\\d{4}-\\d{2}-\\d{2}$/.test(day) && Number.isSafeInteger(count) && count>=0)
+          if(/^\d{4}-\d{2}-\d{2}$/.test(day) && Number.isSafeInteger(count) && count>=0)
             result.recentDays[day]=count;
         }
       }
-      if(typeof raw.lastWinDay==="string" && /^\\d{4}-\\d{2}-\\d{2}$/.test(raw.lastWinDay))
+      if(typeof raw.lastWinDay==="string" && /^\d{4}-\d{2}-\d{2}$/.test(raw.lastWinDay))
         result.lastWinDay=raw.lastWinDay;
       return result;
     } catch { return empty(); }
