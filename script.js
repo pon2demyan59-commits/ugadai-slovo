@@ -436,6 +436,25 @@ function eraseKeyboardLetter() {
   messageElement.classList.remove("is-error");
 }
 
+// Если после клика на подсказку фокус оказался на другой кнопке,
+// настольная клавиатура всё равно продолжает вводить в текущую строку.
+document.addEventListener("keydown",event=>{
+  if(event.ctrlKey||event.altKey||event.metaKey||event.repeat||
+    document.querySelector("#gameScreen").hidden||!resultBackdrop.hidden)return;
+  if(phase!=="guess"&&phase!=="final")return;
+  const node=event.target;
+  if(node?.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(node?.tagName||""))return;
+  if(/^[а-яё]$/i.test(event.key)){
+    event.preventDefault();
+    typeKeyboardLetter(event.key);
+    focusTypingInput(true);
+  }else if(event.key==="Backspace"){
+    event.preventDefault();
+    eraseKeyboardLetter();
+    focusTypingInput(true);
+  }
+});
+
 function showInputError(text) {
   window.GameAudio?.play("wrong");
   messageElement.textContent = text;
@@ -1082,7 +1101,7 @@ nickInput.value=window.GameRewards.getNickname()==="Игрок"?"":window.GameRe
 nickForm.addEventListener("submit",event=>{
   event.preventDefault();
   const saved=window.GameRewards.saveNickname(nickInput.value);
-  nickMessage.textContent=saved.ok?"✓ Ник сохранён: "+saved.nickname:saved.message;
+  nickMessage.textContent=saved.ok?"✓ Имя сохранено: "+saved.nickname:saved.message;
   if(saved.ok) nickInput.value=saved.nickname;
 });
 function refreshRewardCounter(){
