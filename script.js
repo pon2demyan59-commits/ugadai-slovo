@@ -177,6 +177,7 @@ const resultText = document.querySelector("#resultText");
 const resultQuestion = document.querySelector("#resultQuestion");
 const resultAnswer = document.querySelector("#resultAnswer");
 const nextWordButton = document.querySelector("#nextWordButton");
+const streakPraise = document.querySelector("#streakPraise");
 let guessInput = null;
 let currentWord = "";
 let currentAttempt = 0;
@@ -266,6 +267,17 @@ function startGame() {
   window.YandexPlatform.setGameplay(true);
   saveRound();
   saveWordProgress();
+  focusTypingInput(true);
+}
+
+// На компьютере печать начинается сразу, а касание любой клетки
+// активирует единое поле всей строки, без второго клика.
+function focusTypingInput(desktopOnly=false) {
+  if(desktopOnly && !window.matchMedia?.("(pointer: fine)")?.matches)return;
+  const input=phase==="final"?finalInput:phase==="guess"?guessInput:null;
+  if(!input || input.hidden || !resultBackdrop.hidden)return;
+  input.focus({preventScroll:true});
+  input.setSelectionRange?.(input.value.length,input.value.length);
 }
 
 function createLineInput(number) {
@@ -317,6 +329,9 @@ function renderBoard() {
       if (phraseBreaks.includes(i)) cell.classList.add("word-new-part");
       row.append(cell);
     }
+    row.addEventListener("click",()=>{
+      if(phase==="guess" && row.classList.contains("active"))focusTypingInput();
+    });
     boardElement.append(row);
   }
   guessInput=createLineInput(1);
@@ -344,6 +359,7 @@ function activateNextRow() {
   guessInput = createLineInput(currentAttempt + 1);
   row.append(guessInput);
   syncInput();
+  focusTypingInput(true);
 }
 
 function renderPreview() {
@@ -698,10 +714,25 @@ function checkFinalChance() {
   }
 }
 
+// Похвала начинается со второй победы подряд; серия берётся из сохранённой статистики.
+function praiseForStreak(streak){
+  if(streak<2)return "";
+  if(streak===2)return "🌟 Ты молодец! Два слова подряд!";
+  if(streak===3)return "✨ Великолепно! Уже три победы подряд!";
+  if(streak===4)return "🔥 Отличный темп! Продолжай!";
+  if(streak===5)return "🏆 Пять подряд! Вот это серия!";
+  if(streak<10)return "🚀 Невероятно! "+streak+" побед подряд — не останавливайся!";
+  if(streak===10)return "👑 Десять подряд! Ты настоящий мастер слова!";
+  if(streak<20)return "⚡ Ого! "+streak+" побед подряд! Ты бьёшь рекорды!";
+  return "💎 "+streak+" побед подряд! Легендарная серия!";
+}
 function finishGame(won) {
   if (phase==="finished") return;
   window.GameAudio?.play(won?"win":"wrong");
   recordResult(won);
+  const streak=window.GameStats.snapshot().streak;
+  streakPraise.textContent=won?praiseForStreak(streak):"";
+  streakPraise.hidden=!streakPraise.textContent;
   window.GameAnalytics?.track(won?"round_win":"round_loss");
   if(won)window.GameHints.rewardForWin(score.wins);
   if (won) wordProgress.solved.add(currentWord);
@@ -853,8 +884,8 @@ adButton.disabled=!window.YandexPlatform.isYandex;
 adButton.addEventListener("click",async()=>{
   if(adButton.disabled)return;
   adButton.disabled=true;
-  const kind=document.querySelector("#hintAdKind").value;
-  hintStatus.textContent="Запрашиваем добровольную рекламу…";
+  const kind=document.querySelector('input[name="hintAdKind"]:checked').value;
+  hintStatus.textContent="Готовим видео с бонусом…";
   window.GameAnalytics?.track("reward_ad_open");
   try{
     const rewarded=await window.YandexPlatform.showRewarded();
@@ -943,6 +974,7 @@ function showScreen(screen) {
   homeScreen.hidden=screen!==homeScreen;
   gameScreen.hidden=screen!==gameScreen;
   if (screen===homeScreen) setHomeView("menu");
+  if (screen===gameScreen) focusTypingInput(true);
   saveUiState();
   window.YandexPlatform.setGameplay(screen===gameScreen && phase!=="finished");
   window.GameAudio?.setScene(screen===gameScreen?"game":screen===homeScreen?"home":"welcome");
