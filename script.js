@@ -24,97 +24,104 @@ function recordResult(won) {
   }
 }
 
-// Раздельный прогресс десяти категорий с переносом старых достижений.
-const WORD_PROGRESS_KEY = "ugadai-slovo-category-progress-v2";
+// Прогресс отдельно для каждой пары «категория + уровень».
+const WORD_PROGRESS_KEY = "ugadai-slovo-category-level-progress-v3";
+const OLD_PROGRESS_KEY = "ugadai-slovo-category-progress-v2";
 const UI_STORAGE_KEY = "ugadai-slovo-ui-v1";
+const MAX_LEVEL = 5;
+const LEVEL_NAMES = ["Новичок","Любитель","Знаток","Эксперт","Мастер слов"];
 const categoryIds = new Set(GAME_CATEGORIES.map(c => c.id));
-// Сейчас доступен первый уровень. Для следующих уровней у слов предусмотрено поле level.
-const CURRENT_LEVEL = 1;
-const wordsInCategory = id => GAME_WORDS.filter(w => w.category === id && (w.level || 1) === CURRENT_LEVEL).map(w => w.word);
+const wordsInCategory = (id,level=1) =>
+  GAME_WORDS.filter(w => w.category === id && (w.level || 1) === level).map(w => w.word);
+const getEntry = (id,level,word) =>
+  GAME_WORDS.find(w => w.category === id && w.level === level && w.word === word);
+const acceptedAnswers = new Set(GAME_WORDS.map(w => w.word));
 function loadAllProgress() {
-  let saved = {}, fresh = false;
-  try {
-    const raw = localStorage.getItem(WORD_PROGRESS_KEY);
-    fresh = raw !== null;
-    saved = raw ? JSON.parse(raw) : {};
-  } catch {}
-  if (!fresh) {
-    try {
-      const old = JSON.parse(localStorage.getItem("ugadai-slovo-word-progress-v1") || "{}");
-      for (const c of GAME_CATEGORIES) {
-        const valid = new Set(wordsInCategory(c.id));
-        saved[c.id] = {
-          attempted:(old.attempted || []).filter(w => valid.has(w)),
-          solved:(old.solved || []).filter(w => valid.has(w)),
-          active:valid.has(old.active) ? old.active : null
-        };
-      }
-    } catch {}
+  let saved = null,legacy = {};
+  try {saved = JSON.parse(localStorage.getItem(WORD_PROGRESS_KEY) || "null");} catch {}
+  if (!saved) {
+    try {legacy = JSON.parse(localStorage.getItem(OLD_PROGRESS_KEY) || "{}");} catch {}
   }
-  const progress = {};
+  const result = {};
   for (const c of GAME_CATEGORIES) {
-    const entry = saved[c.id] || {};
-    const valid = new Set(wordsInCategory(c.id));
-    const solved = new Set(Array.isArray(entry.solved) ? entry.solved.filter(w => valid.has(w)) : []);
-    const attempted = new Set(Array.isArray(entry.attempted) ? entry.attempted.filter(w => valid.has(w)) : []);
-    for (const w of solved) attempted.add(w);
-    const active = valid.has(entry.active) && !solved.has(entry.active) ? entry.active : null;
-    const oldRound = entry.round || {};
-    const round = active && oldRound.word === active ? {
-      word:active,
-      guesses:Array.isArray(oldRound.guesses)
-        ? oldRound.guesses.filter(g => typeof g === "string" && g.length === 5 &&
-            (VALID_RUSSIAN_WORDS.has(g) || EXTRA_VALID_WORDS.has(g)) && g !== active).slice(0,maxAttempts) : [],
-      draft:typeof oldRound.draft === "string" ? oldRound.draft : "",
-      finalDraft:typeof oldRound.finalDraft === "string" ? oldRound.finalDraft : ""
-    } : null;
-    progress[c.id] = {attempted,solved,active,round};
+    result[c.id] = {};
+    for (let lvl=1;lvl<=MAX_LEVEL;lvl++) {
+      const old = lvl===1 ? legacy[c.id] : null;
+      const entry = saved?.[c.id]?.[lvl] || old || {};
+      const valid = new Set(wordsInCategory(c.id,lvl));
+      const solved = new Set(Array.isArray(entry.solved) ? entry.solved.filter(w => valid.has(w)) : []);
+      const attempted = new Set(Array.isArray(entry.attempted) ? entry.attempted.filter(w => valid.has(w)) : []);
+      solved.forEach(w => attempted.add(w));
+      const active = valid.has(entry.active) && !solved.has(entry.active) ? entry.active : null;
+      const roundData = entry.round || {};
+      const round = active && roundData.word === active ? {
+        word:active,
+        guesses:Array.isArray(roundData.guesses)
+          ? roundData.guesses.filter(g=>typeof g==="string" && g.length===active.length &&
+            /^[а-яё]+$/.test(g) && g!==active).slice(0,maxAttempts) : [],
+        draft:typeof roundData.draft==="string" ? roundData.draft : "",
+        finalDraft:typeof roundData.finalDraft==="string" ? roundData.finalDraft : ""
+      } : null;
+      result[c.id][lvl] = {solved,attempted,active,round,
+        completed:!!entry.completed || solved.size===valid.size && valid.size>0};
+    }
   }
-  return progress;
+  return result;
 }
 function loadUiState() {
   try {
-    const s = JSON.parse(localStorage.getItem(UI_STORAGE_KEY) || "{}");
+    const s=JSON.parse(localStorage.getItem(UI_STORAGE_KEY)||"{}");
     return {
-      category:categoryIds.has(s.category) ? s.category : "animals",
+      category:categoryIds.has(s.category) ? s.category : GAME_CATEGORIES[0].id,
+      level:Number.isInteger(s.level)&&s.level>=1&&s.level<=MAX_LEVEL ? s.level : 1,
       screen:["welcome","home","game"].includes(s.screen) ? s.screen : "welcome",
-      homeView:["menu","categories","stats","rules"].includes(s.homeView) ? s.homeView : "menu"
+      homeView:["menu","categories","levels","stats","rules"].includes(s.homeView) ? s.homeView : "menu"
     };
-  } catch {return {category:"animals",screen:"welcome",homeView:"menu"};}
+  } catch {
+    return {category:GAME_CATEGORIES[0].id,level:1,screen:"welcome",homeView:"menu"};
+  }
 }
 const allProgress = loadAllProgress();
 const initialUiState = loadUiState();
 let selectedCategory = initialUiState.category;
-let wordProgress = allProgress[selectedCategory];
-let wordBank = wordsInCategory(selectedCategory);
+let selectedLevel = initialUiState.level;
+const levelUnlocked = (id,level) =>
+  level===1 || allProgress[id][level-1].completed ||
+  allProgress[id][level-1].solved.size===wordsInCategory(id,level-1).length;
+if (!levelUnlocked(selectedCategory,selectedLevel)) selectedLevel=1;
+let wordProgress = allProgress[selectedCategory][selectedLevel];
+let wordBank = wordsInCategory(selectedCategory,selectedLevel);
 let roundGuesses = [];
 let restoringRound = false;
 function saveWordProgress() {
   try {
-    const stored = {};
+    const data = {};
     for (const c of GAME_CATEGORIES) {
-      const entry = allProgress[c.id];
-      stored[c.id] = {attempted:[...entry.attempted],solved:[...entry.solved],
-        active:entry.active,round:entry.round};
+      data[c.id] = {};
+      for (let l=1;l<=MAX_LEVEL;l++) {
+        const entry=allProgress[c.id][l];
+        data[c.id][l]={solved:[...entry.solved],attempted:[...entry.attempted],
+          active:entry.active,round:entry.round,completed:entry.completed};
+      }
     }
-    localStorage.setItem(WORD_PROGRESS_KEY,JSON.stringify(stored));
-  } catch {}
+    localStorage.setItem(WORD_PROGRESS_KEY,JSON.stringify(data));
+  } catch { /* При отключённом хранилище прогресс живёт до закрытия игры. */ }
 }
 function saveRound() {
-  if (restoringRound || !wordProgress.active || phase === "finished") return;
-  wordProgress.round = {word:currentWord,guesses:[...roundGuesses],
-    draft:phase === "guess" && guessInput ? guessInput.value : "",
-    finalDraft:phase === "final" ? finalInput.value : ""};
+  if (restoringRound || !wordProgress.active || phase==="finished") return;
+  wordProgress.round={word:currentWord,guesses:[...roundGuesses],
+    draft:phase==="guess" && guessInput ? guessInput.value : "",
+    finalDraft:phase==="final" ? finalInput.value : ""};
   saveWordProgress();
 }
 function chooseNextWord() {
-  const fresh = wordBank.filter(w => !wordProgress.attempted.has(w));
-  const unfinished = wordBank.filter(w => !wordProgress.solved.has(w));
-  const pool = fresh.length ? fresh : unfinished;
+  const fresh=wordBank.filter(w=>!wordProgress.attempted.has(w));
+  const unsolved=wordBank.filter(w=>!wordProgress.solved.has(w));
+  const pool=fresh.length?fresh:unsolved;
   if (!pool.length) return null;
-  const alternatives = pool.filter(w => w !== previousWord);
-  const choices = alternatives.length ? alternatives : pool;
-  return choices[Math.floor(Math.random() * choices.length)];
+  const alternatives=pool.filter(w=>w!==previousWord);
+  const choices=alternatives.length?alternatives:pool;
+  return choices[Math.floor(Math.random()*choices.length)];
 }
 function showCollectionComplete() {
   phase = "finished";
