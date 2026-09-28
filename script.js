@@ -253,7 +253,21 @@ function createLineInput(number) {
   input.spellcheck = false;
   input.maxLength = currentWord.length;
   input.setAttribute("aria-label", "Введите слово, попытка " + number);
-  input.addEventListener("input", () => {syncInput();saveRound();});
+  // Печатаем всегда слева направо. Клик по невидимому полю не должен
+  // перемещать курсор в середину слова и ломать работу кнопки удаления.
+  input.addEventListener("focus", () => input.setSelectionRange(input.value.length,input.value.length));
+  input.addEventListener("click", () => input.setSelectionRange(input.value.length,input.value.length));
+  input.addEventListener("keydown", event => {
+    if (["ArrowLeft","ArrowRight","Home","End"].includes(event.key)) {
+      event.preventDefault();
+      input.setSelectionRange(input.value.length,input.value.length);
+    }
+  });
+  input.addEventListener("input", () => {
+    syncInput();
+    input.setSelectionRange(input.value.length,input.value.length);
+    saveRound();
+  });
   return input;
 }
 
@@ -333,20 +347,18 @@ function renderPreview() {
   }
 }
 
-// Экранная клавиатура:// Экранная клавиатура: буквы также можно нажимать мышкой или пальцем.
-// Обе клавиатуры редактируют одно и то же поле: у телефона и игровой клавиатуры
-// общий текст и позиция курсора, поэтому удаление работает в обе стороны.
+// Экранная клавиатура: ввод строго слева направо, удаляем последнюю букву.
+// Не используем selectionStart: тап по прозрачному полю мог оставлять курсор
+// в произвольной позиции, из-за чего буквы удалялись не по порядку.
 function activeLetterInput() {
   return phase === "final" ? finalInput : phase === "guess" ? guessInput : null;
 }
 
 function typeKeyboardLetter(letter) {
   const target = activeLetterInput();
-  if (!target) return;
-  const start = target.selectionStart ?? target.value.length;
-  const end = target.selectionEnd ?? start;
-  if (target.value.length - (end - start) >= target.maxLength) return;
-  target.setRangeText(letter.toLowerCase(), start, end, "end");
+  if (!target || target.value.length >= target.maxLength) return;
+  target.value += letter.toLowerCase();
+  target.setSelectionRange(target.value.length,target.value.length);
   target.dispatchEvent(new Event("input", { bubbles: true }));
   messageElement.classList.remove("is-error");
 }
@@ -354,10 +366,8 @@ function typeKeyboardLetter(letter) {
 function eraseKeyboardLetter() {
   const target = activeLetterInput();
   if (!target || !target.value.length) return;
-  const start = target.selectionStart ?? target.value.length;
-  const end = target.selectionEnd ?? start;
-  if (start === end && start === 0) return;
-  target.setRangeText("", start === end ? start - 1 : start, end, "end");
+  target.value = target.value.slice(0,-1);
+  target.setSelectionRange(target.value.length,target.value.length);
   target.dispatchEvent(new Event("input", { bubbles: true }));
   messageElement.classList.remove("is-error");
 }

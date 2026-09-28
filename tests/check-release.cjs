@@ -141,6 +141,29 @@ for(const screen of ["welcome","home","game"]){
 assert(script.includes('initialScreen=startupScreen(initialUiState.screen,navigationType)'));
 assert(script.includes('showScreen(initialScreen==="game"?gameScreen:'),
   "Первый экран должен зависеть от типа навигации");
+// Экранная клавиатура никогда не зависит от положения курсора.
+assert(script.includes("target.value += letter.toLowerCase()"),"Буквы должны добавляться в конец");
+assert(script.includes("target.value = target.value.slice(0,-1)"),"Удаление последней буквы");
+assert(!script.includes("target.setRangeText("),"Не используйте положение курсора для экранной клавиатуры");
+const keyboardCode=script.slice(script.indexOf("function activeLetterInput()"),script.indexOf("function showInputError("));
+const keyboardContext={
+  phase:"guess",
+  guessInput:{value:"кот",maxLength:5,selectionStart:0,selectionEnd:0,
+    setSelectionRange(start,end){this.selectionStart=start;this.selectionEnd=end;},
+    dispatchEvent(){}},
+  finalInput:null,
+  Event:class{constructor(type,options){this.type=type;this.options=options;}},
+  messageElement:{classList:{remove(){}}}
+};
+vm.createContext(keyboardContext);
+vm.runInContext(keyboardCode,keyboardContext);
+vm.runInContext("eraseKeyboardLetter()",keyboardContext);
+assert.equal(keyboardContext.guessInput.value,"ко","Удаляем последнюю букву даже если курсор в начале");
+keyboardContext.guessInput.selectionStart=0;
+vm.runInContext('typeKeyboardLetter("Л")',keyboardContext);
+assert.equal(keyboardContext.guessInput.value,"кол","Добавляем букву в конец даже если курсор в начале");
+assert.equal(keyboardContext.guessInput.selectionStart,3);
+console.log("OK: экранная клавиатура удаляет последнюю букву и печатает в конец.");
 const worker=fs.readFileSync(path.join(root,"service-worker.js"),"utf8");
 assert(worker.includes('event.request.mode === "navigate"'),"Нет проверки свежего HTML");
 console.log("OK: 1000 слов, 50 уровней, SDK, ник, облачный профиль и 10 фрагментов награды.");
