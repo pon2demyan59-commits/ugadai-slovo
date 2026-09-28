@@ -35,6 +35,11 @@
         <button type="button" id="menuStats" class="home-menu-button menu-stats">★ <span>СТАТИСТИКА</span></button>
         <button type="button" id="menuRules" class="home-menu-button menu-rules">? <span>КАК ИГРАТЬ</span></button>
       </nav>
+      <section id="categoryScreen" class="category-screen" hidden aria-labelledby="categoryTitle">
+        <h3 id="categoryTitle">ВЫБЕРИ КАТЕГОРИЮ</h3>
+        <div id="categoryList" class="category-list"></div>
+        <button type="button" id="categoryBack" class="home-back">← К меню</button>
+      </section>
       <section id="menuDetails" class="home-details" aria-live="polite" hidden>
         <h3 id="menuDetailsTitle"></h3>
         <div id="menuDetailsBody"></div>
@@ -47,6 +52,7 @@
     <section class="game-card">
       <button type="button" id="gameMenuBack" class="game-menu-back" aria-label="Вернуться в главное меню">← Меню</button>
       <h1>Угадай слово</h1>
+      <p id="activeCategoryTitle" class="game-category-label"></p>
       <section class="word-panel" aria-label="Подсказка">
         <form id="finalForm" class="final-form" autocomplete="off">
           <div class="final-entry" id="finalEntry">
