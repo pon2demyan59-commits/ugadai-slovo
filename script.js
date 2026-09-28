@@ -635,6 +635,7 @@ function setHomeView(view) {
   levelsScreen.hidden=view!=="levels";
   details.hidden=view!=="stats" && view!=="rules";
   homeCard.classList.toggle("subview",view!=="menu");
+  homeCard.classList.toggle("stats-open",view==="stats");
   homeCard.setAttribute("aria-labelledby",{
     menu:"homeTitle",categories:"categoryTitle",levels:"levelsTitle",
     stats:"menuDetailsTitle",rules:"menuDetailsTitle"
