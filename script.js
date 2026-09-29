@@ -1102,6 +1102,7 @@ function startLevel(id,level) {
 }
 document.querySelector("#welcomeEnter").addEventListener("click",()=>showScreen(homeScreen));
 document.querySelector("#menuPlay").addEventListener("click",showCategories);
+window.GameDebug?.log("ЭТАП: обработчик Играть подключён");
 document.querySelector("#categoryBack").addEventListener("click",()=>setHomeView("menu"));
 document.querySelector("#levelsBack").addEventListener("click",showCategories);
 document.querySelector("#gameMenuBack").addEventListener("click",()=>{
@@ -1115,7 +1116,9 @@ const nickForm=document.querySelector("#nicknameForm");
 const nickInput=document.querySelector("#nicknameInput");
 const nickMessage=document.querySelector("#nicknameMessage");
 const rewardCounter=document.querySelector("#rewardCounter");
+window.GameDebug?.log("ЭТАП: перед загрузкой никнейма; GameRewards="+Boolean(window.GameRewards));
 nickInput.value=window.GameRewards.getNickname()==="Игрок"?"":window.GameRewards.getNickname();
+window.GameDebug?.log("ЭТАП: никнейм прочитан");
 nickForm.addEventListener("submit",event=>{
   event.preventDefault();
   const saved=window.GameRewards.saveNickname(nickInput.value);
@@ -1127,7 +1130,9 @@ function refreshRewardCounter(){
   const parts=window.GameRewards.earnedParts(allProgress,GAME_CATEGORIES,MAX_LEVEL,wordsInCategory);
   rewardCounter.textContent=earned+"/10 · "+parts+"/50";
 }
+window.GameDebug?.log("ЭТАП: перед расчётом пазла");
 refreshRewardCounter();
+window.GameDebug?.log("ЭТАП: пазл рассчитан");
 document.querySelector("#menuReward").addEventListener("click",()=>{
   openMenuDetails("ТАЙНА ДЕСЯТИ ПЕЧАТЕЙ","reward");
   window.GameRewards.render(detailsBody,allProgress,GAME_CATEGORIES,
@@ -1151,6 +1156,7 @@ cloudButton.addEventListener("click",async ()=>{
     cloudButton.disabled=false;
   }
 });
+window.GameDebug?.log("ЭТАП: статистика и награда подключены");
 document.querySelector("#menuRules").addEventListener("click",()=>{
   openMenuDetails("КАК ИГРАТЬ","rules");
   const rules=[
