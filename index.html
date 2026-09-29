@@ -155,6 +155,38 @@
       </section>
     </div>
   </main>
+  <!-- Диагностика загружается только при ?debug=1 и не влияет на обычную игру. -->
+  <script>
+    if (new URLSearchParams(location.search).has("debug")) {
+      (function () {
+        const events = [];
+        const box = document.createElement("aside");
+        box.setAttribute("role", "status");
+        box.style.cssText = "position:fixed;left:8px;right:8px;bottom:8px;z-index:99999;max-height:45vh;overflow:auto;padding:12px;background:#14142e;color:#fff;border:2px solid #ffdd55;border-radius:12px;font:12px/1.5 monospace;white-space:pre-wrap;overflow-wrap:anywhere";
+        const display = document.createElement("pre");
+        display.style.cssText = "margin:0;white-space:pre-wrap";
+        box.append(display);
+        document.body.append(box);
+        function log(text) {
+          events.push(String(text));
+          display.textContent = "ДИАГНОСТИКА МЕНЮ v1\n" + events.join("\n");
+        }
+        window.GameDebug = { log: log };
+        log("Платформа: " + navigator.userAgent);
+        window.addEventListener("error", function (event) {
+          log("ОШИБКА: " + (event.message || "Не загрузился ресурс") +
+              (event.filename ? " @ " + event.filename.split("/").pop() + ":" + event.lineno : ""));
+        }, true);
+        window.addEventListener("unhandledrejection", function (event) {
+          log("ОШИБКА PROMISE: " + String(event.reason && event.reason.message || event.reason));
+        });
+        ["menuPlay","menuReward","menuStats","menuRules"].forEach(function (id) {
+          const button = document.getElementById(id);
+          if (button) button.addEventListener("click", function () { log("НАЖАТИЕ: " + id); }, true);
+        });
+      })();
+    }
+  </script>
   <script src="data/words.js"></script>
   <script src="data/valid-words.js"></script>
   <script src="data/long-words-loader.js"></script>
