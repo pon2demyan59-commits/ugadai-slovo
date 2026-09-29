@@ -1135,40 +1135,9 @@ document.querySelector("#menuReward").addEventListener("click",()=>{
 });
 document.querySelector("#menuStats").addEventListener("click",()=>{
   openMenuDetails("МОЯ СТАТИСТИКА","stats");
-  // Даже если подробный отчёт вызвал ошибку в конкретном браузере,
-  // показываем основные результаты вместо неработающей кнопки.
-  try {
-    if (!window.GameStatsPanel?.render) throw new Error("Модуль статистики не загружен");
-    window.GameStatsPanel.render(detailsBody,score,allProgress,GAME_CATEGORIES,
-      GAME_WORDS.length,MAX_LEVEL,wordsInCategory);
-  } catch (error) {
-    console.error("Не удалось построить подробную статистику:",error);
-    detailsBody.replaceChildren();
-    const rounds=score.wins+score.losses;
-    const solved=GAME_CATEGORIES.reduce((sum,category)=>
-      sum+Array.from({length:MAX_LEVEL},(_,i)=>
-        allProgress[category.id]?.[i+1]?.solved?.size||0).reduce((a,b)=>a+b,0),0);
-    const heading=document.createElement("p");
-    heading.textContent="Основные результаты";
-    detailsBody.append(heading);
-    for (const [label,value] of [
-      ["Побед",score.wins],["Поражений",score.losses],
-      ["Процент побед",rounds?Math.round(score.wins/rounds*100)+"%":"0%"],
-      ["Разгадано слов",solved+"/"+GAME_WORDS.length]
-    ]) {
-      const row=document.createElement("p");
-      row.className="home-stat-line";
-      const name=document.createElement("span");name.textContent=label;
-      const number=document.createElement("strong");number.textContent=value;
-      row.append(name,number);detailsBody.append(row);
-    }
-    const note=document.createElement("p");
-    note.textContent="Подробный отчёт временно недоступен в этом браузере. Основные результаты сохранены.";
-    detailsBody.append(note);
-  }
-  try {
-    window.GameRewards?.appendProgress?.(detailsBody,allProgress,GAME_CATEGORIES,MAX_LEVEL,wordsInCategory);
-  } catch(error) {console.warn("Не удалось показать печати в статистике:",error);}
+  window.GameStatsPanel.render(detailsBody,score,allProgress,GAME_CATEGORIES,
+    GAME_WORDS.length,MAX_LEVEL,wordsInCategory);
+  window.GameRewards.appendProgress(detailsBody,allProgress,GAME_CATEGORIES,MAX_LEVEL,wordsInCategory);
 });
 const cloudButton=document.querySelector("#menuCloud");
 if (window.YandexPlatform.isYandex && !window.GameCloud.isAuthorized()) cloudButton.hidden=false;
