@@ -1016,3 +1016,7 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
 /* Вся активная строка кликабельна, а невидимый ввод занимает её целиком. */
 .game .row.active{cursor:text}
 .game .row.active .line-input{cursor:text;touch-action:manipulation}
+
+/* Visible release identifier helps distinguish deployed and stale pages. */
+.game-version { display:block; margin:12px 0 0; font-size:11px; color:#ffffffb5; }
+.home-card.subview .game-version { display:none; }

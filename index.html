@@ -7,9 +7,9 @@
   <title>Угадай слово</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="stats.css">
-  <link rel="stylesheet" href="rewards.css">
+  <link rel="stylesheet" href="style.css?v=34">
+  <link rel="stylesheet" href="stats.css?v=34">
+  <link rel="stylesheet" href="rewards.css?v=34">
 </head>
 <body>
   <!-- Стартовая заставка → главное меню → игровое поле. -->
@@ -53,6 +53,7 @@
         <button type="button" id="menuCloud" class="home-menu-button menu-cloud" hidden title="Войти через Яндекс ID, чтобы сохранять прогресс между устройствами">☁ <span>СОХРАНИТЬ В ОБЛАКЕ</span></button>
         <button type="button" id="menuRules" class="home-menu-button menu-rules">? <span>КАК ИГРАТЬ</span></button>
       </nav>
+      <small class="game-version">Версия 34 · 29.09.2026</small>
       <section id="categoryScreen" class="category-screen" hidden aria-labelledby="categoryTitle">
         <button type="button" id="categoryBack" class="nav-return">← Меню</button>
         <h3 id="categoryTitle">ВЫБОР КАТЕГОРИИ</h3>
@@ -170,10 +171,10 @@
   <script src="hints.js"></script>
   <script src="analytics.js"></script>
   <script src="audio.js"></script>
-  <script src="stats.js"></script>
-  <script src="rewards.js"></script>
+  <script src="stats.js?v=34"></script>
+  <script src="rewards.js?v=34"></script>
   <script src="yandex-platform.js"></script>
   <script src="cloud-save.js"></script>
-  <script src="game-bootstrap.js"></script>
+  <script src="game-bootstrap.js?v=34"></script>
 </body>
 </html>
