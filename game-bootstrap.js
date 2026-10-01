@@ -4,7 +4,7 @@
   try { await window.GameCloud.prepare(); }
   catch(error) { console.warn("Запуск с локальным сохранением:",error); }
   const script=document.createElement("script");
-  script.src="script.js?v=34";
+  script.src="script.js?v=39";
   script.async=false;
   script.onload=()=>{
     const enter=document.querySelector("#welcomeEnter");
