@@ -304,81 +304,6 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
 }
 
 
-/* Яркая заставка: название, короткий подзаголовок и одна кнопка. */
-.welcome-screen[hidden], .game[hidden] { display:none!important; }
-.welcome-screen {
-  position:relative; isolation:isolate; display:grid; place-items:center;
-  min-height:100vh; min-height:100dvh; width:100%;
-  padding:32px 18px; overflow:hidden; text-align:center;
-  background:
-    radial-gradient(circle at 15% 15%,#ff8bc480 0%,transparent 33%),
-    radial-gradient(circle at 83% 78%,#51d4ff92 0%,transparent 38%),
-    linear-gradient(140deg,#804bfa 5%,#6c46e8 40%,#3388ed 78%,#27b5ef);
-}
-.welcome-screen::before {
-  content:""; position:absolute; inset:0; z-index:-1; opacity:.25;
-  background-image:radial-gradient(#fff 1.6px,transparent 1.6px);
-  background-size:33px 33px; mask-image:linear-gradient(transparent 0%,#000 60%,transparent 100%);
-}
-.welcome-glow { position:absolute; width:300px; height:300px; border-radius:50%;
-  filter:blur(30px); opacity:.32; z-index:-1; pointer-events:none; }
-.welcome-glow-left { background:#ffb547; top:-130px; left:-125px; }
-.welcome-glow-right { background:#5bffcf; bottom:-135px; right:-125px; }
-.welcome-content {
-  position:relative; width:min(100%,480px); padding:36px 16px 43px;
-  border:1px solid #ffffff7d; border-radius:32px;
-  background:linear-gradient(150deg,#ffffff3d,#ffffff17);
-  box-shadow:inset 0 2px 1px #ffffff80,0 22px 68px #30258a66;
-  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-}
-.welcome-tiles { display:flex; justify-content:center; gap:clamp(5px,2vw,12px); margin:0 auto 27px; }
-.welcome-tiles span {
-  display:grid; place-items:center; width:clamp(41px,12vw,62px); aspect-ratio:1;
-  border:2px solid #fff8; border-radius:13px;
-  color:#fff; font-size:clamp(25px,6.5vw,38px); font-weight:1000;
-  text-shadow:0 2px 1px #3c229052;
-  box-shadow:inset 0 2px #ffffff91,inset 0 -5px #00000026,0 8px 14px #29258445;
-  transform:rotate(-5deg);
-}
-.welcome-tiles span:nth-child(1) { background:#fc718f; }
-.welcome-tiles span:nth-child(2) { background:#ffbc47; transform:rotate(4deg) translateY(-7px); }
-.welcome-tiles span:nth-child(3) { background:#45c7ea; transform:rotate(-3deg); }
-.welcome-tiles span:nth-child(4) { background:#69d99d; transform:rotate(5deg) translateY(-5px); }
-.welcome-tiles span:nth-child(5) { background:#9e77fa; transform:rotate(-3deg); }
-.welcome-title {
-  margin:0; font-size:clamp(46px,12vw,76px); line-height:.97; letter-spacing:.025em;
-  font-weight:1000; color:#fff; text-shadow:0 5px 0 #422d9a80,0 12px 24px #332b9d67;
-}
-.welcome-title span { color:#ffe36e; text-shadow:0 5px 0 #9b60957d,0 10px 25px #5029aa88; }
-.welcome-subtitle {
-  margin:23px 0 33px; color:#fff; font-weight:750;
-  font-size:clamp(16px,4.5vw,21px); text-shadow:0 2px 8px #342d9e88;
-}
-.welcome-button {
-  display:inline-flex; align-items:center; justify-content:center; gap:20px;
-  width:min(100%,286px); min-height:65px; border:2px solid #fff8; border-radius:19px;
-  background:linear-gradient(180deg,#ffdd6d,#ffb730);
-  box-shadow:inset 0 3px 1px #ffffffaa,inset 0 -5px #d78719,0 11px 0 #6e349d99,0 20px 35px #38217f99;
-  color:#51256f; font-size:clamp(22px,6vw,28px); font-weight:1000; letter-spacing:.09em;
-  cursor:pointer; transition:transform .16s ease,filter .16s ease; touch-action:manipulation;
-}
-.welcome-button:hover { filter:brightness(1.07); transform:translateY(-3px); }
-.welcome-button:active { transform:translateY(5px); box-shadow:inset 0 3px #ffffffaa,inset 0 -3px #d78719,0 5px 0 #6e349d99; }
-.welcome-button:focus-visible { outline:4px solid white; outline-offset:5px; }
-.welcome-button span { font-size:28px; line-height:1; }
-.welcome-decor { position:absolute; z-index:-1; font-weight:1000; color:#ffffff43; pointer-events:none; }
-.welcome-decor-one { left:5%; top:12%; font-size:clamp(70px,20vw,180px); transform:rotate(-22deg); }
-.welcome-decor-two { right:6%; bottom:10%; font-size:clamp(80px,22vw,195px); transform:rotate(18deg); }
-@media(max-width:380px) {
-  .welcome-content { padding:31px 9px 37px; border-radius:24px; }
-  .welcome-tiles { margin-bottom:24px; gap:5px; }
-  .welcome-tiles span { border-radius:9px; }
-  .welcome-subtitle { margin:20px 0 28px; }
-}
-@media(prefers-reduced-motion:reduce) {
-  .welcome-button { transition:none; }
-}
-
 /* Меню в стиле яркой головоломки. Отдельный адаптивный экран после заставки. */
 .home-screen[hidden],.home-details[hidden],.home-menu[hidden] { display:none!important; }
 .home-screen {
@@ -1041,10 +966,8 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
   position:absolute;
   inset:0;
   pointer-events:none;
-  background:
-    radial-gradient(circle at 50% 0%, rgba(255,222,155,.12), transparent 32%),
-    linear-gradient(90deg, transparent 0 48%, rgba(255,255,255,.018) 49% 51%, transparent 52% 100%);
-  opacity:.7;
+  background:radial-gradient(circle at 50% 0%, rgba(255,222,155,.12), transparent 34%);
+  opacity:.65;
 }
 .welcome-ambient {
   position:absolute;
@@ -1279,12 +1202,6 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
   background:#fff4bb;
   box-shadow:inset 0 -2px 0 rgba(117,104,42,.19);
 }
-.welcome-v36-note {
-  margin-top:15px;
-  font-size:11px;
-  line-height:1.3;
-  color:#ad9da0;
-}
 
 @media (max-width:390px) {
   .welcome-screen.welcome-v36 { padding:8px; }
@@ -1295,7 +1212,6 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
   .welcome-feature-stack span { min-height:34px;padding:6px 8px;font-size:11px; }
   .welcome-teaser { padding:11px 10px 10px; }
   .welcome-v36-start { min-height:61px; border-radius:19px; }
-  .welcome-v36-note { margin-top:11px; }
 }
 @media (max-height:760px) and (orientation:portrait) {
   .welcome-screen.welcome-v36 { align-items:start; overflow:auto; }
