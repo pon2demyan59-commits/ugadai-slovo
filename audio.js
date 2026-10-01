@@ -6,7 +6,7 @@
   const DEFAULTS={music:true,effects:true};
   const AudioContextClass=window.AudioContext||window.webkitAudioContext;
   let settings={...DEFAULTS},ctx=null,master=null,musicBus=null,effectsBus=null;
-  let unlocked=false,scene="welcome",inAd=false,sequence=0,ticker=null;
+  let unlocked=false,scene="welcome",inAd=false,platformPaused=false,windowBlurred=false,sequence=0,ticker=null;
   let melodyUntil=0;
   try{
     const saved=JSON.parse(localStorage.getItem(KEY)||"null");
@@ -29,11 +29,11 @@
       return true;
     }catch(error){console.warn("Игровой звук:",error);return false;}
   }
-  function audible(){return unlocked&&!document.hidden&&!inAd;}
+  function audible(){return unlocked&&!document.hidden&&!inAd&&!platformPaused&&!windowBlurred;}
   function unlock(){
     if(!ensureContext())return false;
     unlocked=true;
-    if(ctx.state==="suspended")ctx.resume().catch(()=>{});
+    if(audible()&&ctx.state==="suspended")ctx.resume().catch(()=>{});
     startMusic();
     return true;
   }
@@ -78,7 +78,7 @@
   function pauseForAd(active){
     inAd=Boolean(active);
     if(!ctx)return;
-    if(inAd){
+    if(!audible()){
       ctx.suspend().catch(()=>{});
     }else if(audible()&&ctx.state==="suspended"){
       ctx.resume().catch(()=>{});
@@ -130,10 +130,14 @@
   document.addEventListener("visibilitychange",()=>{
     if(!ctx)return;
     if(document.hidden)ctx.suspend().catch(()=>{});
-    else if(unlocked&&!inAd)ctx.resume().catch(()=>{});
+    else if(audible())ctx.resume().catch(()=>{});
   });
   document.addEventListener("game:ad-start",()=>pauseForAd(true));
   document.addEventListener("game:ad-end",()=>pauseForAd(false));
+  document.addEventListener("game:platform-pause",()=>{platformPaused=true;pauseForAd(inAd);});
+  document.addEventListener("game:platform-resume",()=>{platformPaused=false;pauseForAd(inAd);});
+  window.addEventListener?.("blur",()=>{windowBlurred=true;pauseForAd(inAd);});
+  window.addEventListener?.("focus",()=>{windowBlurred=false;pauseForAd(inAd);});
   syncButtons();
   window.GameAudio={play,setScene,toggle,getSettings:()=>({...settings}),unlock};
 })();

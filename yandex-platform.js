@@ -13,6 +13,7 @@
   // В этом случае сохраняем счётчик и повторяем не раньше, чем через минуту,
   // на следующем переходе, но НИКОГДА не запускаем рекламу по таймеру.
   const ROUNDS_PER_AD=3,MIN_AD_INTERVAL=180000,RETRY_INTERVAL=60000;
+  let platformPaused=false,windowBlurred=false,readySent=false;
   let adActive=false,finishedRounds=0,lastAd=0,lastRequest=0;
   let adStatus="waiting";
   function setAdActive(active){
@@ -24,7 +25,7 @@
   }
   function syncGameplay() {
     if(!sdk || !uiReady)return;
-    const shouldRun=desiredGameplay && !document.hidden && !adActive;
+    const shouldRun=desiredGameplay && !document.hidden && !adActive && !platformPaused && !windowBlurred;
     if(shouldRun===gameplayActive)return;
     gameplayActive=shouldRun;
     try {
@@ -40,6 +41,16 @@
       if(!window.YaGames){console.warn("SDK отсутствует");settleSdk(null);return;}
       try{
         sdk=await window.YaGames.init();
+        sdk.on?.("game_api_pause",()=>{
+          platformPaused=true;
+          document.dispatchEvent(new Event("game:platform-pause"));
+          syncGameplay();
+        });
+        sdk.on?.("game_api_resume",()=>{
+          platformPaused=false;
+          document.dispatchEvent(new Event("game:platform-resume"));
+          syncGameplay();
+        });
         // П. 2.14: читаем язык платформы на старте, даже при единственной локализации.
         // Сейчас доступен только русский; другие языки используют русский как резервный.
         portalLanguage=sdk.environment.i18n.lang;
@@ -49,19 +60,21 @@
         window.YandexPlatform.portalLanguage=portalLanguage;
         window.YandexPlatform.language=gameLanguage;
         settleSdk(sdk);
-        if(uiReady)sdk.features.LoadingAPI?.ready();
+        if(uiReady)sendReady();
         syncGameplay();
       }catch(error){console.warn("Ошибка инициализации SDK:",error);settleSdk(null);}
     };
     script.onerror=()=>{console.warn("Не удалось загрузить /sdk.js");settleSdk(null);};
     document.head.append(script);
   }
-  function ready(){
-    uiReady=true;
-    try{sdk?.features.LoadingAPI?.ready();}
+  function sendReady(){
+    if(!sdk || readySent)return;
+    try{sdk.features.LoadingAPI?.ready();readySent=true;}
     catch(error){console.warn("LoadingAPI:",error);}
     syncGameplay();
   }
+  function ready(){uiReady=true;sendReady();syncGameplay();}
+  function isPaused(){return document.hidden || adActive || platformPaused || windowBlurred;}
   function setGameplay(active){desiredGameplay=Boolean(active);syncGameplay();}
   function roundFinished(){finishedRounds++;setGameplay(false);}
   function adDebugStatus(){
@@ -130,8 +143,16 @@
       }catch(error){console.warn("Бонусная реклама:",error);finish();}
     });
   }
+  for(const name of ["click","keydown","beforeinput","submit"]){
+    document.addEventListener(name,event=>{
+      if(!isPaused())return;
+      event.preventDefault();event.stopImmediatePropagation();
+    },true);
+  }
+  window.addEventListener?.("blur",()=>{windowBlurred=true;syncGameplay();});
+  window.addEventListener?.("focus",()=>{windowBlurred=false;syncGameplay();});
   document.addEventListener("visibilitychange",syncGameplay);
   window.YandexPlatform={isYandex,whenSdk,ready,setGameplay,roundFinished,showInterstitialIfDue,
-    showRewarded,adDebugStatus,portalLanguage,language:gameLanguage};
+    showRewarded,isPaused,adDebugStatus,portalLanguage,language:gameLanguage};
   init();
 })();

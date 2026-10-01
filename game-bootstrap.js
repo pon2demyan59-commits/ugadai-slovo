@@ -4,11 +4,17 @@
   try { await window.GameCloud.prepare(); }
   catch(error) { console.warn("Запуск с локальным сохранением:",error); }
   const script=document.createElement("script");
-  script.src="script.js?v=49";
+  script.src="script.js?v=50";
   script.async=false;
-  script.onload=()=>{
+  script.onload=async()=>{
+    const image=document.querySelector(".welcome-art-image");
+    if(image && !image.complete){
+      await new Promise(resolve=>{image.addEventListener("load",resolve,{once:true});image.addEventListener("error",resolve,{once:true});});
+    }
+    if(image?.decode)await image.decode().catch(()=>{});
     const enter=document.querySelector("#welcomeEnter");
     if(enter)enter.disabled=false;
+    window.YandexPlatform.ready();
     window.GameCloud.schedule();
   };
   script.onerror=()=>{

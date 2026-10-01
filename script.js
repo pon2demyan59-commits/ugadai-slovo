@@ -46,9 +46,11 @@ const normalizedDictionary = new Set([...VALID_RUSSIAN_WORDS,...EXTRA_VALID_WORD
 function loadAllProgress() {
   let saved = null,legacy = {};
   try {saved = JSON.parse(localStorage.getItem(WORD_PROGRESS_KEY) || "null");} catch {}
+  if(!saved || typeof saved!=="object" || Array.isArray(saved)){saved=null;}
   if (!saved) {
     try {legacy = JSON.parse(localStorage.getItem(OLD_PROGRESS_KEY) || "{}");} catch {}
   }
+  if(!legacy || typeof legacy!=="object" || Array.isArray(legacy))legacy={};
   const result = {};
   for (const c of GAME_CATEGORIES) {
     result[c.id] = {};
@@ -67,10 +69,11 @@ function loadAllProgress() {
           ? roundData.guesses.filter(g=>typeof g==="string" && g.length===active.length &&
             /^[а-яё]+$/.test(g) && g!==active).slice(0,maxAttempts) : [],
         draft:typeof roundData.draft==="string" ? roundData.draft : "",
-        finalDraft:typeof roundData.finalDraft==="string" ? roundData.finalDraft : ""
+        finalDraft:typeof roundData.finalDraft==="string" ? roundData.finalDraft : "",
+        hints:roundData.hints && typeof roundData.hints==="object" ? roundData.hints : {}
       } : null;
       result[c.id][lvl] = {solved,attempted,active,round,
-        completed:!!entry.completed || solved.size===valid.size && valid.size>0};
+        completed:solved.size===valid.size && valid.size>0};
     }
   }
   return result;
@@ -121,7 +124,7 @@ function saveWordProgress() {
   } catch { /* При отключённом хранилище прогресс живёт до закрытия игры. */ }
 }
 function saveRound() {
-  if (replayMode || restoringRound || !wordProgress.active || phase==="finished") return;
+  if (replayMode || restoringRound || !currentWord || wordProgress.active!==currentWord || phase==="finished") return;
   wordProgress.round={word:currentWord,guesses:[...roundGuesses],
     draft:phase==="guess" && guessInput ? guessInput.value : "",
     finalDraft:phase==="final" ? finalInput.value : "",
@@ -156,7 +159,7 @@ function showCollectionComplete() {
   window.YandexPlatform.setGameplay(false);
 }
 
-// Русская игровая клавиатура// Русская игровая клавиатура дополняет системную клавиатуру телефона.
+// Русская игровая клавиатура дополняет системную клавиатуру телефона.
 const keyboardRows = ["ЙЦУКЕНГШЩЗХЪ", "ФЫВАПРОЛДЖЭ", "ЯЧСМИТЬБЮ"];
 const statusPriority = { unused: 0, missing: 1, present: 2, correct: 3 };
 const hintElement = document.querySelector("#hint");
@@ -187,16 +190,18 @@ let phase = "guess";
 let previousWord = "";
 let roundAttemptLimit=baseAttempts;
 let roundHints={positions:[],extraAttempt:false,eliminated:[],extraClue:false};
-let revealHintMode=false,pendingUnknown=null;
+let revealHintMode=false;
 let replayMode=false;
 let replaySolved=new Set();
 let replayAttempted=new Set();
 const sessionSolvedSize=()=>replayMode?replaySolved.size:wordProgress.solved.size;
 const sessionComplete=()=>sessionSolvedSize()===wordBank.length;
 
+let roundGeneration=0;
 let currentEntry=null;
 let phraseBreaks=[];
 function startGame() {
+  ++roundGeneration;
   const nextWord=!replayMode && wordProgress.active && !wordProgress.solved.has(wordProgress.active)
     ? wordProgress.active : chooseNextWord();
   if (!nextWord) {showCollectionComplete();return;}
@@ -225,7 +230,7 @@ function startGame() {
     extraClue:previousHints.extraClue===true
   };
   roundAttemptLimit=baseAttempts+(roundHints.extraAttempt?1:0);
-  revealHintMode=false;pendingUnknown=null;
+  revealHintMode=false;
   currentAttempt=0;
   phase="guess";
   revealed=Array(currentWord.length).fill(false);
@@ -557,18 +562,12 @@ function checkGuess(guess) {
   const phrase=currentEntry?.display?.includes(" ");
   const known=normalizedDictionary.has(guess)||VALID_LONG_WORDS.has(guess)||acceptedAnswers.has(guess);
   if(!phrase && !known){
-    // Расширяем словарь в отдельном обновлении. Сейчас не отклоняем реальные
-    // слова: два одинаковых нажатия «Проверить» явно подтверждают попытку.
-    if(pendingUnknown!==guess){
-      pendingUnknown=guess;
-      showInputError(longDictionaryReady?
-        "Нет в словаре. Нажми «Проверить» ещё раз, чтобы засчитать попытку.":
-        "Словарь загружается. Можно проверить слово повторным нажатием.");
-      return;
-    }
     window.GameAnalytics?.track("dictionary_miss");
+    showInputError(longDictionaryReady
+      ? "Такого слова нет в словаре. Попробуй другое — попытка не потрачена."
+      : "Словарь ещё загружается. Повтори проверку через пару секунд.");
+    return;
   }
-  pendingUnknown=null;
   messageElement.classList.remove("is-error");
   const result = getGuessResult(guess);
   window.GameAudio?.play("check");
@@ -603,7 +602,9 @@ function checkGuess(guess) {
     messageElement.textContent="✨ Слово разгадано! Собираем ответ…";
     window.YandexPlatform.setGameplay(false);
     saveWordProgress();
+    const generation=roundGeneration;
     animateWinningLetters(row).then(()=>{
+      if(generation!==roundGeneration)return;
       revealed.fill(true);
       renderPreview();
       previewElement.classList.add("victory-glow");
@@ -630,6 +631,7 @@ async function animateWinningLetters(sourceRow) {
       typeof Element==="undefined" || !Element.prototype.animate) return;
   const source=Array.from(sourceRow.querySelectorAll(".cell"));
   const destination=Array.from(previewElement.querySelectorAll(".preview-cell"));
+  const word=currentWord;
   const count=Math.min(source.length,destination.length);
   const flights=[];
   for (let i=0;i<count;i++) {
@@ -651,7 +653,7 @@ async function animateWinningLetters(sourceRow) {
     ],{duration:540,delay,easing:"cubic-bezier(.22,.8,.24,1)",fill:"forwards"});
     const done=flight.finished.catch(()=>{}).then(()=>{
       tile.remove();
-      destination[i].textContent=currentWord[i].toUpperCase();
+      destination[i].textContent=word[i].toUpperCase();
       destination[i].classList.add("is-known","victory-arrived");
     });
     flights.push(done);
@@ -787,7 +789,7 @@ function finishGame(won) {
   nextWordButton.focus();
 }
 
-// Щедрый набор подсказок. Расходуем не более двух открытий букв за раунд,
+// Щедрый набор подсказок. Расходуем не более трёх открытий букв за раунд,
 // оставляем хотя бы одну неизвестную букву и не включаем подсказки после победы.
 const hintStatus=document.querySelector("#hintStatus");
 const hintClueText=document.querySelector("#hintClueText");
@@ -951,6 +953,13 @@ nextWordButton.addEventListener("click",async ()=>{
     startGame();
   }
 });
+document.addEventListener("contextmenu",event=>{
+  if(!event.target.closest?.("input,textarea"))event.preventDefault();
+});
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden){saveRound();window.GameCloud.flush();}
+});
+window.addEventListener("pagehide",()=>{saveRound();window.GameCloud.flush();});
 // Сохраняем открытый раздел меню, категорию, уровень и незаконченный раунд.
 const welcomeScreen=document.querySelector("#welcomeScreen");
 const homeScreen=document.querySelector("#homeScreen");
@@ -1135,7 +1144,13 @@ document.querySelector("#welcomeRewards")?.addEventListener("click",()=>{
 });
 const menuSettingsDialog=document.querySelector("#menuSettingsDialog");
 document.querySelector("#menuSettings").addEventListener("click",()=>menuSettingsDialog.showModal());
-document.querySelector("#gameSettings").addEventListener("click",()=>menuSettingsDialog.showModal());
+document.querySelector("#gameSettings").addEventListener("click",()=>{
+  menuSettingsDialog.showModal();
+  window.YandexPlatform.setGameplay(false);
+});
+menuSettingsDialog.addEventListener("close",()=>{
+  window.YandexPlatform.setGameplay(!gameScreen.hidden && (phase==="guess"||phase==="final"));
+});
 menuSettingsDialog.addEventListener("click",event=>{
   if(event.target===menuSettingsDialog){
     const rect=menuSettingsDialog.getBoundingClientRect();
@@ -1147,6 +1162,7 @@ window.GameDebug?.log("ЭТАП: обработчик Играть подклю�
 document.querySelector("#categoryBack").addEventListener("click",()=>setHomeView("menu"));
 document.querySelector("#levelsBack").addEventListener("click",showCategories);
 document.querySelector("#gameMenuBack").addEventListener("click",()=>{
+  if(phase==="celebrating")return;
   saveRound(); // Возврат к уровням не должен терять текущую попытку.
   showScreen(homeScreen);
   showLevels(selectedCategory);
@@ -1215,7 +1231,7 @@ document.querySelector("#menuRules").addEventListener("click",()=>{
     "Выбери категорию и проходи уровни последовательно. На каждом по 20 заданий.",
     "Уровень 1 — 5 букв, уровень 2 — 6, уровень 3 — 7, уровень 4 — 8.",
     "Уровень 5 — длинные слова и составные выражения. Пробелы уже отмечены на игровом поле.",
-    "Зелёная буква стоит на месте, жёлтая есть в слове, серая отсутствует.",
+    "Зелёная буква стоит на месте, белая есть в слове, серая отсутствует.",
     "У тебя 4 попытки и последний шанс вписать недостающие буквы.",
     "После разгадки всех 20 заданий откроется следующий уровень в этой категории."
   ];
@@ -1227,9 +1243,5 @@ document.querySelector("#menuRules").addEventListener("click",()=>{
   }
   detailsBody.append(list);
 });
-startGame();
 showScreen(initialScreen==="game"?gameScreen:
   initialScreen==="home"?homeScreen:welcomeScreen);
-
-window.YandexPlatform.ready();
-

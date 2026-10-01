@@ -21,6 +21,7 @@ jobs:
         run: |
           node tests/check-release.cjs
           node tests/check-community.cjs
+          node tests/check-audit.cjs
       - name: Prepare Yandex Games ZIP
         run: |
           mkdir -p dist

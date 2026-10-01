@@ -216,5 +216,5 @@
     addPuzzle(target,progress,categories,maxLevel,wordsInCategory);
   }
   window.GameRewards={getNickname,saveNickname,earnedCount,earnedParts,render,appendProgress,
-    completedCategories,ensureIssueDate};
+    completedCategories,ensureIssueDate,reload:()=>{profile=load();}};
 })();

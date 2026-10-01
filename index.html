@@ -8,7 +8,7 @@
     // v40: старый PWA-кэш больше не используется. Очищаем его, чтобы редизайн не перекрывался старыми файлами.
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.getRegistrations()
-        .then(list => Promise.all(list.map(reg => reg.unregister())))
+        .then(list => Promise.all(list.filter(reg => reg.scope === new URL("./", location.href).href).map(reg => reg.unregister())))
         .catch(() => {});
     }
     if ("caches" in window) {
@@ -20,7 +20,7 @@
   <title>Угадай слово</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=45">
+  <link rel="stylesheet" href="style.css?v=50">
   <link rel="stylesheet" href="menu.css?v=48">
   <link rel="stylesheet" href="game-library.css?v=49">
   <link rel="stylesheet" href="stats.css?v=47">
@@ -239,13 +239,13 @@
   <script src="data/levels/travel.js"></script>
   <script src="hints.js"></script>
   <script src="analytics.js"></script>
-  <script src="audio.js"></script>
+  <script src="audio.js?v=50"></script>
   <script src="stats.js?v=47"></script>
-  <script src="rewards.js?v=47"></script>
-  <script src="yandex-platform.js"></script>
-  <script src="cloud-save.js"></script>
+  <script src="rewards.js?v=50"></script>
+  <script src="yandex-platform.js?v=50"></script>
+  <script src="cloud-save.js?v=50"></script>
   <script src="vendor/supabase/supabase-2.117.2.js"></script>
   <script src="rankings.js?v=47"></script>
-  <script src="game-bootstrap.js?v=49"></script>
+  <script src="game-bootstrap.js?v=50"></script>
 </body>
 </html>

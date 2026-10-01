@@ -74,10 +74,10 @@
     if(!local||local.version!==1)return remote;
     const balances={};
     for(const key of ["letter","first","vowel","attempt","eliminate","clue"]){
-      balances[key]=Math.max(nonnegative(local.balances?.[key]),
-        nonnegative(remote.balances?.[key]));
+      const latest=nonnegative(remote.updatedAt)>nonnegative(local.updatedAt)?remote:local;
+      balances[key]=nonnegative(latest.balances?.[key]);
     }
-    return {version:1,balances,
+    return {version:1,updatedAt:Math.max(nonnegative(local.updatedAt),nonnegative(remote.updatedAt)),balances,
       rewardedWins:Math.max(nonnegative(local.rewardedWins),nonnegative(remote.rewardedWins)),
       rewardedLevels:arrayUnion(local.rewardedLevels,remote.rewardedLevels)};
   }
@@ -118,6 +118,7 @@
         const nick=typeof chosenNick==="string"&&chosenNick.length<=24&&/^[a-zа-яё0-9 _-]{2,24}$/iu.test(chosenNick)?chosenNick:"";
         const dates=[localProfile.certificateDate,remoteProfile.certificateDate].filter(d=>typeof d==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
         write(KEYS.profile,{nickname:nick,certificateDate:dates[0]||""});
+        window.GameRewards?.reload?.();
       }
     }catch(error){console.warn("Облачное сохранение недоступно:",error);player=null;}
   }

@@ -246,8 +246,8 @@ assert.equal(hint.rewardForLevel("animals",1),false,"Не выдавать на�
 assert.equal(hint.balances().letter,12);
 assert(script.includes('const maxAttempts = 5')&&script.includes('roundAttemptLimit=baseAttempts+1'),
   "Дополнительная попытка должна добавлять пятую строку");
-assert(script.includes('pendingUnknown=guess')&&script.includes('if(pendingUnknown!==guess)'),
-  "Неизвестное слово должно приниматься после явного подтверждения");
+assert(!script.includes("pendingUnknown") && script.includes("попытка не потрачена"),
+  "Неизвестные слова не должны обходить словарь повторным нажатием");
 for(const id of ["hintLetter","hintFirst","hintVowel","hintAttempt","hintEliminate","hintClue","hintAd","hintAdKind"])
   assert(html.includes('id="'+id+'"'),"Нет элемента "+id);
 assert(bridge.includes("showRewardedVideo")&&bridge.includes("onRewarded"),

@@ -11,9 +11,9 @@
     let saved=null;
     try{saved=JSON.parse(localStorage.getItem(KEY)||"null");}catch{}
     if(!saved||saved.version!==1)return{
-      version:1,balances:{...START},rewardedWins:0,rewardedLevels:[]};
+      version:1,updatedAt:Number.isSafeInteger(saved?.updatedAt)?saved.updatedAt:0,balances:{...START},rewardedWins:0,rewardedLevels:[]};
     return{
-      version:1,
+      version:1,updatedAt:Number.isSafeInteger(saved?.updatedAt)?saved.updatedAt:0,
       balances:Object.fromEntries(TYPES.map(t=>[t,validCount(saved.balances?.[t])])),
       rewardedWins:validCount(saved.rewardedWins),
       rewardedLevels:Array.isArray(saved.rewardedLevels)?
@@ -21,7 +21,7 @@
     };
   }
   function save(data){
-    try{localStorage.setItem(KEY,JSON.stringify(data));}catch{}
+    try{localStorage.setItem(KEY,JSON.stringify({...data,updatedAt:Date.now()}));}catch{}
     window.GameCloud?.schedule?.();
     return data;
   }
