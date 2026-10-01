@@ -981,6 +981,7 @@ function setHomeView(view) {
   details.hidden=view!=="stats" && view!=="rules" && view!=="reward";
   homeCard.classList.toggle("subview",view!=="menu");
   homeCard.classList.toggle("categories-open",view==="categories");
+  homeCard.classList.toggle("levels-open",view==="levels");
   homeCard.classList.toggle("stats-open",view==="stats" || view==="reward");
   homeCard.classList.toggle("mystery-open",view==="reward");
   homeCard.setAttribute("aria-labelledby",{
@@ -1047,7 +1048,12 @@ function showLevels(id) {
   saveRound();
   selectedCategory=id;
   const cat=GAME_CATEGORIES.find(c=>c.id===id);
-  document.querySelector("#levelsTitle").textContent=cat.icon+" "+cat.title;
+  document.querySelector("#levelsTitle").textContent=cat.title;
+  document.querySelector("#levelCategoryBook").className="category-book category-item-"+GAME_CATEGORIES.indexOf(cat);
+  document.querySelector("#levelSealTitle").textContent="Печать: "+cat.title;
+  const fragments=document.querySelector("#levelSealFragments");
+  fragments.replaceChildren();
+  let found=0;
   document.querySelector("#levelsSubtitle").textContent="Пять уровней · 100 заданий";
   levelsList.replaceChildren();
   for (let level=1;level<=MAX_LEVEL;level++) {
@@ -1055,11 +1061,21 @@ function showLevels(id) {
     const progress=allProgress[id][level];
     const button=document.createElement("button");
     button.type="button";
-    button.className="level-card";
+    const total=wordsInCategory(id,level).length;
+    const completed=progress.solved.size===total;
+    if(completed)found++;
+    const fragment=document.createElement("span");
+    fragment.className="level-fragment"+(completed?" is-found":unlocked?" is-next":"");
+    fragment.setAttribute("aria-label","Фрагмент "+level+(completed?": собран":": не собран"));
+    fragment.textContent=completed?"✦":"";
+    fragments.append(fragment);
+    button.className="level-card"+(completed?" is-complete":"");
+    button.setAttribute("aria-label",(level===5?"Мастер слов":LEVEL_NAMES[level-1])+". "+progress.solved.size+" из "+total+". "+(unlocked?(completed?"Повторить уровень":"Играть"):"Откроется после предыдущего уровня"));
     button.disabled=!unlocked;
     const badge=document.createElement("span");
     badge.className="level-number";
-    badge.textContent=unlocked?String(level):"🔒";
+    badge.textContent=String(level);
+    if(!unlocked){const lock=document.createElement("span");lock.className="level-lock";lock.textContent="🔒";lock.setAttribute("aria-hidden","true");badge.prepend(lock);}
     const info=document.createElement("span");
     info.className="level-info";
     const title=document.createElement("strong");
@@ -1067,14 +1083,23 @@ function showLevels(id) {
     const detail=document.createElement("small");
     const levelFormat=level===5?"9+ букв и выражения":(level+4)+" букв";
     detail.textContent=levelFormat+" · "+(progress.completed?"Пройден · можно повторить":"20 заданий");
-    info.append(title,detail);
+    const bar=document.createElement("span");
+    bar.className="category-progress";
+    const fill=document.createElement("span");
+    fill.style.width=(progress.solved.size/total*100)+"%";
+    bar.append(fill);
+    info.append(title,detail,bar);
     const count=document.createElement("span");
     count.className="level-count";
-    count.textContent=progress.solved.size+"/"+wordsInCategory(id,level).length;
-    button.append(badge,info,count);
+    count.textContent=progress.solved.size+"/"+total;
+    const actions=document.createElement("span");
+    actions.className="level-actions";actions.append(count);
+    if(unlocked){const play=document.createElement("span");play.className="level-play";play.textContent=completed?"Повторить":"Играть";actions.append(play);}
+    button.append(badge,info,actions);
     if (unlocked) button.addEventListener("click",()=>startLevel(id,level));
     levelsList.append(button);
   }
+  document.querySelector("#levelSealCount").textContent=found+" / 5 фрагментов";
   setHomeView("levels");
 }
 function startLevel(id,level) {

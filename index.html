@@ -21,7 +21,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css?v=45">
-  <link rel="stylesheet" href="menu.css?v=46">
+  <link rel="stylesheet" href="menu.css?v=48">
   <link rel="stylesheet" href="game-library.css?v=45">
   <link rel="stylesheet" href="stats.css?v=47">
   <link rel="stylesheet" href="rewards.css?v=47">
@@ -81,9 +81,13 @@
       </section>
       <section id="levelsScreen" class="levels-screen" hidden aria-labelledby="levelsTitle">
         <button type="button" id="levelsBack" class="nav-return">← Категории</button>
+        <div class="level-hero" aria-hidden="true"><div class="category-mascot"><img src="assets/category-library.webp" alt="" draggable="false"></div><div id="levelCategoryBook" class="category-book"><img src="assets/category-library.webp" alt="" draggable="false"></div></div>
         <h3 id="levelsTitle">УРОВНИ</h3>
         <p class="levels-subtitle" id="levelsSubtitle">Выбери сложность</p>
+        <p class="levels-heading">Выбери уровень</p>
         <div id="levelsList" class="levels-list"></div>
+        <section class="level-seal" aria-labelledby="levelSealTitle"><h4 id="levelSealTitle">Печать категории</h4><div id="levelSealFragments" class="level-seal-fragments"></div><p id="levelSealCount"></p><small>Каждый пройденный уровень открывает один фрагмент</small></section>
+        <p class="levels-footer">Собери пять фрагментов — сними печать с тайной книги</p>
       </section>
       <section id="menuDetails" class="home-details" aria-live="polite" hidden>
         <button type="button" id="menuDetailsBack" class="nav-return">← Меню</button>
@@ -240,6 +244,6 @@
   <script src="cloud-save.js"></script>
   <script src="vendor/supabase/supabase-2.117.2.js"></script>
   <script src="rankings.js?v=47"></script>
-  <script src="game-bootstrap.js?v=47"></script>
+  <script src="game-bootstrap.js?v=48"></script>
 </body>
 </html>
