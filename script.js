@@ -85,18 +85,13 @@ function loadUiState() {
     return {category:GAME_CATEGORIES[0].id,level:1,screen:"welcome",homeView:"menu"};
   }
 }
-// Перезагрузка сохраняет открытый экран. При новом запуске показываем заставку.
-// Используем Navigation Timing вместо постоянного флага в localStorage: он не
-// отличает новую игровую сессию от обычного обновления страницы.
-function startupScreen(savedScreen,navigationType) {
-  return navigationType==="reload" ? savedScreen : "welcome";
-}
+// v41: каждый запуск начинается со стартовой страницы.
 const allProgress = loadAllProgress();
 const initialUiState = loadUiState();
-const navigationEntry=performance.getEntriesByType?.("navigation")?.[0];
-const navigationType=navigationEntry?.type ||
-  (performance.navigation?.type===1 ? "reload" : "navigate");
-const initialScreen=startupScreen(initialUiState.screen,navigationType);
+const initialScreen = "welcome";
+try {
+  localStorage.removeItem(UI_STORAGE_KEY);
+} catch {}
 let selectedCategory = initialUiState.category;
 let selectedLevel = initialUiState.level;
 const levelUnlocked = (id,level) =>
@@ -1190,12 +1185,6 @@ document.querySelector("#menuRules").addEventListener("click",()=>{
 startGame();
 showScreen(initialScreen==="game"?gameScreen:
   initialScreen==="home"?homeScreen:welcomeScreen);
-if (initialScreen==="home") {
-  if (initialUiState.homeView==="categories") showCategories();
-  else if (initialUiState.homeView==="levels") showLevels(selectedCategory);
-  else if (initialUiState.homeView==="stats") document.querySelector("#menuStats").click();
-  else if (initialUiState.homeView==="rules") document.querySelector("#menuRules").click();
-}
 
 window.YandexPlatform.ready();
 
