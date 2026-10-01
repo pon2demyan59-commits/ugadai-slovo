@@ -1199,7 +1199,3 @@ if (initialScreen==="home") {
 
 window.YandexPlatform.ready();
 
-// Яндекс самостоятельно управляет файлами игры; SW оставляем для GitHub Pages.
-if (!window.YandexPlatform.isYandex && "serviceWorker" in navigator && window.location.protocol !== "file:") {
-  navigator.serviceWorker.register("service-worker.js").catch(() => {});
-}
