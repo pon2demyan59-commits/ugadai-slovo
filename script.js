@@ -743,6 +743,7 @@ function finishGame(won) {
   }
   saveWordProgress();
   refreshRewardCounter();
+  window.GameRankings?.schedule();
   window.GameCloud.flush(); // Победа/поражение сразу отправляются в облако.
   phase="finished";
   guessForm.hidden=true;
@@ -981,6 +982,7 @@ function setHomeView(view) {
   homeCard.classList.toggle("subview",view!=="menu");
   homeCard.classList.toggle("categories-open",view==="categories");
   homeCard.classList.toggle("stats-open",view==="stats" || view==="reward");
+  homeCard.classList.toggle("mystery-open",view==="reward");
   homeCard.setAttribute("aria-labelledby",{
     menu:"homeTitle",categories:"categoryTitle",levels:"levelsTitle",
     stats:"menuDetailsTitle",rules:"menuDetailsTitle",reward:"menuDetailsTitle"
@@ -1145,16 +1147,25 @@ function refreshRewardCounter(){
 window.GameDebug?.log("ЭТАП: перед расчётом пазла");
 refreshRewardCounter();
 window.GameDebug?.log("ЭТАП: пазл рассчитан");
+window.GameRankings.configure(()=>({
+  nickname:window.GameRewards.getNickname(),
+  words:[...new Set(GAME_CATEGORIES.flatMap(cat=>Array.from({length:MAX_LEVEL},(_,i)=>
+    [...allProgress[cat.id][i+1].solved]).flat()))].filter(word=>GAME_WORDS.some(entry=>entry.word===word))
+}));
+document.addEventListener("game:choose-category",()=>{showScreen(homeScreen);showCategories();});
+document.addEventListener("game:continue-seal",event=>{
+  showScreen(homeScreen);showLevels(event.detail.category);startLevel(event.detail.category,event.detail.level);
+});
 document.querySelector("#menuReward").addEventListener("click",()=>{
   openMenuDetails("ТАЙНА ДЕСЯТИ ПЕЧАТЕЙ","reward");
   window.GameRewards.render(detailsBody,allProgress,GAME_CATEGORIES,
     MAX_LEVEL,wordsInCategory,score);
 });
 document.querySelector("#menuStats").addEventListener("click",()=>{
-  openMenuDetails("МОЯ СТАТИСТИКА","stats");
+  openMenuDetails("МОИ ДОСТИЖЕНИЯ","stats");
   window.GameStatsPanel.render(detailsBody,score,allProgress,GAME_CATEGORIES,
     GAME_WORDS.length,MAX_LEVEL,wordsInCategory);
-  window.GameRewards.appendProgress(detailsBody,allProgress,GAME_CATEGORIES,MAX_LEVEL,wordsInCategory);
+
 });
 const cloudButton=document.querySelector("#menuCloud");
 if (window.YandexPlatform.isYandex && !window.GameCloud.isAuthorized()) cloudButton.hidden=false;

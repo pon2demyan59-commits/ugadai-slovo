@@ -5,12 +5,12 @@ const vm=require("node:vm");
 const assert=require("node:assert/strict");
 const root=path.resolve(__dirname,"..");
 const required=[
-  "index.html","style.css","menu.css","game-library.css","stats.css","rewards.css","script.js","stats.js","rewards.js",
+  "index.html","style.css","menu.css","game-library.css","stats.css","rewards.css","script.js","stats.js","rewards.js","rankings.js",
   "yandex-platform.js","cloud-save.js","game-bootstrap.js","hints.js","analytics.js","audio.js",
   "data/words.js","data/valid-words.js","data/valid-long-words.js",
   "data/long-words-loader.js","data/DICTIONARY_LICENSE.txt",
   "assets/icon.svg","assets/start-screen-final.webp","assets/menu-library.webp",
-  "assets/game-library-clean.webp","assets/category-library.webp","manifest.webmanifest"
+  "assets/game-library-clean.webp","assets/category-library.webp","assets/mystery-book.webp","vendor/supabase/supabase-2.117.2.js","vendor/supabase/LICENSE","manifest.webmanifest"
 ];
 const categoryFiles=["animals","nature","food","home","city","tech","slang","cinema","sport","travel"]
   .map(name=>"data/levels/"+name+".js");
@@ -27,7 +27,7 @@ for(const file of [...required,...categoryFiles].filter(file=>/\.js$/.test(file)
   if(file==="rewards.js"||file==="yandex-platform.js"||file==="cloud-save.js"||file==="game-bootstrap.js"||
     file==="hints.js"||file==="analytics.js"||file==="audio.js"||
     file==="data/words.js"||file==="data/valid-words.js"||file==="data/long-words-loader.js"||
-    file==="stats.js"||file.startsWith("data/levels/")){
+    file==="rankings.js"||file==="stats.js"||file.startsWith("data/levels/")){
       assert(html.includes('src="'+file+'"'),"Не подключён "+file);
   }
 }

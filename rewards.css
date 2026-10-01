@@ -102,3 +102,35 @@
   #certificateSheet .reward-certificate-fact span{font-size:10pt}
   #certificateSheet .reward-certificate-stamp{width:26mm}
 }
+
+/* Книга закрыта до десятой печати; каждая категория снимает один замок. */
+.mystery-open .statistics-mascot {visibility:hidden;height:48px;}
+.home-card.mystery-open #menuDetailsBody {max-height:calc(100svh - 150px);}
+.reward-puzzle {padding:0;border:0;background:none;color:#fff0cf;}
+.reward-teaser {margin:0 0 10px;text-align:center;color:#ffe6a6;font:700 15px/1.4 Georgia,serif;}
+.mystery-book {position:relative;isolation:isolate;max-width:480px;margin:auto;aspect-ratio:4/5;border:2px solid #b88030;border-radius:18px;overflow:hidden;box-shadow:0 5px 18px #17090099;}
+.mystery-book-art {display:block;width:100%;height:100%;object-fit:cover;pointer-events:none;}
+.mystery-seal {position:absolute;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:13%;aspect-ratio:1;border:2px solid #c49142;border-radius:50%;background:radial-gradient(#b37b30,#4a280c);color:#e9c57b;box-shadow:inset 0 0 0 2px #5b340f,0 3px 5px #0009;}
+.mystery-rune {font-size:clamp(17px,5vw,30px);line-height:1;}.mystery-seal-state {font:bold 10px/1.2 Arial,sans-serif;}
+.mystery-seal-0,.mystery-seal-1,.mystery-seal-2,.mystery-seal-3,.mystery-seal-4 {left:2%;}
+.mystery-seal-5,.mystery-seal-6,.mystery-seal-7,.mystery-seal-8,.mystery-seal-9 {right:2%;}
+.mystery-seal-0,.mystery-seal-5 {top:27%;}.mystery-seal-1,.mystery-seal-6 {top:40%;}.mystery-seal-2,.mystery-seal-7 {top:53%;}.mystery-seal-3,.mystery-seal-8 {top:66%;}.mystery-seal-4,.mystery-seal-9 {top:79%;}
+.mystery-seal.is-started {border-color:#ffe094;background:radial-gradient(#d1a450,#744410);}
+.mystery-seal.is-open {background:radial-gradient(#fff1a0,#e2a827);color:#704008;border-color:#ffeaa3;box-shadow:0 0 15px #ffcf6699,inset 0 0 0 2px #be7a23;}
+.mystery-ready {box-shadow:0 0 22px #efc15988;}.mystery-revealed .mystery-book-art {filter:brightness(1.13);}
+.reward-summary {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0;padding:14px 10px;border:2px solid #d09b3d;border-radius:12px;
+  background:linear-gradient(120deg,#eed298,#fff4d4,#f0cd85);color:#542914;text-align:center;font-size:clamp(12px,3.5vw,17px);box-shadow:inset 0 0 0 2px #ffe5a2;}
+.reward-progress {grid-column:1/-1;height:10px;border:1px solid #b17b31;border-radius:8px;overflow:hidden;background:#d4ae66;}
+.reward-progress span {display:block;height:100%;background:linear-gradient(#fff0a1,#e4a02a);}
+.reward-story,.reward-next {text-align:center;line-height:1.5;}.reward-story p,.reward-next p {font-size:14px;}
+.reward-story .reward-heading,.reward-next .reward-heading {font:900 18px/1.3 Georgia,serif;margin-bottom:7px;}
+.reward-story-history {text-align:left;font-size:12px;}.reward-story-history summary,.reward-seal-map summary {cursor:pointer;padding:10px 0;font-weight:800;min-height:44px;}
+.reward-story-history li {margin:7px 0;}.reward-seal-map {margin:14px 0;}.reward-seal-map summary {color:#ffebbd;text-align:center;}
+.reward-piece {border-color:#b27a2e;background:#3b210d;color:#ffe8b0;opacity:.9;}
+.reward-piece-unlocked {background:linear-gradient(#e9c271,#936525);color:#39200e;border-color:#ffe4a3;}
+.reward-fragment {background:#5b3e1a;border-color:#b1823a;}.reward-fragment-found {color:#724717;background:linear-gradient(#fff1b7,#d9a654);}
+.reward-description {text-align:center;color:#ffe6b3;font-size:12px;}.reward-locked {padding:10px 0;color:#ffe6b3;text-align:center;font-size:12px;}
+.reward-reveal {margin:16px 0;}.reward-personal-note {text-align:center;}
+@media(prefers-reduced-motion:no-preference) { .mystery-ready {animation:mystery-shine 2.5s ease-in-out infinite;} @keyframes mystery-shine {50%{box-shadow:0 0 35px #ffda8699;}} }
+@media(max-height:500px) and (orientation:landscape) { .home-card.mystery-open #menuDetailsBody {max-height:300px;} }

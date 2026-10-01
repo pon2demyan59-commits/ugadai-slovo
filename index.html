@@ -23,8 +23,8 @@
   <link rel="stylesheet" href="style.css?v=45">
   <link rel="stylesheet" href="menu.css?v=46">
   <link rel="stylesheet" href="game-library.css?v=45">
-  <link rel="stylesheet" href="stats.css?v=39">
-  <link rel="stylesheet" href="rewards.css?v=39">
+  <link rel="stylesheet" href="stats.css?v=47">
+  <link rel="stylesheet" href="rewards.css?v=47">
 </head>
 <body>
   <!-- Стартовая заставка → главное меню → игровое поле. -->
@@ -87,6 +87,7 @@
       </section>
       <section id="menuDetails" class="home-details" aria-live="polite" hidden>
         <button type="button" id="menuDetailsBack" class="nav-return">← Меню</button>
+        <div class="statistics-mascot" aria-hidden="true"><img src="assets/category-library.webp" alt=""></div>
         <h3 id="menuDetailsTitle"></h3>
         <div id="menuDetailsBody"></div>
       </section>
@@ -233,10 +234,12 @@
   <script src="hints.js"></script>
   <script src="analytics.js"></script>
   <script src="audio.js"></script>
-  <script src="stats.js?v=39"></script>
-  <script src="rewards.js?v=39"></script>
+  <script src="stats.js?v=47"></script>
+  <script src="rewards.js?v=47"></script>
   <script src="yandex-platform.js"></script>
   <script src="cloud-save.js"></script>
-  <script src="game-bootstrap.js?v=46"></script>
+  <script src="vendor/supabase/supabase-2.117.2.js"></script>
+  <script src="rankings.js?v=47"></script>
+  <script src="game-bootstrap.js?v=47"></script>
 </body>
 </html>

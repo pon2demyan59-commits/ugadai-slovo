@@ -84,7 +84,16 @@
   }
   function metric(parent,icon,label,value) {
     const card=el("div","insight-metric");
-    card.append(el("span","insight-metric-icon",icon),
+    const symbol=el("span","insight-metric-icon");symbol.setAttribute("aria-hidden","true");
+    const shapes={
+      "📚":"<path d='M3 4h7l2 2 2-2h7v16h-7l-2 2-2-2H3zM12 6v16M6 8h3M6 12h3M15 8h3M15 12h3'/>",
+      "🔥":"<rect x='3' y='5' width='18' height='16' rx='2'/><path d='M7 3v4M17 3v4M3 10h18M7 14h2M15 14h2M7 18h2'/>",
+      "★":"<path d='m12 2 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z'/>",
+      "🏆":"<path d='M7 3h10v7a5 5 0 0 1-10 0zM7 5H3v3a4 4 0 0 0 4 4M17 5h4v3a4 4 0 0 1-4 4M12 15v6M8 21h8'/>",
+      "🎯":"<circle cx='12' cy='12' r='9'/><circle cx='12' cy='12' r='5'/><circle cx='12' cy='12' r='1'/>"
+    };
+    symbol.innerHTML="<svg viewBox='0 0 24 24'>"+(shapes[icon]||shapes["★"])+"</svg>";
+    card.append(symbol,
       el("strong","insight-metric-value",value),el("span","insight-metric-label",label));
     parent.append(card);
   }
@@ -97,7 +106,7 @@
     fill.style.width=(total?Math.min(100,count/total*100):0)+"%";
     track.append(fill);row.append(header,track);parent.append(row);
   }
-  function render(target,score,progress,categories,wordCount,maxLevel,wordsInCategory) {
+  function renderDetails(target,score,progress,categories,wordCount,maxLevel,wordsInCategory) {
     const data=window.GameStats.snapshot(),rounds=score.wins+score.losses;
     const solved=categories.reduce((sum,c)=>
       sum+Array.from({length:maxLevel},(_,i)=>progress[c.id][i+1].solved.size)
@@ -179,8 +188,107 @@
     }
     activity.append(days);
     target.append(el("p","insight-footnote",
-      "Все показатели хранятся в этом браузере. Старые победы и прогресс сохранены, " +
+      "Подробная статистика хранится на устройстве и в облаке после входа через Яндекс. В общий рейтинг отправляются ник и разные разгаданные слова. Старый прогресс сохранён, " +
       "но историю попыток, серии и активность за прошлые дни восстановить нельзя."));
   }
+  function playButton(label){
+    const button=el("button","library-action",label);button.type="button";
+    button.addEventListener("click",()=>document.dispatchEvent(new Event("game:choose-category")));return button;
+  }
+  function rankRow(entry,pioneer=false){
+    const row=el("li","leader-row"+(entry.is_me?" leader-me":""));
+    const rank=pioneer?entry.completion_no:entry.rank;
+    row.append(el("span","leader-medal leader-medal-"+rank,rank));
+    const info=el("span","leader-player");
+    info.append(el("strong","",entry.nickname+(entry.is_me?" · ты":"")));
+    if(pioneer)info.append(el("small","",new Date(entry.completed_at).toLocaleDateString("ru-RU")));
+    else info.append(el("small","",entry.seals+" / 10 печатей"));
+    row.append(info,el("strong","leader-score",pioneer?"1 000 / 1 000":entry.solved+" / 1 000"));return row;
+  }
+  async function renderRanking(target,pioneer,solved){
+    target.replaceChildren(el("p","insight-note","Загружаем общий рейтинг…"));
+    const {data,stale}=await window.GameRankings.load();
+    if(!target.isConnected)return;
+    target.replaceChildren();
+    const block=section(target,pioneer?"ЗАЛ ПЕРВОПРОХОДЦЕВ":"ТОП 10 МАСТЕРОВ",
+      pioneer?"Твой номер за полное прохождение останется в истории навсегда.":"Выше тот, кто разгадал больше разных слов. При равенстве — кто достиг результата раньше.");
+    if(!data){
+      block.append(el("p","leader-empty","Не удалось загрузить рейтинг. Твой прогресс сохранён — попробуй снова, когда появится сеть."));
+      const retry=el("button","library-action","Обновить рейтинг");retry.type="button";
+      retry.addEventListener("click",()=>{window.GameRankings.load(true).then(()=>renderRanking(target,pioneer,solved));});block.append(retry);return;
+    }
+    if(stale)block.append(el("p","insight-note","Показан сохранённый рейтинг. Обновим, когда появится сеть."));
+    const list=el("ol","leader-list");
+    const entries=pioneer?data.pioneers:data.top;
+    for(const entry of entries)list.append(rankRow(entry,pioneer));
+    block.append(list);
+    if(!entries.length){
+      if(pioneer)block.append(el("div","pioneer-throne","♛"),el("p","leader-empty","Полное прохождение ещё никто не зарегистрировал."));
+      else{
+        const places=el("div","leader-vacant");for(let i=1;i<=10;i++)places.append(el("span","leader-slot",i));
+        block.append(places,el("p","leader-empty","Здесь появятся первые игроки. Разгадай слово и займи своё место!"));
+      }
+    }
+    if(data.self){
+      const own=el("div","leader-own");
+      own.append(el("strong","",pioneer
+        ?data.self.completion_no?"Ты — первопроходец № "+data.self.completion_no:"Твоё прохождение: "+data.self.solved+" / 1 000"
+        :"Твоё место: № "+data.self.rank),el("span","",data.self.nickname));
+      block.append(own);
+      if(!pioneer&&data.self.rank>10&&data.cutoff!=null){
+        const left=Math.max(1,data.cutoff-data.self.solved+1);
+        block.append(el("p","leader-motivation",left<=1000-data.self.solved
+          ?"До топа осталось разгадать ещё "+left+" разных слов."
+          :"Лидеры уже разгадали все слова. Заверши свой путь и получи постоянный номер первопроходца."));
+      }
+    }else block.append(el("p","insight-note",solved?"Отправляем твой прогресс в общий рейтинг…":"Твой результат появится после первой победы."));
+    if(window.GameRankings.getState()==="offline")block.append(el("p","insight-note","Результат пока не отправлен. Он сохранён на устройстве и отправится при подключении."));
+    block.append(el("p","insight-note","Твой профиль рейтинга сохранён в этом браузере."));
+    const goal=section(target,pioneer?"ТВОЯ СТРАНИЦА В ИСТОРИИ":"ЗАЛ ПЕРВОПРОХОДЦЕВ");
+    goal.classList.add("pioneer-invitation");
+    goal.append(el("div","pioneer-crown","♛"),el("strong","leader-motivation",data.self?.completion_no
+      ?"Твоё имя уже в истории: первопроходец № "+data.self.completion_no
+      :window.GameRankings.mission(data.finishers)),el("p","insight-note",data.finishers+" игроков завершили путь · 1 000 заданий · 10 печатей"),playButton(solved?"Продолжить путь":"Начать путь"));
+  }
+  function render(target,score,progress,categories,wordCount,maxLevel,wordsInCategory){
+    const data=window.GameStats.snapshot();
+    const solved=categories.reduce((sum,c)=>sum+Array.from({length:maxLevel},(_,i)=>progress[c.id][i+1].solved.size).reduce((a,b)=>a+b,0),0);
+    target.replaceChildren();
+    const overview=el("div","insight-metrics");
+    metric(overview,"📚","Слов разгадано",solved+" / "+wordCount);
+    metric(overview,"🔥","Дней подряд",data.consecutiveDays);
+    metric(overview,"★","Лучшая серия",data.bestStreak);
+    metric(overview,"🏆","Победы",score.wins);
+    target.append(overview);
+    const path=section(target,"Путь к мастеру слова");bar(path,"Разгадано разных слов",solved,wordCount,Math.round(solved/wordCount*100)+"%");
+    path.append(el("p","insight-note",data.lastWinDay===window.GameStats.localDay()
+      ?"Сегодня победа уже есть. Вернись завтра, чтобы продолжить серию дней."
+      :"Разгадай хотя бы одно слово сегодня, чтобы продолжить серию дней."));
+    const tabs=el("div","insight-tabs");tabs.setAttribute("role","tablist");tabs.setAttribute("aria-label","Статистика и рейтинги");
+    const panel=el("div","insight-tab-panel");panel.id="statisticsTabPanel";panel.setAttribute("role","tabpanel");
+    let active="personal";
+    const draw=()=>{
+      if(active==="personal"){
+        renderDetails(panel,score,progress,categories,wordCount,maxLevel,wordsInCategory);
+        panel.querySelector(".insight-intro")?.remove();panel.querySelector(".insight-metrics")?.remove();
+      }else {panel.replaceChildren();const content=el("div","");panel.append(content);renderRanking(content,active==="pioneers",solved);}
+    };
+    const buttons=[];
+    for(const [key,label] of [["personal","Мои успехи"],["top","Топ 10"],["pioneers","Первопроходцы"]]){
+      const button=el("button","insight-tab",label);button.type="button";button.id="stats-tab-"+key;
+      button.setAttribute("role","tab");button.setAttribute("aria-controls",panel.id);button.setAttribute("aria-selected",String(key===active));
+      button.tabIndex=key===active?0:-1;
+      button.addEventListener("click",()=>{active=key;for(const b of buttons){b.setAttribute("aria-selected",String(b===button));b.tabIndex=b===button?0:-1;}panel.setAttribute("aria-labelledby",button.id);draw();});
+      buttons.push(button);tabs.append(button);
+    }
+    tabs.addEventListener("keydown",event=>{let i=buttons.indexOf(document.activeElement);if(i<0)return;
+      if(event.key==="ArrowRight")i=(i+1)%3;else if(event.key==="ArrowLeft")i=(i+2)%3;else return;
+      event.preventDefault();buttons[i].click();buttons[i].focus();});
+    panel.setAttribute("aria-labelledby",buttons[0].id);target.append(tabs,panel);draw();
+    const onUpdate=()=>{if(!panel.isConnected||target.closest("#menuDetails").hidden){document.removeEventListener("game:ranking-update",onUpdate);return;}if(active!=="personal")draw();};
+    document.addEventListener("game:ranking-update",onUpdate);
+    window.GameRankings.flush();
+  }
+
   window.GameStatsPanel={render};
 })();
