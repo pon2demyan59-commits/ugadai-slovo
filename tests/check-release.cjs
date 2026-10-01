@@ -209,6 +209,21 @@ vm.runInContext('typeKeyboardLetter("Л")',keyboardContext);
 assert.equal(keyboardContext.guessInput.value,"кол","Добавляем букву в конец даже если курсор в начале");
 assert.equal(keyboardContext.guessInput.selectionStart,3);
 console.log("OK: экранная клавиатура удаляет последнюю букву и печатает в конец.");
+// Е и Ё считаются одной буквой, включая повторяющиеся буквы в ответе.
+const letterContext={currentWord:"ёжик"};
+vm.createContext(letterContext);
+vm.runInContext(script.match(/function normalizeLetters\(value\) \{[^\n]+\}/)[0]+"\n"+
+  script.slice(script.indexOf("function getGuessResult("),script.indexOf("function updateAlphabet(")),letterContext);
+assert(vm.runInContext('getGuessResult("ежик").every(x=>x.status==="correct")',letterContext));
+letterContext.currentWord="её";
+assert(vm.runInContext('getGuessResult("ее").every(x=>x.status==="correct")',letterContext));
+letterContext.currentWord="ёж";
+assert.equal(vm.runInContext('getGuessResult("ее")[1].status',letterContext),"missing",
+  "Одну Е/Ё нельзя засчитать дважды");
+assert(!script.includes("showEChoice")&&!script.includes('cell.textContent = combined'),
+  "Клавиша Е должна вводить букву сразу без выбора Е/Ё");
+console.log("OK: Е/Ё равноценны, повторяющиеся буквы учитываются точно.");
+
 // Щедрые подсказки: стартовый запас, награды и отсутствие двойной выдачи.
 const hintStorage=new Map();
 const hintContext={
@@ -240,8 +255,8 @@ console.log("OK: подсказки, награды, пятая попытка, 
 // Ретро-аркада: настройки сохраняются, музыка не стартует до действия игрока,
 // рекламный ролик приостанавливает музыку, звуки можно выключать независимо.
 assert(html.includes('src="audio.js"'),"Не подключён звуковой движок");
-assert.equal((html.match(/data-audio="music"/g)||[]).length,3);
-assert.equal((html.match(/data-audio="effects"/g)||[]).length,2);
+assert.equal((html.match(/data-audio="music"/g)||[]).length,2);
+assert.equal((html.match(/data-audio="effects"/g)||[]).length,1);
 assert(script.includes('window.GameAudio?.play("win"') ||
   script.includes('window.GameAudio?.play(won?"win":"wrong")'),
   "Победа должна запускать отдельную мелодию");
