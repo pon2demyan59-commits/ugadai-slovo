@@ -1101,6 +1101,18 @@ function startLevel(id,level) {
   showScreen(gameScreen);
 }
 document.querySelector("#welcomeEnter").addEventListener("click",()=>showScreen(homeScreen));
+document.querySelector("#welcomeRules")?.addEventListener("click",()=>{
+  showScreen(homeScreen);
+  document.querySelector("#menuRules")?.click();
+});
+document.querySelector("#welcomeStats")?.addEventListener("click",()=>{
+  showScreen(homeScreen);
+  document.querySelector("#menuStats")?.click();
+});
+document.querySelector("#welcomeRewards")?.addEventListener("click",()=>{
+  showScreen(homeScreen);
+  document.querySelector("#menuReward")?.click();
+});
 document.querySelector("#menuPlay").addEventListener("click",showCategories);
 window.GameDebug?.log("ЭТАП: обработчик Играть подключён");
 document.querySelector("#categoryBack").addEventListener("click",()=>setHomeView("menu"));
