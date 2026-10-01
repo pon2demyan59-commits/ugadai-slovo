@@ -1,4 +1,7 @@
 * { box-sizing: border-box; }
+/* v37 screen isolation */
+[hidden] { display: none !important; }
+
 :root {
   color-scheme: dark;
   --steel: #a7afb7; --gold: #ffd285; --ember: #ef8732;
