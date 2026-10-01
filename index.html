@@ -21,7 +21,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css?v=45">
-  <link rel="stylesheet" href="menu.css?v=44">
+  <link rel="stylesheet" href="menu.css?v=46">
   <link rel="stylesheet" href="game-library.css?v=45">
   <link rel="stylesheet" href="stats.css?v=39">
   <link rel="stylesheet" href="rewards.css?v=39">
@@ -73,10 +73,11 @@
 
       <section id="categoryScreen" class="category-screen" hidden aria-labelledby="categoryTitle">
         <button type="button" id="categoryBack" class="nav-return">← Меню</button>
-        <h3 id="categoryTitle">ВЫБОР КАТЕГОРИИ</h3>
+        <div class="category-mascot" aria-hidden="true"><img src="assets/category-library.webp" alt="" draggable="false"></div>
+        <h3 id="categoryTitle">ВЫБЕРИ КАТЕГОРИЮ</h3>
         <p class="category-level-heading">10 КАТЕГОРИЙ · 5 УРОВНЕЙ</p>
         <div id="categoryList" class="category-list"></div>
-        <p class="category-goal">1 000 слов и выражений · 20 заданий в каждом уровне</p>
+        <p class="category-goal">1 000 слов и выражений</p>
       </section>
       <section id="levelsScreen" class="levels-screen" hidden aria-labelledby="levelsTitle">
         <button type="button" id="levelsBack" class="nav-return">← Категории</button>
@@ -236,6 +237,6 @@
   <script src="rewards.js?v=39"></script>
   <script src="yandex-platform.js"></script>
   <script src="cloud-save.js"></script>
-  <script src="game-bootstrap.js?v=45"></script>
+  <script src="game-bootstrap.js?v=46"></script>
 </body>
 </html>

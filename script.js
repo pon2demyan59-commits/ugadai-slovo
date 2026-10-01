@@ -979,6 +979,7 @@ function setHomeView(view) {
   levelsScreen.hidden=view!=="levels";
   details.hidden=view!=="stats" && view!=="rules" && view!=="reward";
   homeCard.classList.toggle("subview",view!=="menu");
+  homeCard.classList.toggle("categories-open",view==="categories");
   homeCard.classList.toggle("stats-open",view==="stats" || view==="reward");
   homeCard.setAttribute("aria-labelledby",{
     menu:"homeTitle",categories:"categoryTitle",levels:"levelsTitle",
@@ -1009,27 +1010,32 @@ function showCategories() {
     button.type="button";
     button.className="category-item category-item-"+index;
     const icon=document.createElement("span");
-    icon.className="category-icon";
-    icon.textContent=cat.icon;
+    icon.className="category-book";
+    icon.setAttribute("aria-hidden","true");
+    const art=document.createElement("img");
+    art.src="assets/category-library.webp";
+    art.alt="";
+    art.draggable=false;
+    icon.append(art);
     const info=document.createElement("span");
     info.className="category-info";
     const title=document.createElement("strong");
     title.textContent=cat.title;
-    const subtitle=document.createElement("small");
-    subtitle.textContent=cat.description;
-    const completed=Array.from({length:MAX_LEVEL},(_,i)=>i+1).filter(l=>allProgress[cat.id][l].completed).length;
-    const level=document.createElement("span");
-    level.className="category-level";
-    level.textContent=completed===MAX_LEVEL?"Все уровни пройдены":completed+" из "+MAX_LEVEL+" уровней";
     const total=Array.from({length:MAX_LEVEL},(_,i)=>i+1)
       .reduce((sum,l)=>sum+allProgress[cat.id][l].solved.size,0);
-    const future=document.createElement("small");
-    future.className="category-total";
-    future.textContent="20 заданий на каждом уровне";
-    info.append(title,subtitle,level,future);
+    const target=Array.from({length:MAX_LEVEL},(_,i)=>wordsInCategory(cat.id,i+1).length)
+      .reduce((sum,n)=>sum+n,0);
+    const progress=document.createElement("span");
+    progress.className="category-progress";
+    progress.setAttribute("aria-hidden","true");
+    const fill=document.createElement("span");
+    fill.style.width=Math.min(100,target?total/target*100:0)+"%";
+    progress.append(fill);
+    info.append(title,progress);
     const count=document.createElement("span");
     count.className="category-count";
-    count.textContent=total+"/100";
+    count.textContent=total+"/"+target;
+    button.setAttribute("aria-label",cat.title+". Разгадано "+total+" из "+target+" слов. Выбрать уровень");
     button.append(icon,info,count);
     button.addEventListener("click",()=>showLevels(cat.id));
     categoryList.append(button);
