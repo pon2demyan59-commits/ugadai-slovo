@@ -7,59 +7,27 @@
   <title>Угадай слово</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=37">
+  <link rel="stylesheet" href="style.css?v=38">
   <link rel="stylesheet" href="stats.css?v=34">
   <link rel="stylesheet" href="rewards.css?v=34">
 </head>
 <body>
   <!-- Стартовая заставка → главное меню → игровое поле. -->
-      <section class="welcome-screen welcome-v36" id="welcomeScreen" aria-labelledby="welcomeTitle">
-    <div class="welcome-ambient welcome-ambient-one" aria-hidden="true"></div>
-    <div class="welcome-ambient welcome-ambient-two" aria-hidden="true"></div>
+        <section class="welcome-screen welcome-art-screen" id="welcomeScreen" aria-label="Стартовый экран игры Угадай слово">
+    <div class="welcome-art-shell">
+      <img class="welcome-art-image" src="assets/start-screen-v2.jpg"
+        alt="Угадай слово — уютная библиотека, кот и пример задания"
+        width="720" height="1280" decoding="async" fetchpriority="high">
 
-    <div class="welcome-v36-card">
-      <div class="welcome-v36-top">
-        <div class="welcome-mini-badge">1000 заданий</div>
-        <div class="welcome-mini-badge">10 категорий</div>
-      </div>
+      <button id="welcomeEnter" class="welcome-art-hotspot welcome-art-start"
+        type="button" aria-label="Начать играть" disabled></button>
 
-      <header class="welcome-v36-header">
-        <div class="welcome-crown" aria-hidden="true">♛</div>
-        <h1 id="welcomeTitle" class="welcome-v36-title">
-          <span class="welcome-v36-title-main">УГАДАЙ</span>
-          <span class="welcome-v36-title-tiles" aria-label="СЛОВО">
-            <b>С</b><b>Л</b><b>О</b><b>В</b><b>О</b>
-          </span>
-        </h1>
-        <p class="welcome-v36-subtitle">Проверь словарный запас и угадывай слова по подсказкам</p>
-      </header>
-
-      <div class="welcome-mascot-wrap">
-        <img class="welcome-mascot" src="assets/start-cat.svg" alt="" aria-hidden="true">
-        <div class="welcome-feature-stack" aria-label="Возможности игры">
-          <span>🏆 <strong>1000</strong> заданий</span>
-          <span>📚 <strong>10</strong> категорий</span>
-          <span>💡 Подсказки</span>
-          <span>🎁 Награды</span>
-        </div>
-      </div>
-
-      <section class="welcome-teaser" aria-label="Пример задания">
-        <span class="welcome-teaser-category">🐾 Животные</span>
-        <p class="welcome-teaser-hint">Большая кошка с полосатой шерстью</p>
-        <div class="welcome-teaser-word" aria-label="Т, пусто, Г, пусто">
-          <span class="is-open">Т</span>
-          <span></span>
-          <span class="is-open">Г</span>
-          <span></span>
-        </div>
-        <p class="welcome-teaser-reward">✨ Играй каждый день и открывай награды!</p>
-      </section>
-
-      <button id="welcomeEnter" class="welcome-v36-start" type="button" disabled>
-        <span class="welcome-v36-play" aria-hidden="true">▶</span>
-        <span>НАЧАТЬ ИГРАТЬ</span>
-      </button>
+      <button id="welcomeRules" class="welcome-art-hotspot welcome-art-rules"
+        type="button" aria-label="Правила"></button>
+      <button id="welcomeStats" class="welcome-art-hotspot welcome-art-stats"
+        type="button" aria-label="Статистика"></button>
+      <button id="welcomeRewards" class="welcome-art-hotspot welcome-art-rewards"
+        type="button" aria-label="Награды"></button>
     </div>
   </section>
   <main class="home-screen" id="homeScreen" hidden>
