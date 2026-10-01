@@ -750,13 +750,15 @@ function finishGame(won) {
   finalInput.hidden=true;
   if (guessInput) {guessInput.remove();guessInput=null;}
   finalForm.classList.remove("active");
+  document.querySelector("#resultMystery").hidden=won;
+  document.querySelector("#resultEncouragement").textContent=won?"Отличная работа!":"Не сдавайся — тайна ещё впереди!";
   if (won) {
     resultQuestion.hidden=false;
     resultAnswer.hidden=false;
     resultQuestion.textContent=currentEntry?.hint||"";
     resultAnswer.textContent=(currentEntry?.display||currentWord).toLocaleUpperCase("ru-RU");
     revealed.fill(true);
-    resultTitle.textContent=complete?(replayMode?"УРОВЕНЬ ПРОЙДЕН ЕЩЁ РАЗ!":"УРОВЕНЬ "+selectedLevel+" ПРОЙДЕН!"):"ПОЗДРАВЛЯЕМ!";
+    resultTitle.textContent=complete?(replayMode?"УРОВЕНЬ ПРОЙДЕН ЕЩЁ РАЗ!":"УРОВЕНЬ "+selectedLevel+" ПРОЙДЕН!"):"СЛОВО РАЗГАДАНО!";
     resultText.textContent=complete
       ? (replayMode?"Все 20 слов снова разгаданы! Отличная тренировка.":"Все 20 слов разгаданы!"+(selectedLevel<MAX_LEVEL?" Следующий уровень открыт.":" Все пять уровней категории завершены!"))
       : "Ты угадал слово! Осталось разгадать: "+(wordBank.length-sessionSolvedSize())+".";
@@ -771,8 +773,10 @@ function finishGame(won) {
   } else {
     resultQuestion.hidden=true;
     resultAnswer.hidden=true;
+    resultQuestion.textContent="";
+    resultAnswer.textContent="";
     resultTitle.textContent="ПОКА НЕ УГАДАНО";
-    resultText.textContent="Это слово осталось загадкой. Следующим будет новое, а затем вернёмся к неразгаданным.";
+    resultText.textContent="Впереди новое слово. Попробуем ещё?";
     nextWordButton.textContent="Следующее слово";
     resultBanner.classList.add("lose");
   }

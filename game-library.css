@@ -143,3 +143,27 @@
   content:""; width:20px; height:24px; flex-shrink:0;
   background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 28' fill='none' stroke='%23845014' stroke-width='2'%3E%3Cpath d='M8 20h8M9 24h6M10 27h4M8 18c0-4-5-5-5-10a9 9 0 0 1 18 0c0 5-5 6-5 10z'/%3E%3C/svg%3E") center/contain no-repeat;
 }
+
+/* Результат раунда: текст и ответы живут в DOM, рисунок содержит только котят. */
+#gameScreen .result-backdrop { padding:12px; background:#190c08b8; backdrop-filter:blur(7px); }
+#gameScreen .result-banner { width:min(100%,440px); max-height:calc(100svh - 24px); overflow-y:auto; overscroll-behavior:contain; padding:12px 17px 17px; border:3px solid #e9b24b; border-radius:22px; color:#fff0c6; background:linear-gradient(110deg,#46200ef5,#84461ff5 50%,#46200ef5); box-shadow:inset 0 0 0 3px #62300e,0 20px 65px #000b,0 0 20px #f2b64233; scrollbar-color:#d6a65e #48200d; }
+#gameScreen .result-banner.win { border-color:#ffda78; box-shadow:inset 0 0 0 3px #62300e,0 20px 65px #000b,0 0 28px #f2b64266; }
+.result-mascot { position:relative; overflow:hidden; width:150px; aspect-ratio:1; margin:0 auto -2px; }
+.result-mascot img { position:absolute; width:200%; max-width:none; left:0; top:0; pointer-events:none; }
+.lose .result-mascot img { left:-100%; }
+#gameScreen .result-banner h2 { margin:0; padding:12px 8px; border:2px solid #f4bc50; border-radius:16px; color:#ffdf83; background:linear-gradient(#1769ba,#09275c); font:900 clamp(20px,5.6vw,27px)/1.2 Georgia,serif; letter-spacing:0; text-shadow:0 2px #653009; box-shadow:inset 0 0 0 2px #925d1f; }
+#gameScreen .result-banner .result-encouragement { margin:8px 0 12px; color:#ffe8b0; font:700 14px/1.4 Georgia,serif; }
+#gameScreen .result-banner .result-puzzle,#gameScreen .result-mystery { margin:12px 0; padding:14px 12px; border:2px solid #d8a044; border-radius:13px; background:linear-gradient(120deg,#efd69a,#fff4d5 40%,#f2d08b); box-shadow:inset 0 0 0 2px #ffe7b0,0 3px 0 #61300d; color:#542914; }
+#gameScreen .result-puzzle-label { color:#8a551b; font-size:11px; letter-spacing:.06em; }
+#gameScreen .result-banner .result-question { margin:8px 0 12px; color:#542914!important; font-size:16px; line-height:1.4; }
+#gameScreen .result-banner .result-answer { margin:8px 0 0; padding:0; border:0; background:none; color:#176038; font:900 clamp(23px,6vw,32px)/1.25 Georgia,serif; overflow-wrap:anywhere; }
+#gameScreen .result-mystery[hidden] { display:none; }
+.result-mystery > span { display:block; color:#c88a16; font:900 48px/1 Georgia,serif; text-shadow:0 2px #ffebaf; margin-bottom:10px; }
+#gameScreen .result-mystery strong { display:block; font-size:16px; }
+#gameScreen .result-mystery p { margin:8px 0 0; color:#542914; font-size:14px; }
+#gameScreen .result-banner #resultText { margin:12px 0; color:#fff0c6; font-size:14px; line-height:1.5; }
+#gameScreen .result-banner .streak-praise { margin:12px 0; padding:9px; border:2px solid #e9b24b; border-radius:20px; background:linear-gradient(#fff1b8,#efc064); color:#542914; font-weight:800; box-shadow:0 2px 4px #210d0666; }
+#gameScreen .result-banner button { min-height:50px; margin-top:5px; border:2px solid #ffc65b; border-bottom:4px solid #ad741f; border-radius:23px; color:#fff7dc; background:linear-gradient(#1b73c9,#10266a); box-shadow:inset 0 2px 3px #fff7,0 3px 6px #210d0666; font:800 17px/1.2 Arial,sans-serif; }
+#gameScreen .result-banner button:focus-visible { outline:3px solid #fff2a4; outline-offset:3px; }
+@media(max-height:700px) { .result-mascot { width:105px; } #gameScreen .result-banner { padding:10px 12px 12px; } #gameScreen .result-banner .result-puzzle,#gameScreen .result-mystery { padding:10px; margin:8px 0; } }
+@media(max-height:450px) and (orientation:landscape) { .result-mascot { width:70px; } #gameScreen .result-banner { width:min(100%,560px); } #gameScreen .result-banner h2 { padding:8px; font-size:20px; } }

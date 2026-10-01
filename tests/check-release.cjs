@@ -10,7 +10,7 @@ const required=[
   "data/words.js","data/valid-words.js","data/valid-long-words.js",
   "data/long-words-loader.js","data/DICTIONARY_LICENSE.txt",
   "assets/icon.svg","assets/start-screen-final.webp","assets/menu-library.webp",
-  "assets/game-library-clean.webp","assets/category-library.webp","assets/mystery-book.webp","vendor/supabase/supabase-2.117.2.js","vendor/supabase/LICENSE","manifest.webmanifest"
+  "assets/game-library-clean.webp","assets/category-library.webp","assets/mystery-book.webp","assets/result-kittens.webp","vendor/supabase/supabase-2.117.2.js","vendor/supabase/LICENSE","manifest.webmanifest"
 ];
 const categoryFiles=["animals","nature","food","home","city","tech","slang","cinema","sport","travel"]
   .map(name=>"data/levels/"+name+".js");

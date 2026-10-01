@@ -22,7 +22,7 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css?v=45">
   <link rel="stylesheet" href="menu.css?v=48">
-  <link rel="stylesheet" href="game-library.css?v=45">
+  <link rel="stylesheet" href="game-library.css?v=49">
   <link rel="stylesheet" href="stats.css?v=47">
   <link rel="stylesheet" href="rewards.css?v=47">
 </head>
@@ -168,8 +168,10 @@
     <div class="result-backdrop" id="resultBackdrop" hidden>
       <section class="result-banner" role="dialog" aria-modal="true"
         aria-labelledby="resultTitle" aria-describedby="resultText">
-        <div class="result-ornament" aria-hidden="true">✦</div>
+        <div class="result-mascot" aria-hidden="true"><img src="assets/result-kittens.webp" alt="" draggable="false"></div>
         <h2 id="resultTitle">Результат</h2>
+        <p id="resultEncouragement" class="result-encouragement"></p>
+        <div class="result-mystery" id="resultMystery" hidden><span aria-hidden="true">?</span><strong>Это слово осталось загадкой.</strong><p>Мы вернёмся к нему позже.</p></div>
         <div class="result-puzzle" id="resultPuzzle">
           <span class="result-puzzle-label">ЗАГАДКА</span>
           <p class="result-question" id="resultQuestion" hidden></p>
@@ -244,6 +246,6 @@
   <script src="cloud-save.js"></script>
   <script src="vendor/supabase/supabase-2.117.2.js"></script>
   <script src="rankings.js?v=47"></script>
-  <script src="game-bootstrap.js?v=48"></script>
+  <script src="game-bootstrap.js?v=49"></script>
 </body>
 </html>
