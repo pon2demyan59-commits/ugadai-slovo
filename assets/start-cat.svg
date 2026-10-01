@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 300" role="img" aria-label="Кот на книгах">
+  <defs>
+    <linearGradient id="fur" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9aa1b3"/>
+      <stop offset=".55" stop-color="#72798e"/>
+      <stop offset="1" stop-color="#555d72"/>
+    </linearGradient>
+    <linearGradient id="book" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3159a8"/>
+      <stop offset="1" stop-color="#193879"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-opacity=".28"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <rect x="47" y="232" width="267" height="38" rx="12" fill="url(#book)"/>
+    <rect x="69" y="206" width="226" height="34" rx="11" fill="#8d461f"/>
+    <rect x="91" y="183" width="184" height="30" rx="10" fill="#e9b85e"/>
+    <path d="M91 183h184l-10 12H103z" fill="#fff0b7" opacity=".65"/>
+    <path d="M95 89 78 30l58 35c18-12 70-12 88 0l58-35-17 59c18 21 27 47 24 74-5 55-50 87-109 87S76 218 71 163c-3-27 6-53 24-74z" fill="url(#fur)"/>
+    <path d="m92 65-7-26 31 19zM268 65l7-26-31 19z" fill="#f69b95"/>
+    <path d="M144 83c11-9 61-10 73 0l-13 24h-47z" fill="#fff5ea"/>
+    <ellipse cx="131" cy="130" rx="33" ry="39" fill="#fff"/>
+    <ellipse cx="229" cy="130" rx="33" ry="39" fill="#fff"/>
+    <ellipse cx="135" cy="135" rx="17" ry="24" fill="#78b742"/>
+    <ellipse cx="225" cy="135" rx="17" ry="24" fill="#78b742"/>
+    <ellipse cx="138" cy="140" rx="8" ry="14" fill="#172516"/>
+    <ellipse cx="222" cy="140" rx="8" ry="14" fill="#172516"/>
+    <circle cx="145" cy="126" r="5" fill="#fff"/>
+    <circle cx="215" cy="126" r="5" fill="#fff"/>
+    <path d="M158 161c10-12 34-12 44 0-3 15-13 25-22 25s-19-10-22-25z" fill="#fff5ea"/>
+    <path d="M168 160c4-6 20-6 24 0-4 8-8 11-12 11s-8-3-12-11z" fill="#ef8780"/>
+    <path d="M180 171v9M180 180c-9 9-17 8-24 2M180 180c9 9 17 8 24 2" fill="none" stroke="#7e4b49" stroke-width="3" stroke-linecap="round"/>
+    <path d="M154 166 97 157M154 175 94 177M206 166l57-9M206 175l60 2" stroke="#e9e4df" stroke-width="3" stroke-linecap="round" opacity=".9"/>
+    <ellipse cx="115" cy="197" rx="43" ry="27" fill="#f7f0e8"/>
+    <ellipse cx="245" cy="197" rx="43" ry="27" fill="#f7f0e8"/>
+    <path d="M85 195c18 5 31 4 47-2M228 193c16 6 30 7 47 2" fill="none" stroke="#d5cdc8" stroke-width="3" stroke-linecap="round"/>
+    <path d="M112 87c13-10 29-14 45-11M248 87c-13-10-29-14-45-11" fill="none" stroke="#4d5263" stroke-width="8" stroke-linecap="round" opacity=".65"/>
+  </g>
+</svg>
