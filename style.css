@@ -1020,3 +1020,73 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
 /* Visible release identifier helps distinguish deployed and stale pages. */
 .game-version { display:block; margin:12px 0 0; font-size:11px; color:#ffffffb5; }
 .home-card.subview .game-version { display:none; }
+
+
+/* v35 — новый стартовый экран. Регистрация остаётся на следующей странице. */
+.welcome-screen.welcome-poster {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  overflow: auto;
+  background:
+    radial-gradient(circle at 50% 12%, rgba(255, 169, 75, .16), transparent 34%),
+    #100b0b;
+}
+.welcome-poster-shell {
+  position: relative;
+  width: min(100%, 460px);
+  margin: auto;
+  line-height: 0;
+  background: #1a1010;
+  box-shadow: 0 0 70px rgba(0, 0, 0, .55);
+}
+.welcome-poster-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.welcome-poster-enter {
+  position: absolute;
+  z-index: 2;
+  left: 9.5%;
+  right: 9.5%;
+  top: 71.2%;
+  height: 10.3%;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  background: transparent;
+  color: transparent;
+  -webkit-tap-highlight-color: transparent;
+}
+.welcome-poster-enter:not(:disabled):hover,
+.welcome-poster-enter:not(:disabled):focus-visible {
+  outline: 3px solid rgba(255, 236, 128, .95);
+  outline-offset: -3px;
+  box-shadow: 0 0 24px rgba(255, 216, 70, .55);
+}
+.welcome-poster-enter:not(:disabled):active {
+  transform: scale(.985);
+}
+.welcome-poster-enter:disabled { cursor: progress; }
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+@media (min-width: 700px) {
+  .welcome-poster-shell {
+    border-radius: 28px;
+    overflow: hidden;
+  }
+}

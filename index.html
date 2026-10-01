@@ -7,29 +7,26 @@
   <title>Угадай слово</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=34">
+  <link rel="stylesheet" href="style.css?v=35">
   <link rel="stylesheet" href="stats.css?v=34">
   <link rel="stylesheet" href="rewards.css?v=34">
 </head>
 <body>
   <!-- Стартовая заставка → главное меню → игровое поле. -->
-  <section class="welcome-screen" id="welcomeScreen" aria-labelledby="welcomeTitle">
-    <div class="welcome-glow welcome-glow-left" aria-hidden="true"></div>
-    <div class="welcome-glow welcome-glow-right" aria-hidden="true"></div>
-    <div class="welcome-content">
-      <div class="welcome-tiles" aria-hidden="true">
-        <span>С</span><span>Л</span><span>О</span><span>В</span><span>О</span>
-      </div>
-      <h1 id="welcomeTitle" class="welcome-title">УГАДАЙ<br><span>СЛОВО</span></h1>
-      <p class="welcome-subtitle">Найди слово за 4 попытки!</p>
-      <button id="welcomeEnter" class="welcome-button" type="button" disabled>ВХОД <span aria-hidden="true">➜</span></button>
-      <div class="audio-controls welcome-audio" role="group" aria-label="Настройки звука">
-        <button type="button" data-audio="music" aria-pressed="true">♫ Музыка: ВКЛ</button>
-        <button type="button" data-audio="effects" aria-pressed="true">♪ Звуки: ВКЛ</button>
-      </div>
+    <section class="welcome-screen welcome-poster" id="welcomeScreen" aria-label="Стартовый экран игры Угадай слово">
+    <div class="welcome-poster-shell">
+      <img
+        class="welcome-poster-image"
+        src="assets/start-screen.jpg"
+        alt="Угадай слово — стартовая заставка с котом, игровыми заданиями и кнопкой Начать играть"
+        width="180"
+        height="320"
+        decoding="async"
+        fetchpriority="high">
+      <button id="welcomeEnter" class="welcome-poster-enter" type="button" aria-label="Начать играть" disabled>
+        <span class="sr-only">Начать играть</span>
+      </button>
     </div>
-    <div class="welcome-decor welcome-decor-one" aria-hidden="true">?</div>
-    <div class="welcome-decor welcome-decor-two" aria-hidden="true">✦</div>
   </section>
   <main class="home-screen" id="homeScreen" hidden>
     <section class="home-card" aria-labelledby="homeTitle">
