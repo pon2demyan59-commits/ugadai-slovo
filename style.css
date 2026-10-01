@@ -1031,3 +1031,6 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
     min-height:100dvh;
   }
 }
+
+/* Кнопка возврата слева освобождает место для настроек звука справа. */
+.game .nav-return.game-menu-back { display:flex; margin-right:auto; }

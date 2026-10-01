@@ -20,7 +20,8 @@
   <title>Угадай слово</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=43">
+  <link rel="stylesheet" href="style.css?v=44">
+  <link rel="stylesheet" href="menu.css?v=44">
   <link rel="stylesheet" href="stats.css?v=39">
   <link rel="stylesheet" href="rewards.css?v=39">
 </head>
@@ -45,27 +46,37 @@
   </section>
   <main class="home-screen" id="homeScreen" hidden>
     <section class="home-card" aria-labelledby="homeTitle">
-      <div class="home-tiles" aria-hidden="true"><span>У</span><span>Г</span><span>А</span><span>Д</span><span>АЙ</span></div>
-      <h2 id="homeTitle" class="home-title">ГЛАВНОЕ МЕНЮ</h2>
-      <p class="home-tagline">Собери слово. Победи загадку!</p>
-      <div class="audio-controls home-audio" role="group" aria-label="Настройки звука">
-        <button type="button" data-audio="music" aria-pressed="true">♫ Музыка: ВКЛ</button>
-        <button type="button" data-audio="effects" aria-pressed="true">♪ Звуки: ВКЛ</button>
+      <div id="homeArt" class="home-art-shell">
+        <h2 id="homeTitle" class="menu-visually-hidden">ГЛАВНОЕ МЕНЮ — Угадай слово</h2>
+        <img class="home-art-image" src="assets/menu-library.webp?v=44" alt="Уютная библиотека с котёнком" width="941" height="1672" decoding="async">
+        <button type="button" class="menu-art-hotspot menu-music" data-audio="music" aria-label="Музыка" aria-pressed="true"></button>
+        <button type="button" id="menuSettings" class="menu-art-hotspot menu-settings" aria-label="Настройки звука" aria-haspopup="dialog"></button>
+        <form id="nicknameForm" class="menu-nickname" autocomplete="off">
+          <label for="nicknameInput" class="menu-visually-hidden">Как тебя зовут в игре?</label>
+          <input id="nicknameInput" type="text" maxlength="24" placeholder="Введите имя..." aria-describedby="nicknameMessage" required>
+          <button type="submit" class="menu-art-hotspot menu-save" aria-label="Сохранить имя"></button>
+          <p id="nicknameMessage" class="menu-nickname-message" role="status" aria-live="polite"></p>
+        </form>
+        <nav class="home-menu menu-art-nav" aria-label="Главное меню">
+          <button type="button" id="menuPlay" class="menu-art-hotspot menu-art-play" aria-label="Играть — выбрать категорию"></button>
+          <button type="button" id="menuStats" class="menu-art-hotspot menu-art-stats" aria-label="Статистика"></button>
+          <button type="button" id="menuReward" class="menu-art-hotspot menu-art-reward" aria-label="Тайна десяти печатей">
+            <span id="rewardCounter" class="menu-visually-hidden">0/10 · 0/50</span>
+            <span id="menuSealCount" class="menu-progress menu-seals" aria-hidden="true">0/10</span>
+            <span id="menuPartCount" class="menu-progress menu-parts" aria-hidden="true">0/50</span>
+          </button>
+          <button type="button" id="menuRules" class="menu-art-hotspot menu-art-rules" aria-label="Как играть"></button>
+          <button type="button" id="menuCloud" class="menu-cloud-button" hidden>☁ Сохранить в облаке</button>
+        </nav>
       </div>
-      <form id="nicknameForm" class="nickname-form" autocomplete="off">
-        <label for="nicknameInput">✎ Как тебя зовут в игре?</label>
-        <input id="nicknameInput" type="text" maxlength="24" placeholder="Имя игрока" aria-describedby="nicknameMessage" required>
-        <button type="submit">Сохранить</button>
-        <p id="nicknameMessage" class="nickname-message" role="status" aria-live="polite"></p>
-      </form>
-      <nav class="home-menu" aria-label="Главное меню">
-        <button type="button" id="menuPlay" class="home-menu-button menu-play">▶ <span>ИГРАТЬ</span></button>
-        <button type="button" id="menuStats" class="home-menu-button menu-stats">★ <span>СТАТИСТИКА</span></button>
-        <button type="button" id="menuReward" class="home-menu-button menu-reward">🧩 <span>ТАЙНА ДЕСЯТИ ПЕЧАТЕЙ</span> <span id="rewardCounter">0/10 · 0/50</span></button>
-        <button type="button" id="menuCloud" class="home-menu-button menu-cloud" hidden title="Войти через Яндекс ID, чтобы сохранять прогресс между устройствами">☁ <span>СОХРАНИТЬ В ОБЛАКЕ</span></button>
-        <button type="button" id="menuRules" class="home-menu-button menu-rules">? <span>КАК ИГРАТЬ</span></button>
-      </nav>
-      <small class="game-version">Версия 34 · 29.09.2026</small>
+      <dialog id="menuSettingsDialog" class="menu-settings-dialog" aria-labelledby="menuSettingsTitle">
+        <h3 id="menuSettingsTitle">Настройки звука</h3>
+        <div class="audio-controls" role="group" aria-label="Звук">
+          <button type="button" data-audio="music" aria-pressed="true">♫ Музыка: ВКЛ</button>
+          <button type="button" data-audio="effects" aria-pressed="true">♪ Звуки: ВКЛ</button>
+        </div>
+        <form method="dialog"><button class="menu-settings-close">Готово</button></form>
+      </dialog>
       <section id="categoryScreen" class="category-screen" hidden aria-labelledby="categoryTitle">
         <button type="button" id="categoryBack" class="nav-return">← Меню</button>
         <h3 id="categoryTitle">ВЫБОР КАТЕГОРИИ</h3>
@@ -219,6 +230,6 @@
   <script src="rewards.js?v=39"></script>
   <script src="yandex-platform.js"></script>
   <script src="cloud-save.js"></script>
-  <script src="game-bootstrap.js?v=41"></script>
+  <script src="game-bootstrap.js?v=44"></script>
 </body>
 </html>

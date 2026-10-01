@@ -985,6 +985,8 @@ function saveUiState() {
 }
 function setHomeView(view) {
   homeView=view;
+  document.querySelector("#homeArt").hidden=view!=="menu";
+  document.querySelector("#menuSettingsDialog").close();
   homeMenu.hidden=view!=="menu";
   document.querySelector("#nicknameForm").hidden=view!=="menu";
   categoryScreen.hidden=view!=="categories";
@@ -1108,6 +1110,14 @@ document.querySelector("#welcomeRewards")?.addEventListener("click",()=>{
   showScreen(homeScreen);
   document.querySelector("#menuReward")?.click();
 });
+const menuSettingsDialog=document.querySelector("#menuSettingsDialog");
+document.querySelector("#menuSettings").addEventListener("click",()=>menuSettingsDialog.showModal());
+menuSettingsDialog.addEventListener("click",event=>{
+  if(event.target===menuSettingsDialog){
+    const rect=menuSettingsDialog.getBoundingClientRect();
+    if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)menuSettingsDialog.close();
+  }
+});
 document.querySelector("#menuPlay").addEventListener("click",showCategories);
 window.GameDebug?.log("ЭТАП: обработчик Играть подключён");
 document.querySelector("#categoryBack").addEventListener("click",()=>setHomeView("menu"));
@@ -1136,6 +1146,8 @@ function refreshRewardCounter(){
   const earned=window.GameRewards.earnedCount(allProgress,GAME_CATEGORIES,MAX_LEVEL,wordsInCategory);
   const parts=window.GameRewards.earnedParts(allProgress,GAME_CATEGORIES,MAX_LEVEL,wordsInCategory);
   rewardCounter.textContent=earned+"/10 · "+parts+"/50";
+  document.querySelector("#menuSealCount").textContent=earned+"/10";
+  document.querySelector("#menuPartCount").textContent=parts+"/50";
 }
 window.GameDebug?.log("ЭТАП: перед расчётом пазла");
 refreshRewardCounter();

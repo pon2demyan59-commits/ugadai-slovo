@@ -19,7 +19,8 @@ for(const file of [...required,...categoryFiles]){
 for(const file of [...required,...categoryFiles].filter(file=>file.endsWith(".js"))){
   new vm.Script(fs.readFileSync(path.join(root,file),"utf8"),{filename:file});
 }
-const html=fs.readFileSync(path.join(root,"index.html"),"utf8");
+const html=fs.readFileSync(path.join(root,"index.html"),"utf8")
+  .replace(/(src="[^"?]+)\?v=\d+"/g,'$1"');
 for(const file of [...required,...categoryFiles].filter(file=>/\.js$/.test(file)&&
   !["data/valid-long-words.js","script.js"].includes(file))){
   if(file==="rewards.js"||file==="yandex-platform.js"||file==="cloud-save.js"||file==="game-bootstrap.js"||
@@ -164,17 +165,10 @@ async function checkPlatformLanguage(){
   console.log("OK: SDK i18n ru/en/kk, русский fallback, международные домены Яндекса.");
 }
 checkPlatformLanguage().catch(error=>{console.error(error);process.exitCode=1;});
-// При новом открытии страницы — заставка, при обновлении — сохранённый экран.
-const startupMatch=script.match(/function startupScreen\(savedScreen,navigationType\) \{[\s\S]*?\n\}/);
-assert(startupMatch,"Не найдена логика различения обновления и нового запуска");
-const startupScreen=vm.runInNewContext(startupMatch[0]+";startupScreen");
-for(const screen of ["welcome","home","game"]){
-  assert.equal(startupScreen(screen,"reload"),screen,"Обновление должно сохранять экран");
-  assert.equal(startupScreen(screen,"navigate"),"welcome","Новый запуск должен показывать заставку");
-}
-assert(script.includes('initialScreen=startupScreen(initialUiState.screen,navigationType)'));
+// После исправления v41 каждый запуск открывает согласованную заставку.
+assert(script.includes('const initialScreen = "welcome";'),"Запуск должен открывать заставку");
 assert(script.includes('showScreen(initialScreen==="game"?gameScreen:'),
-  "Первый экран должен зависеть от типа навигации");
+  "Первый экран должен зависеть от выбранного стартового экрана");
 // Статистика: пятая бонусная попытка не смешивается с последним шансом.
 const statStore=new Map([["ugadai-slovo-stats-v1",JSON.stringify({
   distribution:[1,2,3,4,5],streak:0,bestStreak:0,totalDetailed:15})]]);
@@ -247,7 +241,7 @@ console.log("OK: подсказки, награды, пятая попытка, 
 // рекламный ролик приостанавливает музыку, звуки можно выключать независимо.
 assert(html.includes('src="audio.js"'),"Не подключён звуковой движок");
 assert.equal((html.match(/data-audio="music"/g)||[]).length,3);
-assert.equal((html.match(/data-audio="effects"/g)||[]).length,3);
+assert.equal((html.match(/data-audio="effects"/g)||[]).length,2);
 assert(script.includes('window.GameAudio?.play("win"') ||
   script.includes('window.GameAudio?.play(won?"win":"wrong")'),
   "Победа должна запускать отдельную мелодию");
@@ -357,10 +351,9 @@ Promise.all([checkMobileInterstitial("games.yandex.ru"),
   checkMobileInterstitial("games.yandex.com")]).then(()=>
   console.log("OK: 3 раунда, запрос на телефоне, отказ SDK, повтор и пауза между показами.")
 ).catch(error=>{console.error(error);process.exitCode=1;});
-const worker=fs.readFileSync(path.join(root,"service-worker.js"),"utf8");
-assert(worker.includes('event.request.mode === "navigate"'),"Нет проверки свежего HTML");
-assert(worker.includes('"./audio.js"')&&worker.includes('"./hints.js"'),
-  "Новые скрипты должны кэшироваться для офлайн-запуска");
+// Старый PWA-кэш удалён в v40, чтобы он не перекрывал новые экраны.
+assert(!fs.existsSync(path.join(root,"service-worker.js")),"Старый service worker должен оставаться удалённым");
+assert(html.includes("reg.unregister()")&&html.includes("caches.delete(key)"),"Нет очистки старого PWA-кэша");
 
 // Повторное прохождение: завершённый уровень должен запускаться заново без сброса основного прогресса.
 assert(script.includes("let replayMode=false"),"Нет режима повторного прохождения");
