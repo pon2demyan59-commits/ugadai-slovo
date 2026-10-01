@@ -4,10 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#714eea">
+  <script>
+    // v40: старый PWA-кэш больше не используется. Очищаем его, чтобы редизайн не перекрывался старыми файлами.
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations()
+        .then(list => Promise.all(list.map(reg => reg.unregister())))
+        .catch(() => {});
+    }
+    if ("caches" in window) {
+      caches.keys()
+        .then(keys => Promise.all(keys.filter(key => key.startsWith("ugadai-slovo-")).map(key => caches.delete(key))))
+        .catch(() => {});
+    }
+  </script>
   <title>Угадай слово</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=39">
+  <link rel="stylesheet" href="style.css?v=40">
   <link rel="stylesheet" href="stats.css?v=39">
   <link rel="stylesheet" href="rewards.css?v=39">
 </head>
@@ -206,6 +219,6 @@
   <script src="rewards.js?v=39"></script>
   <script src="yandex-platform.js"></script>
   <script src="cloud-save.js"></script>
-  <script src="game-bootstrap.js?v=39"></script>
+  <script src="game-bootstrap.js?v=40"></script>
 </body>
 </html>
