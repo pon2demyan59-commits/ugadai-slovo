@@ -39,7 +39,10 @@ const wordsInCategory = (id,level=1) =>
   GAME_WORDS.filter(w => w.category === id && (w.level || 1) === level).map(w => w.word);
 const getEntry = (id,level,word) =>
   GAME_WORDS.find(w => w.category === id && w.level === level && w.word === word);
-const acceptedAnswers = new Set(GAME_WORDS.map(w => w.word));
+// Е и Ё равноценны при вводе и проверке; оригинальные ответы и прогресс сохраняем.
+function normalizeLetters(value) { return value.toLowerCase().replace(/ё/g,"е"); }
+const acceptedAnswers = new Set(GAME_WORDS.map(w => normalizeLetters(w.word)));
+const normalizedDictionary = new Set([...VALID_RUSSIAN_WORDS,...EXTRA_VALID_WORDS].map(normalizeLetters));
 function loadAllProgress() {
   let saved = null,legacy = {};
   try {saved = JSON.parse(localStorage.getItem(WORD_PROGRESS_KEY) || "null");} catch {}
@@ -85,18 +88,13 @@ function loadUiState() {
     return {category:GAME_CATEGORIES[0].id,level:1,screen:"welcome",homeView:"menu"};
   }
 }
-// Перезагрузка сохраняет открытый экран. При новом запуске показываем заставку.
-// Используем Navigation Timing вместо постоянного флага в localStorage: он не
-// отличает новую игровую сессию от обычного обновления страницы.
-function startupScreen(savedScreen,navigationType) {
-  return navigationType==="reload" ? savedScreen : "welcome";
-}
+// v41: каждый запуск начинается со стартовой страницы.
 const allProgress = loadAllProgress();
 const initialUiState = loadUiState();
-const navigationEntry=performance.getEntriesByType?.("navigation")?.[0];
-const navigationType=navigationEntry?.type ||
-  (performance.navigation?.type===1 ? "reload" : "navigate");
-const initialScreen=startupScreen(initialUiState.screen,navigationType);
+const initialScreen = "welcome";
+try {
+  localStorage.removeItem(UI_STORAGE_KEY);
+} catch {}
 let selectedCategory = initialUiState.category;
 let selectedLevel = initialUiState.level;
 const levelUnlocked = (id,level) =>
@@ -246,8 +244,9 @@ function startGame() {
   resultBanner.classList.remove("win","lose");
   hintElement.textContent=selected.hint;
   const cat=GAME_CATEGORIES.find(c=>c.id===selectedCategory);
-  document.querySelector("#activeCategoryTitle").textContent=cat.icon+" "+cat.title+" · Уровень "+selectedLevel;
-  messageElement.textContent="Угадай слово!";
+  document.querySelector("#activeCategoryTitle").textContent=cat.title+" · Уровень "+selectedLevel;
+  document.querySelector("#gameRoundProgress").textContent=Math.min(sessionSolvedSize()+1,wordBank.length)+" / "+wordBank.length;
+  messageElement.textContent="Введите слово";
   window.GameAudio?.setScene("game");
   renderBoard();
   renderPreview();
@@ -319,10 +318,15 @@ function createLineInput(number) {
   return input;
 }
 
+function puzzleColumns() {
+  const breaks=[0,...phraseBreaks,currentWord.length];
+  return Math.min(8,Math.max(...breaks.slice(1).map((end,index)=>end-breaks[index])));
+}
+
 function renderBoard() {
   boardElement.replaceChildren();
   const long=currentWord.length>8;
-  const columns=Math.min(currentWord.length,8);
+  const columns=puzzleColumns();
   boardElement.classList.toggle("long-letters",long);
   boardElement.style.setProperty("--word-length",currentWord.length);
   boardElement.style.setProperty("--columns",columns);
@@ -351,7 +355,7 @@ function renderBoard() {
 
 function syncInput() {
   if (!guessInput || phase !== "guess") return;
-  const clean = guessInput.value.toLowerCase().replace(/[^а-яё]/g, "").slice(0, currentWord.length);
+  const clean = normalizeLetters(guessInput.value).replace(/[^а-яё]/g, "").slice(0, currentWord.length);
   if (guessInput.value !== clean) guessInput.value = clean;
   const row = boardElement.children[currentAttempt];
   if (!row) return;
@@ -373,11 +377,12 @@ function activateNextRow() {
 }
 
 function renderPreview() {
+  finalEntry.hidden=phase==="guess"&&!revealed.some(Boolean)&&!revealHintMode;
   previewElement.replaceChildren();
   previewElement.style.setProperty("--word-length",currentWord.length);
-  previewElement.style.setProperty("--columns",Math.min(currentWord.length,8));
+  previewElement.style.setProperty("--columns",puzzleColumns());
   previewElement.classList.toggle("long-letters",currentWord.length>8);
-  const draft=finalInput.value.toLowerCase().replace(/[^а-яё]/g,"");
+  const draft=normalizeLetters(finalInput.value).replace(/[^а-яё]/g,"");
   let draftIndex=0;
   for (let i=0;i<currentWord.length;i++) {
     const cell=document.createElement("span");
@@ -429,7 +434,7 @@ function activeLetterInput() {
 function typeKeyboardLetter(letter) {
   const target = activeLetterInput();
   if (!target || target.value.length >= target.maxLength) return;
-  target.value += letter.toLowerCase();
+  target.value += letter.toLowerCase().replace(/ё/g,"е");
   target.setSelectionRange(target.value.length,target.value.length);
   target.dispatchEvent(new Event("input", { bubbles: true }));
   window.GameAudio?.play("key");
@@ -452,53 +457,27 @@ function showInputError(text) {
   messageElement.classList.add("is-error");
 }
 
-// Одна клавиша Е/Ё: при нажатии показываем выбор нужной буквы.
-function showEChoice(anchor) {
-  const old = alphabetElement.querySelector(".keyboard-letter-choice");
-  if (old) { const sameKey = old.parentElement === anchor; old.remove(); if (sameKey) return; }
-  const menu = document.createElement("div");
-  menu.className = "keyboard-letter-choice";
-  menu.setAttribute("role", "group");
-  menu.setAttribute("aria-label", "Выбрать Е или Ё");
-  for (const letter of ["Е", "Ё"]) {
-    const option = document.createElement("button");
-    option.type = "button";
-    option.className = "keyboard-choice-button";
-    option.textContent = letter;
-    option.addEventListener("click", event => {
-      event.stopPropagation();
-      menu.remove();
-      typeKeyboardLetter(letter);
-    });
-    menu.append(option);
-  }
-  anchor.append(menu);
-}
 function renderAlphabet() {
   alphabetElement.replaceChildren();
   for (const letters of keyboardRows) {
     const row = document.createElement("div");
     row.className = "keyboard-row";
     for (const letter of letters) {
-      const combined = letter === "Е";
       const cellWrap = document.createElement("div");
       cellWrap.className = "keyboard-key-wrap";
       const cell = document.createElement("button");
       cell.type = "button";
-      const status = combined
-        ? (statusPriority[usedLetters["Е"] || "unused"] >= statusPriority[usedLetters["Ё"] || "unused"]
-            ? usedLetters["Е"] || "unused" : usedLetters["Ё"] || "unused")
-        : usedLetters[letter] || "unused";
+      const status = usedLetters[letter] || "unused";
       cell.className = "alphabet-letter" + (status === "unused" ? "" : " " + status);
       if(roundHints.eliminated.includes(letter)){
         cell.disabled=true;cell.classList.add("hint-eliminated");
       }
-      cell.textContent = combined ? "Е/Ё" : letter;
-      cell.setAttribute("aria-label", (combined ? "Выбрать Е или Ё" : letter) + ": " + ({
+      cell.textContent = letter;
+      cell.setAttribute("aria-label", letter + ": " + ({
         unused: "ещё не использована", missing: "отсутствует",
         present: "есть в слове", correct: "стоит на месте"
       })[status]);
-      cell.addEventListener("click", () => combined ? showEChoice(cellWrap) : typeKeyboardLetter(letter));
+      cell.addEventListener("click", () => typeKeyboardLetter(letter));
       cellWrap.append(cell);
       row.append(cellWrap);
     }
@@ -534,10 +513,11 @@ function updateStats() {
 }
 
 function getGuessResult(guess) {
+  guess=normalizeLetters(guess);
   const result = Array.from(guess, letter => ({ letter, status: "missing" }));
-  const remaining = Array.from(currentWord);
+  const remaining = Array.from(normalizeLetters(currentWord));
   for (let i = 0; i < result.length; i++) {
-    if (guess[i] === currentWord[i]) {
+    if (guess[i] === normalizeLetters(currentWord[i])) {
       result[i].status = "correct";
       remaining[i] = null;
     }
@@ -555,7 +535,7 @@ function getGuessResult(guess) {
 
 function updateAlphabet(result) {
   for (const item of result) {
-    const letter = item.letter.toUpperCase();
+    const letter = normalizeLetters(item.letter).toUpperCase();
     const previous = usedLetters[letter] || "unused";
     if (statusPriority[item.status] > statusPriority[previous]) {
       usedLetters[letter] = item.status;
@@ -566,6 +546,7 @@ function updateAlphabet(result) {
 
 function checkGuess(guess) {
   if (phase !== "guess") return;
+  guess=normalizeLetters(guess);
   if (!guess) { showInputError("Сначала введи слово."); return; }
   if (guess.length !== currentWord.length) {
     showInputError("Нужно слово из " + currentWord.length + " букв.");
@@ -574,8 +555,7 @@ function checkGuess(guess) {
   // На пятом уровне составные выражения проверяются по буквам и длине,
   // обычные слова — по лицензированному словарю существительных.
   const phrase=currentEntry?.display?.includes(" ");
-  const known=VALID_RUSSIAN_WORDS.has(guess)||VALID_LONG_WORDS.has(guess)||
-    EXTRA_VALID_WORDS.has(guess)||acceptedAnswers.has(guess);
+  const known=normalizedDictionary.has(guess)||VALID_LONG_WORDS.has(guess)||acceptedAnswers.has(guess);
   if(!phrase && !known){
     // Расширяем словарь в отдельном обновлении. Сейчас не отклоняем реальные
     // слова: два одинаковых нажатия «Проверить» явно подтверждают попытку.
@@ -612,7 +592,7 @@ function checkGuess(guess) {
   updateAlphabet(result);
   currentAttempt++;
   updateStats();
-  const isWin=guess === currentWord || revealed.every(Boolean);
+  const isWin=guess === normalizeLetters(currentWord) || revealed.every(Boolean);
   if(!isWin && result.some(item=>item.status==="correct"))window.GameAudio?.play("correct");
   else if(!isWin)window.GameAudio?.play("wrong");
   if (isWin && currentAttempt < baseAttempts && !restoringRound) {
@@ -693,7 +673,7 @@ function beginFinalChance() {
 }
 
 function cleanFinalInput() {
-  const clean = finalInput.value.toLowerCase().replace(/[^а-яё]/g, "").slice(0, finalInput.maxLength);
+  const clean = normalizeLetters(finalInput.value).replace(/[^а-яё]/g, "").slice(0, finalInput.maxLength);
   if (finalInput.value !== clean) finalInput.value = clean;
   renderPreview();
   saveRound();
@@ -710,7 +690,7 @@ function checkFinalChance() {
   const candidate = Array.from(currentWord, (letter, i) =>
     revealed[i] ? letter : finalInput.value[index++]
   ).join("");
-  if (candidate === currentWord) {
+  if (normalizeLetters(candidate) === normalizeLetters(currentWord)) {
     revealed.fill(true);
     finalInput.hidden = true;
     finalForm.classList.remove("active");
@@ -846,6 +826,7 @@ function renderHints(){
 }
 hintButtons.letter.addEventListener("click",()=>{
   revealHintMode=true;
+  renderPreview();
   hintStatus.textContent="Нажми на вопросительный знак нужной клетки в верхнем ответе.";
 });
 function revealAutomatic(kind,index){
@@ -922,7 +903,7 @@ adButton.addEventListener("click",async()=>{
 // настольная клавиатура всё равно продолжает вводить в текущую строку.
 document.addEventListener("keydown",event=>{
   if(event.ctrlKey||event.altKey||event.metaKey||event.repeat||
-    document.querySelector("#gameScreen").hidden||!resultBackdrop.hidden)return;
+    document.querySelector("#gameScreen").hidden||!resultBackdrop.hidden||document.querySelector("#menuSettingsDialog").open)return;
   if(phase!=="guess"&&phase!=="final")return;
   const node=event.target;
   if(node?.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(node?.tagName||""))return;
@@ -990,6 +971,8 @@ function saveUiState() {
 }
 function setHomeView(view) {
   homeView=view;
+  document.querySelector("#homeArt").hidden=view!=="menu";
+  document.querySelector("#menuSettingsDialog").close();
   homeMenu.hidden=view!=="menu";
   document.querySelector("#nicknameForm").hidden=view!=="menu";
   categoryScreen.hidden=view!=="categories";
@@ -1101,6 +1084,27 @@ function startLevel(id,level) {
   showScreen(gameScreen);
 }
 document.querySelector("#welcomeEnter").addEventListener("click",()=>showScreen(homeScreen));
+document.querySelector("#welcomeRules")?.addEventListener("click",()=>{
+  showScreen(homeScreen);
+  document.querySelector("#menuRules")?.click();
+});
+document.querySelector("#welcomeStats")?.addEventListener("click",()=>{
+  showScreen(homeScreen);
+  document.querySelector("#menuStats")?.click();
+});
+document.querySelector("#welcomeRewards")?.addEventListener("click",()=>{
+  showScreen(homeScreen);
+  document.querySelector("#menuReward")?.click();
+});
+const menuSettingsDialog=document.querySelector("#menuSettingsDialog");
+document.querySelector("#menuSettings").addEventListener("click",()=>menuSettingsDialog.showModal());
+document.querySelector("#gameSettings").addEventListener("click",()=>menuSettingsDialog.showModal());
+menuSettingsDialog.addEventListener("click",event=>{
+  if(event.target===menuSettingsDialog){
+    const rect=menuSettingsDialog.getBoundingClientRect();
+    if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)menuSettingsDialog.close();
+  }
+});
 document.querySelector("#menuPlay").addEventListener("click",showCategories);
 window.GameDebug?.log("ЭТАП: обработчик Играть подключён");
 document.querySelector("#categoryBack").addEventListener("click",()=>setHomeView("menu"));
@@ -1129,6 +1133,8 @@ function refreshRewardCounter(){
   const earned=window.GameRewards.earnedCount(allProgress,GAME_CATEGORIES,MAX_LEVEL,wordsInCategory);
   const parts=window.GameRewards.earnedParts(allProgress,GAME_CATEGORIES,MAX_LEVEL,wordsInCategory);
   rewardCounter.textContent=earned+"/10 · "+parts+"/50";
+  document.querySelector("#menuSealCount").textContent=earned+"/10";
+  document.querySelector("#menuPartCount").textContent=parts+"/50";
 }
 window.GameDebug?.log("ЭТАП: перед расчётом пазла");
 refreshRewardCounter();
@@ -1178,16 +1184,6 @@ document.querySelector("#menuRules").addEventListener("click",()=>{
 startGame();
 showScreen(initialScreen==="game"?gameScreen:
   initialScreen==="home"?homeScreen:welcomeScreen);
-if (initialScreen==="home") {
-  if (initialUiState.homeView==="categories") showCategories();
-  else if (initialUiState.homeView==="levels") showLevels(selectedCategory);
-  else if (initialUiState.homeView==="stats") document.querySelector("#menuStats").click();
-  else if (initialUiState.homeView==="rules") document.querySelector("#menuRules").click();
-}
 
 window.YandexPlatform.ready();
 
-// Яндекс самостоятельно управляет файлами игры; SW оставляем для GitHub Pages.
-if (!window.YandexPlatform.isYandex && "serviceWorker" in navigator && window.location.protocol !== "file:") {
-  navigator.serviceWorker.register("service-worker.js").catch(() => {});
-}

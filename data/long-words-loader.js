@@ -9,7 +9,7 @@ const longDictionaryPromise = fetch("./data/valid-long-words.js")
     const end = source.indexOf("])", start);
     if (start < 0 || end < 0) throw new Error("Неверный формат словаря");
     const words = JSON.parse(source.slice(start, end + 1));
-    for (const word of words) VALID_LONG_WORDS.add(word);
+    for (const word of words) { VALID_LONG_WORDS.add(word); VALID_LONG_WORDS.add(word.replace(/ё/g,"е")); }
     longDictionaryReady = true;
   })
   .catch(() => { longDictionaryReady = true; });

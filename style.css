@@ -1,4 +1,7 @@
 * { box-sizing: border-box; }
+/* v37 screen isolation */
+[hidden] { display: none !important; }
+
 :root {
   color-scheme: dark;
   --steel: #a7afb7; --gold: #ffd285; --ember: #ef8732;
@@ -303,81 +306,6 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
   .cell { height:42px; }
 }
 
-
-/* Яркая заставка: название, короткий подзаголовок и одна кнопка. */
-.welcome-screen[hidden], .game[hidden] { display:none!important; }
-.welcome-screen {
-  position:relative; isolation:isolate; display:grid; place-items:center;
-  min-height:100vh; min-height:100dvh; width:100%;
-  padding:32px 18px; overflow:hidden; text-align:center;
-  background:
-    radial-gradient(circle at 15% 15%,#ff8bc480 0%,transparent 33%),
-    radial-gradient(circle at 83% 78%,#51d4ff92 0%,transparent 38%),
-    linear-gradient(140deg,#804bfa 5%,#6c46e8 40%,#3388ed 78%,#27b5ef);
-}
-.welcome-screen::before {
-  content:""; position:absolute; inset:0; z-index:-1; opacity:.25;
-  background-image:radial-gradient(#fff 1.6px,transparent 1.6px);
-  background-size:33px 33px; mask-image:linear-gradient(transparent 0%,#000 60%,transparent 100%);
-}
-.welcome-glow { position:absolute; width:300px; height:300px; border-radius:50%;
-  filter:blur(30px); opacity:.32; z-index:-1; pointer-events:none; }
-.welcome-glow-left { background:#ffb547; top:-130px; left:-125px; }
-.welcome-glow-right { background:#5bffcf; bottom:-135px; right:-125px; }
-.welcome-content {
-  position:relative; width:min(100%,480px); padding:36px 16px 43px;
-  border:1px solid #ffffff7d; border-radius:32px;
-  background:linear-gradient(150deg,#ffffff3d,#ffffff17);
-  box-shadow:inset 0 2px 1px #ffffff80,0 22px 68px #30258a66;
-  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-}
-.welcome-tiles { display:flex; justify-content:center; gap:clamp(5px,2vw,12px); margin:0 auto 27px; }
-.welcome-tiles span {
-  display:grid; place-items:center; width:clamp(41px,12vw,62px); aspect-ratio:1;
-  border:2px solid #fff8; border-radius:13px;
-  color:#fff; font-size:clamp(25px,6.5vw,38px); font-weight:1000;
-  text-shadow:0 2px 1px #3c229052;
-  box-shadow:inset 0 2px #ffffff91,inset 0 -5px #00000026,0 8px 14px #29258445;
-  transform:rotate(-5deg);
-}
-.welcome-tiles span:nth-child(1) { background:#fc718f; }
-.welcome-tiles span:nth-child(2) { background:#ffbc47; transform:rotate(4deg) translateY(-7px); }
-.welcome-tiles span:nth-child(3) { background:#45c7ea; transform:rotate(-3deg); }
-.welcome-tiles span:nth-child(4) { background:#69d99d; transform:rotate(5deg) translateY(-5px); }
-.welcome-tiles span:nth-child(5) { background:#9e77fa; transform:rotate(-3deg); }
-.welcome-title {
-  margin:0; font-size:clamp(46px,12vw,76px); line-height:.97; letter-spacing:.025em;
-  font-weight:1000; color:#fff; text-shadow:0 5px 0 #422d9a80,0 12px 24px #332b9d67;
-}
-.welcome-title span { color:#ffe36e; text-shadow:0 5px 0 #9b60957d,0 10px 25px #5029aa88; }
-.welcome-subtitle {
-  margin:23px 0 33px; color:#fff; font-weight:750;
-  font-size:clamp(16px,4.5vw,21px); text-shadow:0 2px 8px #342d9e88;
-}
-.welcome-button {
-  display:inline-flex; align-items:center; justify-content:center; gap:20px;
-  width:min(100%,286px); min-height:65px; border:2px solid #fff8; border-radius:19px;
-  background:linear-gradient(180deg,#ffdd6d,#ffb730);
-  box-shadow:inset 0 3px 1px #ffffffaa,inset 0 -5px #d78719,0 11px 0 #6e349d99,0 20px 35px #38217f99;
-  color:#51256f; font-size:clamp(22px,6vw,28px); font-weight:1000; letter-spacing:.09em;
-  cursor:pointer; transition:transform .16s ease,filter .16s ease; touch-action:manipulation;
-}
-.welcome-button:hover { filter:brightness(1.07); transform:translateY(-3px); }
-.welcome-button:active { transform:translateY(5px); box-shadow:inset 0 3px #ffffffaa,inset 0 -3px #d78719,0 5px 0 #6e349d99; }
-.welcome-button:focus-visible { outline:4px solid white; outline-offset:5px; }
-.welcome-button span { font-size:28px; line-height:1; }
-.welcome-decor { position:absolute; z-index:-1; font-weight:1000; color:#ffffff43; pointer-events:none; }
-.welcome-decor-one { left:5%; top:12%; font-size:clamp(70px,20vw,180px); transform:rotate(-22deg); }
-.welcome-decor-two { right:6%; bottom:10%; font-size:clamp(80px,22vw,195px); transform:rotate(18deg); }
-@media(max-width:380px) {
-  .welcome-content { padding:31px 9px 37px; border-radius:24px; }
-  .welcome-tiles { margin-bottom:24px; gap:5px; }
-  .welcome-tiles span { border-radius:9px; }
-  .welcome-subtitle { margin:20px 0 28px; }
-}
-@media(prefers-reduced-motion:reduce) {
-  .welcome-button { transition:none; }
-}
 
 /* Меню в стиле яркой головоломки. Отдельный адаптивный экран после заставки. */
 .home-screen[hidden],.home-details[hidden],.home-menu[hidden] { display:none!important; }
@@ -1020,3 +948,89 @@ h1 { margin: 2px 0 20px; color:#f9e5bc; font-size:clamp(25px, 7vw, 33px);
 /* Visible release identifier helps distinguish deployed and stale pages. */
 .game-version { display:block; margin:12px 0 0; font-size:11px; color:#ffffffb5; }
 .home-card.subview .game-version { display:none; }
+
+
+/* ===== Стартовый экран v38: утверждённый арт + живые зоны ===== */
+.welcome-screen.welcome-art-screen {
+  min-height:100vh;
+  min-height:100dvh;
+  display:grid;
+  place-items:center;
+  padding:0;
+  overflow:hidden;
+  background:#120a08;
+}
+.welcome-art-shell {
+  position:relative;
+  width:min(100vw, calc(100dvh * 0.5625), 720px);
+  aspect-ratio:9 / 16;
+  margin:auto;
+  overflow:hidden;
+  background:#120a08;
+  box-shadow:0 0 70px rgba(0,0,0,.48);
+}
+.welcome-art-image {
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  user-select:none;
+  -webkit-user-drag:none;
+}
+.welcome-art-hotspot {
+  position:absolute;
+  z-index:2;
+  border:0;
+  padding:0;
+  background:transparent;
+  cursor:pointer;
+  border-radius:18px;
+  -webkit-tap-highlight-color:transparent;
+}
+.welcome-art-hotspot:focus-visible {
+  outline:3px solid #fff3a8;
+  outline-offset:-3px;
+  box-shadow:0 0 22px rgba(255,225,96,.75);
+}
+.welcome-art-hotspot:active { transform:scale(.985); }
+.welcome-art-hotspot:disabled { cursor:progress; }
+
+.welcome-art-start {
+  left:12.7%;
+  top:73.1%;
+  width:74.6%;
+  height:10.4%;
+  border-radius:999px;
+}
+.welcome-art-rules {
+  left:8.4%;
+  top:85.1%;
+  width:22.5%;
+  height:8.5%;
+}
+.welcome-art-stats {
+  left:37.5%;
+  top:85.1%;
+  width:24.8%;
+  height:8.5%;
+}
+.welcome-art-rewards {
+  left:69.4%;
+  top:85.1%;
+  width:22.3%;
+  height:8.5%;
+}
+@media (min-width:900px) {
+  .welcome-art-shell { border-radius:26px; }
+}
+@media (max-aspect-ratio:9/16) {
+  .welcome-screen.welcome-art-screen { align-items:start; overflow:auto; }
+  .welcome-art-shell {
+    width:100vw;
+    height:auto;
+    min-height:100dvh;
+  }
+}
+
+/* Кнопка возврата слева освобождает место для настроек звука справа. */
+.game .nav-return.game-menu-back { display:flex; margin-right:auto; }

@@ -4,56 +4,73 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#714eea">
+  <script>
+    // v40: старый PWA-кэш больше не используется. Очищаем его, чтобы редизайн не перекрывался старыми файлами.
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations()
+        .then(list => Promise.all(list.map(reg => reg.unregister())))
+        .catch(() => {});
+    }
+    if ("caches" in window) {
+      caches.keys()
+        .then(keys => Promise.all(keys.filter(key => key.startsWith("ugadai-slovo-")).map(key => caches.delete(key))))
+        .catch(() => {});
+    }
+  </script>
   <title>Угадай слово</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=34">
-  <link rel="stylesheet" href="stats.css?v=34">
-  <link rel="stylesheet" href="rewards.css?v=34">
+  <link rel="stylesheet" href="style.css?v=45">
+  <link rel="stylesheet" href="menu.css?v=44">
+  <link rel="stylesheet" href="game-library.css?v=45">
+  <link rel="stylesheet" href="stats.css?v=39">
+  <link rel="stylesheet" href="rewards.css?v=39">
 </head>
 <body>
   <!-- Стартовая заставка → главное меню → игровое поле. -->
-  <section class="welcome-screen" id="welcomeScreen" aria-labelledby="welcomeTitle">
-    <div class="welcome-glow welcome-glow-left" aria-hidden="true"></div>
-    <div class="welcome-glow welcome-glow-right" aria-hidden="true"></div>
-    <div class="welcome-content">
-      <div class="welcome-tiles" aria-hidden="true">
-        <span>С</span><span>Л</span><span>О</span><span>В</span><span>О</span>
-      </div>
-      <h1 id="welcomeTitle" class="welcome-title">УГАДАЙ<br><span>СЛОВО</span></h1>
-      <p class="welcome-subtitle">Найди слово за 4 попытки!</p>
-      <button id="welcomeEnter" class="welcome-button" type="button" disabled>ВХОД <span aria-hidden="true">➜</span></button>
-      <div class="audio-controls welcome-audio" role="group" aria-label="Настройки звука">
-        <button type="button" data-audio="music" aria-pressed="true">♫ Музыка: ВКЛ</button>
-        <button type="button" data-audio="effects" aria-pressed="true">♪ Звуки: ВКЛ</button>
-      </div>
+        <section class="welcome-screen welcome-art-screen" id="welcomeScreen" aria-label="Стартовый экран игры Угадай слово">
+    <div class="welcome-art-shell">
+      <img class="welcome-art-image" src="assets/start-screen-final.webp?v=43"
+        alt="Угадай слово — уютная библиотека, кот и пример задания"
+        width="720" height="1280" decoding="async" fetchpriority="high">
+
+      <button id="welcomeEnter" class="welcome-art-hotspot welcome-art-start"
+        type="button" aria-label="Начать играть" disabled></button>
+
+      <button id="welcomeRules" class="welcome-art-hotspot welcome-art-rules"
+        type="button" aria-label="Правила"></button>
+      <button id="welcomeStats" class="welcome-art-hotspot welcome-art-stats"
+        type="button" aria-label="Статистика"></button>
+      <button id="welcomeRewards" class="welcome-art-hotspot welcome-art-rewards"
+        type="button" aria-label="Награды"></button>
     </div>
-    <div class="welcome-decor welcome-decor-one" aria-hidden="true">?</div>
-    <div class="welcome-decor welcome-decor-two" aria-hidden="true">✦</div>
   </section>
   <main class="home-screen" id="homeScreen" hidden>
     <section class="home-card" aria-labelledby="homeTitle">
-      <div class="home-tiles" aria-hidden="true"><span>У</span><span>Г</span><span>А</span><span>Д</span><span>АЙ</span></div>
-      <h2 id="homeTitle" class="home-title">ГЛАВНОЕ МЕНЮ</h2>
-      <p class="home-tagline">Собери слово. Победи загадку!</p>
-      <div class="audio-controls home-audio" role="group" aria-label="Настройки звука">
-        <button type="button" data-audio="music" aria-pressed="true">♫ Музыка: ВКЛ</button>
-        <button type="button" data-audio="effects" aria-pressed="true">♪ Звуки: ВКЛ</button>
+      <div id="homeArt" class="home-art-shell">
+        <h2 id="homeTitle" class="menu-visually-hidden">ГЛАВНОЕ МЕНЮ — Угадай слово</h2>
+        <img class="home-art-image" src="assets/menu-library.webp?v=44" alt="Уютная библиотека с котёнком" width="941" height="1672" decoding="async">
+        <button type="button" class="menu-art-hotspot menu-music" data-audio="music" aria-label="Музыка" aria-pressed="true"></button>
+        <button type="button" id="menuSettings" class="menu-art-hotspot menu-settings" aria-label="Настройки звука" aria-haspopup="dialog"></button>
+        <form id="nicknameForm" class="menu-nickname" autocomplete="off">
+          <label for="nicknameInput" class="menu-visually-hidden">Как тебя зовут в игре?</label>
+          <input id="nicknameInput" type="text" maxlength="24" placeholder="Введите имя..." aria-describedby="nicknameMessage" required>
+          <button type="submit" class="menu-art-hotspot menu-save" aria-label="Сохранить имя"></button>
+          <p id="nicknameMessage" class="menu-nickname-message" role="status" aria-live="polite"></p>
+        </form>
+        <nav class="home-menu menu-art-nav" aria-label="Главное меню">
+          <button type="button" id="menuPlay" class="menu-art-hotspot menu-art-play" aria-label="Играть — выбрать категорию"></button>
+          <button type="button" id="menuStats" class="menu-art-hotspot menu-art-stats" aria-label="Статистика"></button>
+          <button type="button" id="menuReward" class="menu-art-hotspot menu-art-reward" aria-label="Тайна десяти печатей">
+            <span id="rewardCounter" class="menu-visually-hidden">0/10 · 0/50</span>
+            <span id="menuSealCount" class="menu-progress menu-seals" aria-hidden="true">0/10</span>
+            <span id="menuPartCount" class="menu-progress menu-parts" aria-hidden="true">0/50</span>
+          </button>
+          <button type="button" id="menuRules" class="menu-art-hotspot menu-art-rules" aria-label="Как играть"></button>
+          <button type="button" id="menuCloud" class="menu-cloud-button" hidden>☁ Сохранить в облаке</button>
+        </nav>
       </div>
-      <form id="nicknameForm" class="nickname-form" autocomplete="off">
-        <label for="nicknameInput">✎ Как тебя зовут в игре?</label>
-        <input id="nicknameInput" type="text" maxlength="24" placeholder="Имя игрока" aria-describedby="nicknameMessage" required>
-        <button type="submit">Сохранить</button>
-        <p id="nicknameMessage" class="nickname-message" role="status" aria-live="polite"></p>
-      </form>
-      <nav class="home-menu" aria-label="Главное меню">
-        <button type="button" id="menuPlay" class="home-menu-button menu-play">▶ <span>ИГРАТЬ</span></button>
-        <button type="button" id="menuStats" class="home-menu-button menu-stats">★ <span>СТАТИСТИКА</span></button>
-        <button type="button" id="menuReward" class="home-menu-button menu-reward">🧩 <span>ТАЙНА ДЕСЯТИ ПЕЧАТЕЙ</span> <span id="rewardCounter">0/10 · 0/50</span></button>
-        <button type="button" id="menuCloud" class="home-menu-button menu-cloud" hidden title="Войти через Яндекс ID, чтобы сохранять прогресс между устройствами">☁ <span>СОХРАНИТЬ В ОБЛАКЕ</span></button>
-        <button type="button" id="menuRules" class="home-menu-button menu-rules">? <span>КАК ИГРАТЬ</span></button>
-      </nav>
-      <small class="game-version">Версия 34 · 29.09.2026</small>
+
       <section id="categoryScreen" class="category-screen" hidden aria-labelledby="categoryTitle">
         <button type="button" id="categoryBack" class="nav-return">← Меню</button>
         <h3 id="categoryTitle">ВЫБОР КАТЕГОРИИ</h3>
@@ -76,22 +93,25 @@
   </main>
   <main class="game" id="gameScreen" hidden>
     <section class="game-card">
-      <button type="button" id="gameMenuBack" class="nav-return game-menu-back" aria-label="Вернуться к выбору уровня">← Уровни</button>
-      <h1>Угадай слово</h1>
-      <div class="audio-controls game-audio" role="group" aria-label="Настройки звука">
-        <button type="button" data-audio="music" aria-pressed="true">♫ Музыка: ВКЛ</button>
-        <button type="button" data-audio="effects" aria-pressed="true">♪ Звуки: ВКЛ</button>
+      <header class="game-library-header">
+        <h1 class="menu-visually-hidden">Угадай слово</h1>
+        <button type="button" id="gameMenuBack" class="nav-return game-menu-back" aria-label="Вернуться к выбору уровня">← Меню</button>
+        <button type="button" id="gameSettings" class="game-settings-button" aria-label="Настройки звука" aria-haspopup="dialog">⚙</button>
+      </header>
+      <div class="game-category-bar">
+        <p id="activeCategoryTitle" class="game-category-label"></p>
+        <span id="gameRoundProgress" class="game-round-progress" aria-label="Прогресс уровня">1 / 20</span>
       </div>
-      <p id="activeCategoryTitle" class="game-category-label"></p>
+      <section class="game-puzzle" aria-label="Задание и попытки">
       <section class="word-panel" aria-label="Подсказка">
         <form id="finalForm" class="final-form" autocomplete="off">
+          <p class="hint" id="hint">Подсказка к слову</p>
           <div class="final-entry" id="finalEntry">
             <div class="word-preview" id="wordPreview" aria-label="Угаданные буквы"></div>
             <input class="final-input" id="finalInput" type="text" inputmode="text"
               autocapitalize="none" spellcheck="false" autocomplete="off"
               aria-label="Последний шанс: введите недостающие буквы" hidden>
           </div>
-          <p class="hint" id="hint">Подсказка к слову</p>
         </form>
       </section>
       <form class="guess-form" id="guessForm">
@@ -101,8 +121,9 @@
           <span>Осталось: <strong id="attemptsLeft">4</strong></span>
         </div>
       </form>
+      </section>
       <details class="hint-shop" id="hintShop">
-        <summary>💡 Подсказки — открыть помощь</summary>
+        <summary>Подсказки</summary>
         <div class="hint-shop-grid">
           <button type="button" id="hintLetter">🔤 Открыть клетку <span id="hintLetterCount"></span></button>
           <button type="button" id="hintFirst">🔡 Первая буква <span id="hintFirstCount"></span></button>
@@ -132,9 +153,9 @@
       <section class="alphabet-panel" aria-label="Алфавит">
         <div class="alphabet-grid" id="alphabet"></div>
         <div class="alphabet-legend">
-          <span><i class="legend-dot legend-present"></i> Есть</span>
           <span><i class="legend-dot legend-correct"></i> На месте</span>
-          <span><i class="legend-dot legend-missing"></i> Нет</span>
+          <span><i class="legend-dot legend-present"></i> Есть в слове</span>
+          <span><i class="legend-dot legend-missing"></i> Нет в слове</span>
         </div>
       </section>
     </section>
@@ -155,6 +176,14 @@
       </section>
     </div>
   </main>
+      <dialog id="menuSettingsDialog" class="menu-settings-dialog" aria-labelledby="menuSettingsTitle">
+        <h3 id="menuSettingsTitle">Настройки звука</h3>
+        <div class="audio-controls" role="group" aria-label="Звук">
+          <button type="button" data-audio="music" aria-pressed="true">♫ Музыка: ВКЛ</button>
+          <button type="button" data-audio="effects" aria-pressed="true">♪ Звуки: ВКЛ</button>
+        </div>
+        <form method="dialog"><button class="menu-settings-close">Готово</button></form>
+      </dialog>
   <!-- Диагностика загружается только при ?debug=1 и не влияет на обычную игру. -->
   <script>
     if (new URLSearchParams(location.search).has("debug")) {
@@ -189,7 +218,7 @@
   </script>
   <script src="data/words.js"></script>
   <script src="data/valid-words.js"></script>
-  <script src="data/long-words-loader.js"></script>
+  <script src="data/long-words-loader.js?v=45"></script>
   <script src="data/levels/animals.js"></script>
   <script src="data/levels/nature.js"></script>
   <script src="data/levels/food.js"></script>
@@ -203,10 +232,10 @@
   <script src="hints.js"></script>
   <script src="analytics.js"></script>
   <script src="audio.js"></script>
-  <script src="stats.js?v=34"></script>
-  <script src="rewards.js?v=34"></script>
+  <script src="stats.js?v=39"></script>
+  <script src="rewards.js?v=39"></script>
   <script src="yandex-platform.js"></script>
   <script src="cloud-save.js"></script>
-  <script src="game-bootstrap.js?v=34"></script>
+  <script src="game-bootstrap.js?v=45"></script>
 </body>
 </html>
