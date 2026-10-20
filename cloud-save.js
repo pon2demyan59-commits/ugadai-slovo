@@ -1,4 +1,4 @@
-/* Облачное сохранение для авторизованных игроков Яндекс Игр.
+/* Облачное сохранение для игроков VK и авторизованных игроков Яндекс Игр.
    Гости продолжают играть с локальными сохранениями. */
 (function(){
   "use strict";
@@ -10,9 +10,13 @@
     profile:"ugadai-slovo-profile-v1",
     hints:"ugadai-slovo-hints-v1"
   };
-  let player=null, timer=null, pending=false, saving=false;
-  function read(key){try{return JSON.parse(localStorage.getItem(key)||"null");}catch{return null;}}
-  function write(key,value){try{localStorage.setItem(key,JSON.stringify(value));}catch{}}
+  let player=null, timer=null, pending=false, saving=false, state="local";
+  function setState(next){
+    state=next;
+    document.dispatchEvent(new Event("game:cloud-update"));
+  }
+  function read(key){try{return JSON.parse((window.VKPlatform?.storage || localStorage).getItem(key)||"null");}catch{return null;}}
+  function write(key,value){try{(window.VKPlatform?.storage || localStorage).setItem(key,JSON.stringify(value));}catch{}}
   function arrayUnion(a,b){
     return [...new Set([...(Array.isArray(a)?a:[]),...(Array.isArray(b)?b:[])])];
   }
@@ -85,22 +89,27 @@
     return {version:1,progress:read(KEYS.progress),score:read(KEYS.score),stats:read(KEYS.stats),profile:read(KEYS.profile),hints:read(KEYS.hints)};
   }
   async function prepare(){
-    if(!window.YandexPlatform.isYandex)return;
-    // При проблемах с платформой не блокируем запуск игры бесконечно.
-    const sdk=await Promise.race([
-      window.YandexPlatform.whenSdk,
-      new Promise(resolve=>setTimeout(()=>resolve(null),6000))
-    ]);
-    if(!sdk)return;
+    const isVK=window.VKPlatform?.isVK;
+    if(!isVK&&!window.YandexPlatform.isYandex)return;
     try{
-      const candidate=await Promise.race([sdk.getPlayer(),new Promise(resolve=>setTimeout(()=>resolve(null),6000))]);
-      if(!candidate?.isAuthorized?.())return;
-      player=candidate;
-      const response=await Promise.race([
-        player.getData([CLOUD_KEY]),
-        new Promise(resolve=>setTimeout(()=>resolve(null),6000))
+      let candidate;
+      if(isVK){
+        candidate=await window.VKPlatform.createPlayer();
+      }else{
+        // Ошибка чтения не должна приводить к перезаписи неизвестного облака.
+        const sdk=await Promise.race([
+          window.YandexPlatform.whenSdk,
+          new Promise(resolve=>setTimeout(()=>resolve(null),6000))
+        ]);
+        if(!sdk)return;
+        candidate=await Promise.race([sdk.getPlayer(),new Promise(resolve=>setTimeout(()=>resolve(null),6000))]);
+      }
+      if(!candidate?.isAuthorized?.()){if(isVK)setState("offline");return;}
+      const response=isVK?await candidate.getData([CLOUD_KEY]):await Promise.race([
+        candidate.getData([CLOUD_KEY]),new Promise(resolve=>setTimeout(()=>resolve(null),6000))
       ]);
-      if(response===null){player=null;return;} // Сетевая ошибка: не перезаписываем неизвестное облачное состояние.
+      if(response===null){setState("offline");return;}
+      player=candidate;
       const cloud=response?.[CLOUD_KEY];
       if(cloud&&typeof cloud==="object"&&cloud.version===1){
         const progress=mergeProgress(read(KEYS.progress),cloud.progress);
@@ -120,15 +129,17 @@
         write(KEYS.profile,{nickname:nick,certificateDate:dates[0]||""});
         window.GameRewards?.reload?.();
       }
-    }catch(error){console.warn("Облачное сохранение недоступно:",error);player=null;}
+      setState("ready");
+    }catch(error){console.warn("Облачное сохранение недоступно:",error);player=null;setState("offline");}
   }
   async function flush(){
     if(!player){return;}
     if(saving){pending=true;return;}
     if(timer){clearTimeout(timer);timer=null;}
     saving=true;pending=false;
-    try{await player.setData({[CLOUD_KEY]:snapshot()},true);}
-    catch(error){console.warn("Не удалось сохранить прогресс в облако:",error);}
+    setState("saving");
+    try{await player.setData({[CLOUD_KEY]:snapshot()},true);setState("saved");}
+    catch(error){console.warn("Не удалось сохранить прогресс в облако:",error);setState("offline");}
     finally{
       saving=false;
       if(pending){pending=false;schedule();}
@@ -137,6 +148,7 @@
   function schedule(){
     if(!player)return;
     if(saving){pending=true;return;}
+    if(state==="saved")setState("ready");
     if(timer)clearTimeout(timer);
     timer=setTimeout(flush,7000);
   }
@@ -152,5 +164,5 @@
       return true;
     }catch(error){console.warn("Вход через Яндекс ID:",error);return false;}
   }
-  window.GameCloud={prepare,schedule,flush,signIn,isAuthorized:()=>Boolean(player),mergeProgress};
+  window.GameCloud={prepare,schedule,flush,signIn,isAuthorized:()=>Boolean(player),getState:()=>state,mergeProgress};
 })();

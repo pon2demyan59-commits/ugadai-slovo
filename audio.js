@@ -9,14 +9,14 @@
   let unlocked=false,scene="welcome",inAd=false,platformPaused=false,windowBlurred=false,sequence=0,ticker=null;
   let melodyUntil=0;
   try{
-    const saved=JSON.parse(localStorage.getItem(KEY)||"null");
+    const saved=JSON.parse((window.VKPlatform?.storage || localStorage).getItem(KEY)||"null");
     if(saved&&typeof saved==="object"){
       settings.music=saved.music!==false;
       settings.effects=saved.effects!==false;
     }
   }catch{}
   function save(){
-    try{localStorage.setItem(KEY,JSON.stringify(settings));}catch{}
+    try{(window.VKPlatform?.storage || localStorage).setItem(KEY,JSON.stringify(settings));}catch{}
   }
   function ensureContext(){
     if(!AudioContextClass)return false;

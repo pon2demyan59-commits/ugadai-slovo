@@ -4,7 +4,7 @@ const SCORE_STORAGE_KEY = "ugadai-slovo-score-v1";
 
 function loadScore() {
   try {
-    const saved = JSON.parse(localStorage.getItem(SCORE_STORAGE_KEY) || "{}");
+    const saved = JSON.parse((window.VKPlatform?.storage || localStorage).getItem(SCORE_STORAGE_KEY) || "{}");
     return {
       wins: Number.isSafeInteger(saved.wins) && saved.wins >= 0 ? saved.wins : 0,
       losses: Number.isSafeInteger(saved.losses) && saved.losses >= 0 ? saved.losses : 0
@@ -21,7 +21,7 @@ function recordResult(won) {
   if (won) score.wins++;
   else score.losses++;
   try {
-    localStorage.setItem(SCORE_STORAGE_KEY, JSON.stringify(score));
+    (window.VKPlatform?.storage || localStorage).setItem(SCORE_STORAGE_KEY, JSON.stringify(score));
     window.GameCloud.schedule();
   } catch {
     // Если хранилище недоступно, счётчики сохраняются до перезагрузки.
@@ -45,10 +45,10 @@ const acceptedAnswers = new Set(GAME_WORDS.map(w => normalizeLetters(w.word)));
 const normalizedDictionary = new Set([...VALID_RUSSIAN_WORDS,...EXTRA_VALID_WORDS].map(normalizeLetters));
 function loadAllProgress() {
   let saved = null,legacy = {};
-  try {saved = JSON.parse(localStorage.getItem(WORD_PROGRESS_KEY) || "null");} catch {}
+  try {saved = JSON.parse((window.VKPlatform?.storage || localStorage).getItem(WORD_PROGRESS_KEY) || "null");} catch {}
   if(!saved || typeof saved!=="object" || Array.isArray(saved)){saved=null;}
   if (!saved) {
-    try {legacy = JSON.parse(localStorage.getItem(OLD_PROGRESS_KEY) || "{}");} catch {}
+    try {legacy = JSON.parse((window.VKPlatform?.storage || localStorage).getItem(OLD_PROGRESS_KEY) || "{}");} catch {}
   }
   if(!legacy || typeof legacy!=="object" || Array.isArray(legacy))legacy={};
   const result = {};
@@ -80,7 +80,7 @@ function loadAllProgress() {
 }
 function loadUiState() {
   try {
-    const s=JSON.parse(localStorage.getItem(UI_STORAGE_KEY)||"{}");
+    const s=JSON.parse((window.VKPlatform?.storage || localStorage).getItem(UI_STORAGE_KEY)||"{}");
     return {
       category:categoryIds.has(s.category) ? s.category : GAME_CATEGORIES[0].id,
       level:Number.isInteger(s.level)&&s.level>=1&&s.level<=MAX_LEVEL ? s.level : 1,
@@ -96,7 +96,7 @@ const allProgress = loadAllProgress();
 const initialUiState = loadUiState();
 const initialScreen = "welcome";
 try {
-  localStorage.removeItem(UI_STORAGE_KEY);
+  (window.VKPlatform?.storage || localStorage).removeItem(UI_STORAGE_KEY);
 } catch {}
 let selectedCategory = initialUiState.category;
 let selectedLevel = initialUiState.level;
@@ -119,7 +119,7 @@ function saveWordProgress() {
           active:entry.active,round:entry.round,completed:entry.completed};
       }
     }
-    localStorage.setItem(WORD_PROGRESS_KEY,JSON.stringify(data));
+    (window.VKPlatform?.storage || localStorage).setItem(WORD_PROGRESS_KEY,JSON.stringify(data));
     window.GameCloud.schedule();
   } catch { /* При отключённом хранилище прогресс живёт до закрытия игры. */ }
 }
@@ -156,7 +156,7 @@ function showCollectionComplete() {
   nextWordButton.textContent="К уровням";
   resultBackdrop.hidden=false;
   window.GameAudio?.play("puzzle");
-  window.YandexPlatform.setGameplay(false);
+  (window.GamePlatform || window.YandexPlatform).setGameplay(false);
 }
 
 // Русская игровая клавиатура дополняет системную клавиатуру телефона.
@@ -278,7 +278,7 @@ function startGame() {
   restoringRound=false;
   renderHints();
   window.GameAnalytics?.track("game_start");
-  window.YandexPlatform.setGameplay(true);
+  (window.GamePlatform || window.YandexPlatform).setGameplay(true);
   saveRound();
   saveWordProgress();
   focusTypingInput(true);
@@ -600,7 +600,7 @@ function checkGuess(guess) {
     revealed=previouslyRevealed;
     renderPreview();
     messageElement.textContent="✨ Слово разгадано! Собираем ответ…";
-    window.YandexPlatform.setGameplay(false);
+    (window.GamePlatform || window.YandexPlatform).setGameplay(false);
     saveWordProgress();
     const generation=roundGeneration;
     animateWinningLetters(row).then(()=>{
@@ -785,7 +785,7 @@ function finishGame(won) {
   renderPreview();
   resultBackdrop.hidden=false;
   renderHints();
-  window.YandexPlatform.roundFinished();
+  (window.GamePlatform || window.YandexPlatform).roundFinished();
   nextWordButton.focus();
 }
 
@@ -883,7 +883,8 @@ hintButtons.clue.addEventListener("click",()=>{
   window.GameAnalytics?.track("hint_used");
 });
 const adButton=document.querySelector("#hintAd");
-adButton.disabled=!window.YandexPlatform.isYandex;
+adButton.disabled=!(window.GamePlatform || window.YandexPlatform).isYandex;
+if(window.VKPlatform?.isVK)document.querySelector(".hint-ad").hidden=true;
 adButton.addEventListener("click",async()=>{
   if(adButton.disabled)return;
   adButton.disabled=true;
@@ -891,7 +892,7 @@ adButton.addEventListener("click",async()=>{
   hintStatus.textContent="Готовим видео с бонусом…";
   window.GameAnalytics?.track("reward_ad_open");
   try{
-    const rewarded=await window.YandexPlatform.showRewarded();
+    const rewarded=await (window.GamePlatform || window.YandexPlatform).showRewarded();
     if(rewarded){
       window.GameAudio?.play("hint");
       const amount=["letter","first","vowel"].includes(kind)?3:2;
@@ -943,7 +944,7 @@ finalEntry.addEventListener("click", () => {
 nextWordButton.addEventListener("click",async ()=>{
   if (nextWordButton.disabled) return;
   nextWordButton.disabled=true;
-  try { await window.YandexPlatform.showInterstitialIfDue(); }
+  try { await (window.GamePlatform || window.YandexPlatform).showInterstitialIfDue(); }
   finally { nextWordButton.disabled=false; }
   if (sessionComplete()) {
     resultBackdrop.hidden=true;
@@ -959,6 +960,7 @@ document.addEventListener("contextmenu",event=>{
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden){saveRound();window.GameCloud.flush();}
 });
+document.addEventListener("game:platform-pause",()=>{saveRound();window.GameCloud.flush();});
 window.addEventListener("pagehide",()=>{saveRound();window.GameCloud.flush();});
 // Сохраняем открытый раздел меню, категорию, уровень и незаконченный раунд.
 const welcomeScreen=document.querySelector("#welcomeScreen");
@@ -976,7 +978,7 @@ const detailsBody=document.querySelector("#menuDetailsBody");
 let homeView="menu";
 function saveUiState() {
   try {
-    localStorage.setItem(UI_STORAGE_KEY,JSON.stringify({
+    (window.VKPlatform?.storage || localStorage).setItem(UI_STORAGE_KEY,JSON.stringify({
       category:selectedCategory,level:selectedLevel,
       screen:gameScreen.hidden?(homeScreen.hidden?"welcome":"home"):"game",
       homeView
@@ -1010,7 +1012,7 @@ function showScreen(screen) {
   if (screen===homeScreen) setHomeView("menu");
   if (screen===gameScreen) focusTypingInput(true);
   saveUiState();
-  window.YandexPlatform.setGameplay(screen===gameScreen && phase!=="finished");
+  (window.GamePlatform || window.YandexPlatform).setGameplay(screen===gameScreen && phase!=="finished");
   window.GameAudio?.setScene(screen===gameScreen?"game":screen===homeScreen?"home":"welcome");
 }
 function openMenuDetails(title,view) {
@@ -1146,10 +1148,10 @@ const menuSettingsDialog=document.querySelector("#menuSettingsDialog");
 document.querySelector("#menuSettings").addEventListener("click",()=>menuSettingsDialog.showModal());
 document.querySelector("#gameSettings").addEventListener("click",()=>{
   menuSettingsDialog.showModal();
-  window.YandexPlatform.setGameplay(false);
+  (window.GamePlatform || window.YandexPlatform).setGameplay(false);
 });
 menuSettingsDialog.addEventListener("close",()=>{
-  window.YandexPlatform.setGameplay(!gameScreen.hidden && (phase==="guess"||phase==="final"));
+  (window.GamePlatform || window.YandexPlatform).setGameplay(!gameScreen.hidden && (phase==="guess"||phase==="final"));
 });
 menuSettingsDialog.addEventListener("click",event=>{
   if(event.target===menuSettingsDialog){
@@ -1213,8 +1215,25 @@ document.querySelector("#menuStats").addEventListener("click",()=>{
 
 });
 const cloudButton=document.querySelector("#menuCloud");
-if (window.YandexPlatform.isYandex && !window.GameCloud.isAuthorized()) cloudButton.hidden=false;
+if ((window.GamePlatform || window.YandexPlatform).isYandex && !window.GameCloud.isAuthorized()) cloudButton.hidden=false;
+if (window.VKPlatform?.isVK) {
+  cloudButton.hidden=false;
+  const updateCloud=()=>{
+    const state=window.GameCloud.getState();
+    cloudButton.textContent=state==="saved"?"✓ Прогресс сохранён в VK":
+      state==="saving"?"Сохраняем в VK…":state==="ready"?"Сохранить прогресс в VK":"Повторить синхронизацию VK";
+    cloudButton.disabled=state==="saving";
+  };
+  document.addEventListener("game:cloud-update",updateCloud);
+  updateCloud();
+}
 cloudButton.addEventListener("click",async ()=>{
+  if (window.VKPlatform?.isVK) {
+    saveRound();
+    if(!window.GameCloud.isAuthorized()||window.GameCloud.getState()==="offline")location.reload();
+    else await window.GameCloud.flush();
+    return;
+  }
   cloudButton.disabled=true;
   try {
     const signedIn=await window.GameCloud.signIn();

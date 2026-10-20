@@ -6,7 +6,7 @@
     recentDays:{}, lastWinDay:null, consecutiveDays:0, bestDays:0, totalDetailed:0 });
   function load() {
     try {
-      const raw=JSON.parse(localStorage.getItem(KEY)||"null");
+      const raw=JSON.parse((window.VKPlatform?.storage || localStorage).getItem(KEY)||"null");
       if (!raw || typeof raw!=="object") return empty();
       const result=empty();
       for(const field of ["streak","bestStreak","consecutiveDays","bestDays","totalDetailed"]) {
@@ -55,7 +55,7 @@
     const cutoff=new Date();cutoff.setDate(cutoff.getDate()-90);
     const cutoffDay=localDay(cutoff);
     Object.keys(data.recentDays).forEach(day=>{if(day<cutoffDay)delete data.recentDays[day];});
-    try {localStorage.setItem(KEY,JSON.stringify(data));} catch {}
+    try {(window.VKPlatform?.storage || localStorage).setItem(KEY,JSON.stringify(data));} catch {}
   }
   function snapshot() {
     const today=localDay();

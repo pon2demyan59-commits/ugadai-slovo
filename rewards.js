@@ -10,7 +10,7 @@
   }
   function load(){
     try {
-      const data=JSON.parse(localStorage.getItem(KEY)||"null")||{};
+      const data=JSON.parse((window.VKPlatform?.storage || localStorage).getItem(KEY)||"null")||{};
       const nickname=sanitize(data.nickname);
       return {
         nickname: nickname.length>=2&&nickname.length<=24&&NAME_RE.test(nickname)?nickname:"",
@@ -21,7 +21,7 @@
   }
   let profile=load();
   function store(){
-    try {localStorage.setItem(KEY,JSON.stringify(profile));}catch{}
+    try {(window.VKPlatform?.storage || localStorage).setItem(KEY,JSON.stringify(profile));}catch{}
     window.GameCloud?.schedule?.();
   }
   function getNickname(){return profile.nickname||DEFAULT;}

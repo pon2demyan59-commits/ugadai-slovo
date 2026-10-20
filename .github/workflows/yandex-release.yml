@@ -22,12 +22,13 @@ jobs:
           node tests/check-release.cjs
           node tests/check-community.cjs
           node tests/check-audit.cjs
+          node tests/check-vk.cjs
       - name: Prepare Yandex Games ZIP
         run: |
           mkdir -p dist
           zip -q -9 -r dist/ugadai-slovo-yandex.zip \
             index.html style.css menu.css game-library.css stats.css rewards.css script.js stats.js rewards.js \
-            yandex-platform.js cloud-save.js game-bootstrap.js hints.js analytics.js audio.js \
+            yandex-platform.js vk-platform.js cloud-save.js game-bootstrap.js hints.js analytics.js audio.js \
             manifest.webmanifest rankings.js vendor assets data
           test "$(unzip -Z1 dist/ugadai-slovo-yandex.zip | grep -cx 'index.html')" -eq 1
           test "$(unzip -Z1 dist/ugadai-slovo-yandex.zip | grep -Ec '(^|/)index.html$')" -eq 1
