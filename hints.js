@@ -9,7 +9,7 @@
   function validCount(n){return Number.isSafeInteger(n)&&n>=0?Math.min(n,10000):0;}
   function read(){
     let saved=null;
-    try{saved=JSON.parse(localStorage.getItem(KEY)||"null");}catch{}
+    try{saved=JSON.parse((window.VKPlatform?.storage || localStorage).getItem(KEY)||"null");}catch{}
     if(!saved||saved.version!==1)return{
       version:1,updatedAt:Number.isSafeInteger(saved?.updatedAt)?saved.updatedAt:0,balances:{...START},rewardedWins:0,rewardedLevels:[]};
     return{
@@ -21,7 +21,7 @@
     };
   }
   function save(data){
-    try{localStorage.setItem(KEY,JSON.stringify({...data,updatedAt:Date.now()}));}catch{}
+    try{(window.VKPlatform?.storage || localStorage).setItem(KEY,JSON.stringify({...data,updatedAt:Date.now()}));}catch{}
     window.GameCloud?.schedule?.();
     return data;
   }

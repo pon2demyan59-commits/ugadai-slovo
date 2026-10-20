@@ -6,7 +6,8 @@ const assert=require("node:assert/strict");
 const root=path.resolve(__dirname,"..");
 const required=[
   "index.html","style.css","menu.css","game-library.css","stats.css","rewards.css","script.js","stats.js","rewards.js","rankings.js",
-  "yandex-platform.js","cloud-save.js","game-bootstrap.js","hints.js","analytics.js","audio.js",
+  "yandex-platform.js","vk-platform.js","cloud-save.js","game-bootstrap.js","hints.js","analytics.js","audio.js",
+  "vendor/vk-bridge/vk-bridge-3.0.2.min.js","vendor/vk-bridge/LICENSE",
   "data/words.js","data/valid-words.js","data/valid-long-words.js",
   "data/long-words-loader.js","data/DICTIONARY_LICENSE.txt",
   "assets/icon.svg","assets/start-screen-final.webp","assets/menu-library.webp",
